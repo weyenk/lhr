@@ -27,6 +27,14 @@ export const recipePostSchema = z.object({
 export const articlePostSchema = z.object({
   type: z.literal('article'),
   ...basePostFields,
+  sections: z
+    .array(
+      z.object({
+        heading: z.string(),
+        body: z.string(),
+      }),
+    )
+    .min(1),
 });
 
 export const postSchema = z.discriminatedUnion('type', [recipePostSchema, articlePostSchema]);
