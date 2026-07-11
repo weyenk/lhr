@@ -8,7 +8,6 @@ const sets = [
       name: 'Coastal Blue',
       startDate: new Date('2026-07-01'),
       endDate: new Date('2026-12-31'),
-      productIds: ['coastal-blue-platter'],
     },
   },
 ];

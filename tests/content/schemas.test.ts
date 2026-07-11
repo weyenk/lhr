@@ -102,7 +102,6 @@ describe('setSchema', () => {
       name: 'Coastal Blue',
       startDate: '2026-07-01',
       endDate: '2026-12-31',
-      productIds: ['coastal-blue-platter'],
     });
     expect(result.success).toBe(true);
   });

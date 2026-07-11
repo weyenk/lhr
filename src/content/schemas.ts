@@ -50,7 +50,6 @@ export const setSchema = z.object({
   name: z.string(),
   startDate: z.coerce.date(),
   endDate: z.coerce.date(),
-  productIds: z.array(z.string()),
 });
 
 export type PostData = z.infer<typeof postSchema>;
