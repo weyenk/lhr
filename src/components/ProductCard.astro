@@ -1,0 +1,24 @@
+---
+import { formatPrice } from '../lib/content';
+import type { ProductData } from '../content/schemas';
+
+interface Props {
+  id: string;
+  data: ProductData;
+}
+
+const { id, data } = Astro.props;
+---
+<a
+  class="product-card"
+  href={data.vendorUrl}
+  target="_blank"
+  rel="noopener sponsored"
+  data-umami-event="kitchenware-click"
+  data-umami-event-product={id}
+>
+  <img src={data.image} alt={data.imageAlt} />
+  <span class="product-card__name">{data.name}</span>
+  <span class="product-card__price">{formatPrice(data.priceCents)}</span>
+  <small class="product-card__disclosure">Shop this piece (affiliate link)</small>
+</a>

@@ -1,0 +1,21 @@
+---
+import type { AffiliateLinkData } from '../content/schemas';
+
+interface Props {
+  id: string;
+  data: AffiliateLinkData;
+}
+
+const { id, data } = Astro.props;
+---
+<a
+  class="affiliate-link"
+  href={data.url}
+  target="_blank"
+  rel="noopener sponsored"
+  data-umami-event="affiliate-click"
+  data-umami-event-link={id}
+>
+  {data.label}
+  <small class="affiliate-link__disclosure">(affiliate link)</small>
+</a>
