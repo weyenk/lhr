@@ -1,0 +1,43 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import ProductCard from '../components/ProductCard.astro';
+import AffiliateLink from '../components/AffiliateLink.astro';
+import { render, type CollectionEntry } from 'astro:content';
+import { getEntriesByIds } from '../lib/content';
+
+interface Props {
+  post: CollectionEntry<'posts'>;
+  products: CollectionEntry<'products'>[];
+  affiliateLinks: CollectionEntry<'affiliateLinks'>[];
+}
+
+const { post, products, affiliateLinks } = Astro.props;
+const { data } = post;
+
+if (data.type !== 'article') {
+  throw new Error(`ArticleLayout received a non-article post: ${post.id}`);
+}
+
+const linkedProducts = getEntriesByIds(data.kitchenwareIds, products);
+const linkedAffiliateLinks = getEntriesByIds(data.affiliateLinkIds, affiliateLinks);
+const { Content } = await render(post);
+---
+<BaseLayout title={data.title}>
+  <article class="article-post">
+    <h1>{data.title}</h1>
+    <img src={data.coverPhoto} alt={data.coverPhotoAlt} />
+    <Content />
+    {linkedProducts.length > 0 && (
+      <section class="article-post__kitchenware">
+        <h2>Shop this set</h2>
+        {linkedProducts.map((product) => <ProductCard id={product.id} data={product.data} />)}
+      </section>
+    )}
+    {linkedAffiliateLinks.length > 0 && (
+      <section class="article-post__affiliate-links">
+        <h2>Also mentioned</h2>
+        {linkedAffiliateLinks.map((link) => <AffiliateLink id={link.id} data={link.data} />)}
+      </section>
+    )}
+  </article>
+</BaseLayout>
