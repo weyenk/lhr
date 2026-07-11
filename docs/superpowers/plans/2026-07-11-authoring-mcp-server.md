@@ -262,9 +262,39 @@ git commit -m "feat: migrate article posts to structured named sections"
 
 **Interfaces:**
 - Consumes: nothing (leaf task).
-- Produces: `mcp-server/src/server.ts` exporting a default Express `app` with a `GET /health` route — Task 6/7 extend this same file with auth middleware and the MCP endpoint.
+- Produces: `mcp-server/src/server.ts` exporting a default Express `app` with a `GET /health` route — Task 6/7 extend this same file with auth middleware and the MCP endpoint. The repo root becomes an npm workspace host — Task 15's integration test relies on `mcp-server` being a declared workspace member to import the site's schema module cleanly.
 
-- [ ] **Step 1: Create `mcp-server/package.json`**
+- [ ] **Step 1: Declare `mcp-server` as an npm workspace**
+
+Modify the root `package.json` (currently `lhr-site`'s manifest from Plan 1) to add a `workspaces` field:
+
+```json
+{
+  "name": "lhr-site",
+  "private": true,
+  "type": "module",
+  "workspaces": ["mcp-server"],
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "pretest": "astro sync && mkdir -p .astro && cp node_modules/.astro/data-store.json .astro/data-store.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "astro": "^5.0.0",
+    "@astrojs/mdx": "^4.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}
+```
+
+This makes `mcp-server` a proper workspace member: one shared root `package-lock.json`, one `npm install` covers both packages, and `mcp-server`'s tests can reference the site's modules by relative path as a normal same-repo (not cross-package) reference.
+
+- [ ] **Step 2: Create `mcp-server/package.json`**
 
 ```json
 {
@@ -289,12 +319,14 @@ git commit -m "feat: migrate article posts to structured named sections"
     "vitest": "^2.1.0",
     "@types/express": "^4.17.0",
     "@types/js-yaml": "^4.0.0",
-    "@types/node": "^22.0.0"
+    "@types/node": "^22.0.0",
+    "supertest": "^7.0.0",
+    "@types/supertest": "^6.0.0"
   }
 }
 ```
 
-- [ ] **Step 2: Create `mcp-server/tsconfig.json`**
+- [ ] **Step 3: Create `mcp-server/tsconfig.json`**
 
 ```json
 {
@@ -312,7 +344,7 @@ git commit -m "feat: migrate article posts to structured named sections"
 }
 ```
 
-- [ ] **Step 3: Create `mcp-server/vitest.config.ts`**
+- [ ] **Step 4: Create `mcp-server/vitest.config.ts`**
 
 ```ts
 import { defineConfig } from 'vitest/config';
@@ -324,7 +356,7 @@ export default defineConfig({
 });
 ```
 
-- [ ] **Step 4: Create `mcp-server/vercel.json`**
+- [ ] **Step 5: Create `mcp-server/vercel.json`**
 
 ```json
 {
@@ -335,7 +367,7 @@ export default defineConfig({
 }
 ```
 
-- [ ] **Step 5: Create `mcp-server/.gitignore`**
+- [ ] **Step 6: Create `mcp-server/.gitignore`**
 
 ```
 node_modules/
@@ -343,12 +375,12 @@ dist/
 .env
 ```
 
-- [ ] **Step 6: Install dependencies**
+- [ ] **Step 7: Install dependencies from the repo root**
 
-Run: `cd mcp-server && npm install`
-Expected: installs without error, creates `mcp-server/package-lock.json`.
+Run: `npm install` (from the repo root, not inside `mcp-server/`)
+Expected: installs without error for both workspace members, updates the root `package-lock.json` (there is no separate `mcp-server/package-lock.json` — npm workspaces share one lockfile), and creates `node_modules` symlinks so `mcp-server` sees its own dependencies.
 
-- [ ] **Step 7: Write the failing test**
+- [ ] **Step 8: Write the failing test**
 
 Create `mcp-server/tests/server.test.ts`:
 
@@ -366,14 +398,12 @@ describe('GET /health', () => {
 });
 ```
 
-This test needs `supertest` — add it to `mcp-server/package.json` devDependencies as `"supertest": "^7.0.0"` and `"@types/supertest": "^6.0.0"`, then re-run `npm install` in `mcp-server/`.
-
-- [ ] **Step 8: Run test to verify it fails**
+- [ ] **Step 9: Run test to verify it fails**
 
 Run: `cd mcp-server && npm test`
 Expected: FAIL — `Cannot find module '../src/server'`
 
-- [ ] **Step 9: Write `mcp-server/src/server.ts`**
+- [ ] **Step 10: Write `mcp-server/src/server.ts`**
 
 ```ts
 import express from 'express';
@@ -388,7 +418,7 @@ app.get('/health', (_req, res) => {
 export default app;
 ```
 
-- [ ] **Step 10: Write `mcp-server/api/index.ts`**
+- [ ] **Step 11: Write `mcp-server/api/index.ts`**
 
 ```ts
 import app from '../src/server';
@@ -396,16 +426,16 @@ import app from '../src/server';
 export default app;
 ```
 
-- [ ] **Step 11: Run test to verify it passes**
+- [ ] **Step 12: Run test to verify it passes**
 
 Run: `cd mcp-server && npm test`
 Expected: PASS — `GET /health > responds with ok status`
 
-- [ ] **Step 12: Commit**
+- [ ] **Step 13: Commit**
 
 ```bash
-git add mcp-server/package.json mcp-server/package-lock.json mcp-server/tsconfig.json mcp-server/vitest.config.ts mcp-server/vercel.json mcp-server/.gitignore mcp-server/src/server.ts mcp-server/api/index.ts mcp-server/tests/server.test.ts
-git commit -m "chore: scaffold authoring MCP server project"
+git add package.json package-lock.json mcp-server/package.json mcp-server/tsconfig.json mcp-server/vitest.config.ts mcp-server/vercel.json mcp-server/.gitignore mcp-server/src/server.ts mcp-server/api/index.ts mcp-server/tests/server.test.ts
+git commit -m "chore: scaffold authoring MCP server project as an npm workspace"
 ```
 
 ---
@@ -3430,7 +3460,7 @@ describe('full authoring flow', () => {
 });
 ```
 
-This test imports `postSchema` from the site's `src/content/schemas.ts` via a relative path (`../../../src/content/schemas`) — `mcp-server/tests/integration/fullFlow.test.ts` is three levels below the repo root, so `../../../src` resolves to the repo root's `src/`. This cross-package import is read-only (schema validation only) and doesn't require the site's `astro:content` virtual module, since `postSchema` is a plain Zod schema with no Astro-specific imports.
+This test imports `postSchema` from the site's `src/content/schemas.ts` via a relative path (`../../../src/content/schemas`) — `mcp-server/tests/integration/fullFlow.test.ts` is three levels below the repo root, so `../../../src` resolves to the repo root's `src/`. Since Task 2 declared `mcp-server` as an npm workspace member of the root package, this relative import is a normal same-repo reference, not a fragile cross-package hack — both packages share one `node_modules`/lockfile, and the import is read-only (schema validation only), needing none of the site's `astro:content` virtual module since `postSchema` is a plain Zod schema with no Astro-specific imports.
 
 - [ ] **Step 2: Run test to verify it fails**
 
