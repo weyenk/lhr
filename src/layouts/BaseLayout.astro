@@ -4,12 +4,17 @@ interface Props {
 }
 
 const { title } = Astro.props;
+const umamiUrl = import.meta.env.PUBLIC_UMAMI_URL;
+const umamiWebsiteId = import.meta.env.PUBLIC_UMAMI_WEBSITE_ID;
 ---
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
+    {umamiUrl && umamiWebsiteId && (
+      <script defer src={umamiUrl} data-website-id={umamiWebsiteId}></script>
+    )}
   </head>
   <body>
     <slot />
