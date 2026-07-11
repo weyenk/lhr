@@ -16,11 +16,11 @@ Plan 1 (site foundation) is complete: the Astro site, content schemas, recipe/ar
 
 ## 2. Architecture
 
-- **MCP server**: lives in `mcp-server/` in this repo, deployed as an **always-on Fly.io app** (separate deploy from the site). Fly.io was chosen over Vercel specifically because exported food photos can land in the 3–8MB range, and Vercel serverless functions cap request bodies around 4.5MB — a real constraint discovered mid-design, not present when hosting was first discussed. An always-on container has no such body-size ceiling.
-- **Auth**: the Claude.ai connector UI expects an OAuth handshake, not a pasted API key. The server implements a **minimal single-user OAuth 2.1 surface** (`/authorize`, `/token`) gated by one secret set as a Fly.io env var — not a full identity provider, just enough surface for the client to complete its login flow and receive a long-lived token. Satisfies Constitution #5 (single-author only).
+- **MCP server**: lives in `mcp-server/` in this repo, deployed as its own **Vercel project** (separate deploy from the site, same repo). Vercel serverless functions cap request bodies around 4.5MB, which was initially a concern for large exported photos — but since photo bytes now travel via a server-side fetch rather than through the tool-call body (see §5), that ceiling no longer applies to this design, and Vercel keeps everything on one hosting platform.
+- **Auth**: the MCP TypeScript SDK's own guidance is explicit — don't hand-roll an OAuth authorization server; front an existing one. The server uses the SDK's **`ProxyOAuthServerProvider`** to delegate the OAuth handshake to **GitHub OAuth**: she logs in with her own GitHub account (the repo owner) when claude.ai's connector completes its handshake. The server then checks the authenticated GitHub username against a single-entry allowlist (her username) before permitting any tool call — satisfying Constitution #5 (single-author only) without the server implementing token issuance itself. Her resulting GitHub token (scoped with `repo` write access) doubles as the credential for git writes, so there's no separate static secret or bot PAT to manage. In-flight OAuth state (PKCE challenges, issued tokens) is held in **Vercel KV**, since the server is stateless per-invocation and can't keep this in memory across requests.
 - **Claude-side flow**: she connects the server as a custom MCP connector in the Claude.ai app, then uses a **Claude.ai Project** whose custom instructions script the step-by-step conversation (pick post type → fields → photos → kitchenware → affiliate links → preview → confirm). This replaces the original spec's "structured skill-driven flow" language — Claude.ai's mobile app doesn't support Claude Code-style Skills, so the structure lives in the Project instructions plus the shape of the tools themselves.
-- **Git writes**: all commits, branches, and merges happen via the **GitHub REST API (Octokit)** — the server is stateless per-request even on Fly.io (no assumption of a persistent local clone), so there's no local git checkout to operate on.
-- **Photo storage**: unchanged from the original spec — photos upload to **Vercel Blob**, referenced by URL from post content. Moving the MCP server to Fly.io doesn't change where images live.
+- **Git writes**: all commits, branches, and merges happen via the **GitHub REST API (Octokit)**, authenticated with her own OAuth-derived token — the server is stateless per-request (no assumption of a persistent local clone), so there's no local git checkout to operate on.
+- **Photo storage**: photos are fetched server-side and stored in **Vercel Blob**, referenced by URL from post content. See §5 for how bytes get there.
 
 ## 3. Draft Lifecycle & Data Model
 
@@ -45,7 +45,7 @@ Extends the original spec's tool list (Rules #3) with concrete shapes:
 
 - **`start_post(type: 'recipe' | 'article')`** — lists open drafts of the given type first; if none or she declines to resume, creates a new `draft/post-<id>` branch with an empty `.drafts/<id>.json`. Returns the draft id and next-step prompt.
 - **`add_content_step(draftId, ...)`** — for recipes: appends to `ingredients` / `steps`. For articles: appends a `{ heading, body }` entry to `sections` (see §6). Commits the updated draft JSON.
-- **`attach_photo(draftId, imageBase64, mimeType, caption?)`** — decodes base64 (capped at ~20MB to reject clearly oversized payloads), uploads to Vercel Blob, appends the resulting URL (+ caption) to the draft JSON. Photo upload failures leave the rest of the draft untouched (§8).
+- **`attach_photo(draftId, photoUrl, caption?)`** — fetches `photoUrl` server-side (see §5), uploads the bytes to Vercel Blob, appends the resulting Blob URL (+ caption) to the draft JSON. Photo upload failures leave the rest of the draft untouched (§8).
 - **`link_kitchenware(draftId, productIds: string[])`** — defaults to suggesting the currently-active set's products (via `getActiveSet`/`getSetProducts`, carried over from Plan 1's `src/lib/content.ts`); she picks which apply. Writes `kitchenwareIds` into the draft JSON.
 - **`add_affiliate_link(draftId, label, url, tag)`** — validates the URL, checks `main`'s current affiliate-link catalog (fetched live via GitHub API) for a matching `url`. On a match, reuses that entry's id. On no match, stages a full new entry in the draft JSON's `pendingAffiliateLinks`, materialized as a real catalog file only at publish time.
 - **`preview_post(draftId)`** — renders a text summary (title, excerpt, photo count with URLs, linked products, linked affiliate links) back into the chat for her review.
@@ -54,7 +54,14 @@ Extends the original spec's tool list (Rules #3) with concrete shapes:
 
 ## 5. Photo Handling
 
-`attach_photo` receives image bytes as base64 in the tool-call arguments — the only channel available for getting bytes from the chat into a tool call. She's responsible for exporting a web-ready JPEG/HEIC from her camera's RAW/HDR source before attaching (a normal step in her existing photo workflow) — the pipeline does not perform RAW conversion. A ~20MB cap on the decoded input rejects clearly-wrong attachments (e.g. an un-exported RAW file) with a clear error rather than failing obscurely.
+Rather than routing image bytes through the tool-call channel (which runs into MCP transport and mobile-upload limits for anything beyond a few MB), photos flow through a **link-and-fetch** pattern:
+
+1. She exports a web-ready JPEG/HEIC from her camera's RAW/HDR source (a normal step in her existing photo workflow — the pipeline does not perform RAW conversion).
+2. She shares it via the Photos app's "Copy iCloud Link" feature, producing a public, unauthenticated URL, and pastes that URL into the chat.
+3. `attach_photo(draftId, photoUrl, caption?)` receives just that URL string — a tiny tool-call payload regardless of the photo's actual size — and does a **server-to-server `fetch`** of it. Outbound fetches aren't subject to Vercel's inbound request-body limit, so this works for any photo size she'd realistically export.
+4. The server validates the response is an image (content-type check) and under a sanity cap (~25MB) before uploading the bytes to Vercel Blob and discarding the fetched buffer. The Blob URL — not the iCloud link — is what gets stored in the draft JSON and ultimately the published post, since iCloud share links can expire or be revoked and a blog post needs to stay up.
+
+This is a placeholder transport for photo intake, chosen because it requires no new infrastructure and iCloud is already her camera roll's home. It's expected to be replaced by a direct upload path (e.g. to AWS S3) in a future phase; `attach_photo`'s interface (`draftId, photoUrl, caption?` in, a stored Blob URL out) is written generically enough that swapping the fetch source or storage destination later doesn't change the tool's contract.
 
 ## 6. Content Model Change: Article Sections
 
@@ -91,10 +98,11 @@ Carries forward the original spec's principles, made concrete for this design:
 
 ## 10. Manual Setup (outside this repo's code, documented like `DEPLOYMENT.md`)
 
-1. Generate the OAuth gate secret and a GitHub token (repo write access) for the MCP server; set both as Fly.io app secrets.
-2. Deploy `mcp-server/` to a new Fly.io app.
-3. Add the Fly.io app's URL as a custom MCP connector in the Claude.ai app, completing the OAuth handshake with the secret from step 1.
-4. Create a Claude.ai Project, paste in the scripted authoring-flow instructions, and attach the connector.
+1. Register a GitHub OAuth App for the MCP server (callback URL pointing at the new Vercel project); note its client id/secret.
+2. Create the new Vercel project for `mcp-server/`, provision a Vercel KV store for OAuth/session state, and set the GitHub OAuth App client id/secret plus a Vercel Blob token as project env vars.
+3. Add her GitHub username to the server's single-entry author allowlist (a config value, not a secret).
+4. Add the deployed project's URL as a custom MCP connector in the Claude.ai app, completing the GitHub OAuth handshake.
+5. Create a Claude.ai Project, paste in the scripted authoring-flow instructions, and attach the connector.
 
 ## 11. Repo Structure Addition
 
@@ -103,9 +111,9 @@ Extends Plan 1's layout:
 mcp-server/
   src/
     tools/           # one module per MCP tool
-    auth/             # minimal OAuth surface
+    auth/             # ProxyOAuthServerProvider config + author allowlist check
     github.ts         # Octokit wrapper (branches, commits, direct-to-main publish)
-    blob.ts            # Vercel Blob upload wrapper
+    blob.ts            # Vercel Blob upload wrapper + photoUrl fetch-and-store
   tests/
 docs/
   AUTHORING-SETUP.md   # manual setup steps (§10), mirrors DEPLOYMENT.md
