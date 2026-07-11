@@ -11,4 +11,12 @@ describe('home page', () => {
     const html = readFileSync('dist/index.html', 'utf-8');
     expect(html).toContain('Love Heat Relationship');
   });
+
+  it('lists links to all published posts', () => {
+    const html = readFileSync('dist/index.html', 'utf-8');
+    expect(html).toContain('href="/posts/jerk-chicken-platter/"');
+    expect(html).toContain('Jerk Chicken for a Crowd');
+    expect(html).toContain('href="/posts/why-coastal-blue/"');
+    expect(html).toContain('Why We Chose the Coastal Blue Set');
+  });
 });
