@@ -6,7 +6,7 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "pretest": "astro sync",
+    "pretest": "astro sync && mkdir -p .astro && cp node_modules/.astro/data-store.json .astro/data-store.json",
     "test": "vitest run"
   },
   "dependencies": {
