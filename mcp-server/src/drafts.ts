@@ -119,10 +119,12 @@ export async function deleteDraftBranch(client: GitHubClient, kind: 'post' | 'se
 }
 
 export async function findDraftKind(client: GitHubClient, id: string): Promise<'post' | 'set' | null> {
-  const postBranches = await listBranches(client, branchName('post', id));
-  if (postBranches.length > 0) return 'post';
-  const setBranches = await listBranches(client, branchName('set', id));
-  if (setBranches.length > 0) return 'set';
+  const postBranch = branchName('post', id);
+  const postBranches = await listBranches(client, postBranch);
+  if (postBranches.includes(postBranch)) return 'post';
+  const setBranch = branchName('set', id);
+  const setBranches = await listBranches(client, setBranch);
+  if (setBranches.includes(setBranch)) return 'set';
   return null;
 }
 

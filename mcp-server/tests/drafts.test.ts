@@ -125,6 +125,15 @@ describe('findDraftKind', () => {
     github.listBranches.mockResolvedValue([]);
     expect(await findDraftKind(client, 'nope')).toBeNull();
   });
+
+  it('does not false-positive when a branch only shares a prefix with the requested id', async () => {
+    // listBranches is a startsWith match under the hood — a branch named
+    // draft/post-abc12345 must not count as a match for id "abc1".
+    github.listBranches.mockImplementation(async (_client: unknown, prefix: string) =>
+      prefix === 'draft/post-abc1' ? ['draft/post-abc12345'] : [],
+    );
+    expect(await findDraftKind(client, 'abc1')).toBeNull();
+  });
 });
 
 describe('summarizeDraftPost', () => {
@@ -133,5 +142,17 @@ describe('summarizeDraftPost', () => {
     expect(summary).toContain('Title: Jerk Chicken');
     expect(summary).toContain('Ingredients: 1');
     expect(summary).toContain('Steps: 1');
+  });
+
+  it('includes article-specific section count', () => {
+    const summary = summarizeDraftPost({
+      ...emptyRecipeDraft,
+      postType: 'article',
+      title: 'Why We Chose Coastal Blue',
+      sections: [{ heading: 'Why blue', body: 'It photographs beautifully.' }],
+    });
+    expect(summary).toContain('Title: Why We Chose Coastal Blue');
+    expect(summary).toContain('Sections: 1');
+    expect(summary).not.toContain('Ingredients:');
   });
 });
