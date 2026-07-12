@@ -4,6 +4,7 @@ import { registerAddContentStep } from './addContentStep';
 import { registerAttachPhoto } from './attachPhoto';
 import { registerLinkKitchenware } from './linkKitchenware';
 import { registerAddAffiliateLink } from './addAffiliateLink';
+import { registerPreviewPost } from './previewPost';
 
 export function registerTools(server: McpServer, accessToken: string): void {
   registerStartPost(server, accessToken);
@@ -11,4 +12,5 @@ export function registerTools(server: McpServer, accessToken: string): void {
   registerAttachPhoto(server, accessToken);
   registerLinkKitchenware(server, accessToken);
   registerAddAffiliateLink(server, accessToken);
+  registerPreviewPost(server, accessToken);
 }
