@@ -38,7 +38,6 @@ interface ExistingSetData {
   name: string;
   startDate: string;
   endDate: string;
-  productIds: string[];
 }
 
 function dayBefore(isoDate: string): string {
@@ -62,7 +61,7 @@ async function publishSet(client: GitHubClient, draftId: string) {
     {
       path: `src/content/sets/${setSlug}.json`,
       content: JSON.stringify(
-        { name: draft.name, startDate: draft.startDate, endDate: '9999-12-31', productIds: productSlugs },
+        { name: draft.name, startDate: draft.startDate, endDate: '9999-12-31' },
         null,
         2,
       ),

@@ -134,18 +134,24 @@ describe('confirm_and_publish (post)', () => {
 });
 
 describe('confirm_and_publish (set)', () => {
-  it('publishes the new set, its products, and auto-closes the previous active set', async () => {
+  it('publishes the new set, its products, and auto-closes the immediately-preceding set among 3+ candidates', async () => {
     draftsMock.findDraftKind.mockResolvedValue('set');
     draftsMock.readDraft.mockResolvedValue({
       kind: 'set',
       name: 'Sunset Terracotta',
-      startDate: '2027-01-01',
+      startDate: '2027-02-15',
       products: [
         { name: 'Terracotta Bowl', priceCents: 3200, image: 'https://example.com/bowl.jpg', imageAlt: 'A terracotta bowl', vendorUrl: 'https://vendor.example.com/terracotta-bowl' },
       ],
     });
+    // Three prior sets, deliberately out of order in the mocked collection, so a
+    // selection bug (e.g. picking the oldest, or the first in list order) would be
+    // caught: "even-older" and "ancient" must NOT be selected — only "coastal-blue"
+    // (the one with the latest startDate still before the new set's startDate).
     catalogMock2.readCollection.mockResolvedValue([
-      { id: 'coastal-blue', data: { name: 'Coastal Blue', startDate: '2026-07-01', endDate: '2026-12-31', productIds: ['coastal-blue-platter'] } },
+      { id: 'even-older', data: { name: 'Even Older', startDate: '2025-01-01', endDate: '2026-06-30' } },
+      { id: 'coastal-blue', data: { name: 'Coastal Blue', startDate: '2026-07-01', endDate: '9999-12-31' } },
+      { id: 'ancient', data: { name: 'Ancient', startDate: '2024-01-01', endDate: '2024-12-31' } },
     ]);
     githubMock.commitFilesToMain.mockResolvedValue('commit-sha');
 
@@ -157,15 +163,21 @@ describe('confirm_and_publish (set)', () => {
     expect(githubMock.commitFilesToMain).toHaveBeenCalledWith(
       expect.anything(),
       expect.arrayContaining([
-        expect.objectContaining({ path: 'src/content/sets/sunset-terracotta.json' }),
+        expect.objectContaining({
+          path: 'src/content/sets/sunset-terracotta.json',
+          content: expect.not.stringContaining('productIds'),
+        }),
         expect.objectContaining({ path: 'src/content/products/terracotta-bowl.json' }),
         expect.objectContaining({
           path: 'src/content/sets/coastal-blue.json',
-          content: expect.stringContaining('"endDate": "2026-12-31"'),
+          content: expect.stringContaining('"endDate": "2027-02-14"'),
         }),
       ]),
       expect.stringContaining('Sunset Terracotta'),
     );
+    const [, files] = githubMock.commitFilesToMain.mock.calls[0] as [unknown, { path: string }[]];
+    expect(files.some((f) => f.path === 'src/content/sets/even-older.json')).toBe(false);
+    expect(files.some((f) => f.path === 'src/content/sets/ancient.json')).toBe(false);
     expect(draftsMock.deleteDraftBranch).toHaveBeenCalledWith(expect.anything(), 'set', 'set1');
   });
 });
