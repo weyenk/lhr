@@ -85,6 +85,34 @@ describe('confirm_and_publish (post)', () => {
     expect(draftsMock.deleteDraftBranch).not.toHaveBeenCalled();
   });
 
+  it('rejects a draft with no title without committing anything', async () => {
+    draftsMock.findDraftKind.mockResolvedValue('post');
+    draftsMock.readDraft.mockResolvedValue({ ...validRecipeDraft, title: '' });
+
+    const server = fakeServer();
+    registerConfirmAndPublish(server as never, 'token');
+
+    await expect(server.call('confirm_and_publish', { draftId: 'abc1' })).rejects.toThrow(/title/);
+    expect(githubMock.commitFilesToMain).not.toHaveBeenCalled();
+    expect(draftsMock.deleteDraftBranch).not.toHaveBeenCalled();
+  });
+
+  it('rejects an article draft with no sections without committing anything', async () => {
+    draftsMock.findDraftKind.mockResolvedValue('post');
+    draftsMock.readDraft.mockResolvedValue({
+      ...validRecipeDraft,
+      postType: 'article' as const,
+      sections: [],
+    });
+
+    const server = fakeServer();
+    registerConfirmAndPublish(server as never, 'token');
+
+    await expect(server.call('confirm_and_publish', { draftId: 'abc1' })).rejects.toThrow(/section/);
+    expect(githubMock.commitFilesToMain).not.toHaveBeenCalled();
+    expect(draftsMock.deleteDraftBranch).not.toHaveBeenCalled();
+  });
+
   it('throws when no draft matches the given id', async () => {
     draftsMock.findDraftKind.mockResolvedValue(null);
     const server = fakeServer();

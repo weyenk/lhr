@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { createGitHubClient, commitFilesToMain, type FileWrite } from '../github';
-import { readDraft, findDraftKind, deleteDraftBranch, type DraftPost } from '../drafts';
+import { readDraft, findDraftKind, deleteDraftBranch } from '../drafts';
 import { uniqueSlug } from '../catalog';
 import { renderPostMdx } from '../render';
 
