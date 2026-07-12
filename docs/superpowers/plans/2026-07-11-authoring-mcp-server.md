@@ -19,6 +19,7 @@
 - `confirm_and_publish` writes directly to `main` as one commit (blobs → tree → commit → ref update), not a git merge (spec §3).
 - The MCP TypeScript SDK's own docs warn against implementing OAuth token issuance from scratch — auth must proxy to GitHub OAuth via `ProxyOAuthServerProvider`, not a hand-rolled `/authorize`/`/token` (spec §2).
 - The exact runtime shape of `@modelcontextprotocol/sdk`'s auth exports (import paths, `ProxyOAuthServerProvider` constructor, `mcpAuthRouter`) was verified against current documentation and examples as of this plan's writing, but this SDK is young and moves fast — if the installed package's TypeScript types disagree with the code in Task 6, trust the installed types and adjust the call shape accordingly rather than fighting the compiler.
+- `mcp-server/tsconfig.json` uses `"moduleResolution": "Bundler"` (not `"NodeNext"`) specifically so relative imports throughout this plan's code (e.g. `import { readDraft } from '../drafts'`) do not need explicit `.js` extensions — write and keep them exactly as shown in every task's code blocks, without extensions.
 
 ---
 
@@ -332,8 +333,8 @@ This makes `mcp-server` a proper workspace member: one shared root `package-lock
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
