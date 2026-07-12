@@ -2,6 +2,7 @@
   "name": "lhr-site",
   "private": true,
   "type": "module",
+  "workspaces": ["mcp-server"],
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
@@ -11,7 +12,8 @@
   },
   "dependencies": {
     "astro": "^5.0.0",
-    "@astrojs/mdx": "^4.0.0"
+    "@astrojs/mdx": "^4.0.0",
+    "zod": "^3.24.0"
   },
   "devDependencies": {
     "typescript": "^5.7.0",

@@ -38,15 +38,28 @@ describe('recipePostSchema', () => {
 });
 
 describe('articlePostSchema', () => {
-  it('accepts a valid article post without ingredients/steps', () => {
+  it('accepts a valid article post with sections', () => {
     const result = articlePostSchema.safeParse({
       type: 'article',
       title: 'Why We Chose the Coastal Blue Set',
       date: '2026-07-01',
       coverPhoto: 'https://example.com/set-hero.jpg',
       coverPhotoAlt: 'The Coastal Blue kitchenware set styled on a table',
+      sections: [{ heading: 'Why blue', body: 'It photographs beautifully in natural light.' }],
     });
     expect(result.success).toBe(true);
+  });
+
+  it('rejects an article post with no sections', () => {
+    const result = articlePostSchema.safeParse({
+      type: 'article',
+      title: 'Why We Chose the Coastal Blue Set',
+      date: '2026-07-01',
+      coverPhoto: 'https://example.com/set-hero.jpg',
+      coverPhotoAlt: 'The Coastal Blue kitchenware set styled on a table',
+      sections: [],
+    });
+    expect(result.success).toBe(false);
   });
 });
 

@@ -2,7 +2,7 @@
 import BaseLayout from './BaseLayout.astro';
 import ProductCard from '../components/ProductCard.astro';
 import AffiliateLink from '../components/AffiliateLink.astro';
-import { render, type CollectionEntry } from 'astro:content';
+import type { CollectionEntry } from 'astro:content';
 import { getEntriesByIds } from '../lib/content';
 
 interface Props {
@@ -20,13 +20,17 @@ if (data.type !== 'article') {
 
 const linkedProducts = getEntriesByIds(data.kitchenwareIds, products);
 const linkedAffiliateLinks = getEntriesByIds(data.affiliateLinkIds, affiliateLinks);
-const { Content } = await render(post);
 ---
 <BaseLayout title={data.title}>
   <article class="article-post">
     <h1>{data.title}</h1>
     <img src={data.coverPhoto} alt={data.coverPhotoAlt} />
-    <Content />
+    {data.sections.map((section) => (
+      <section class="article-post__section">
+        <h2>{section.heading}</h2>
+        <p>{section.body}</p>
+      </section>
+    ))}
     {linkedProducts.length > 0 && (
       <section class="article-post__kitchenware">
         <h2>Shop this set</h2>
