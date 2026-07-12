@@ -6,6 +6,7 @@ import { registerLinkKitchenware } from './linkKitchenware';
 import { registerAddAffiliateLink } from './addAffiliateLink';
 import { registerPreviewPost } from './previewPost';
 import { registerConfirmAndPublish } from './confirmAndPublish';
+import { registerStartNewSet } from './startNewSet';
 
 export function registerTools(server: McpServer, accessToken: string): void {
   registerStartPost(server, accessToken);
@@ -15,4 +16,5 @@ export function registerTools(server: McpServer, accessToken: string): void {
   registerAddAffiliateLink(server, accessToken);
   registerPreviewPost(server, accessToken);
   registerConfirmAndPublish(server, accessToken);
+  registerStartNewSet(server, accessToken);
 }

@@ -18,7 +18,18 @@ vi.mock('../../src/github', () => ({
 }));
 
 const catalogMock = { uniqueSlug: vi.fn() };
-vi.mock('../../src/catalog', () => ({ uniqueSlug: (...args: unknown[]) => catalogMock.uniqueSlug(...args) }));
+const catalogMock2 = { readCollection: vi.fn() };
+vi.mock('../../src/catalog', async () => {
+  const actual = await vi.importActual<typeof import('../../src/catalog')>('../../src/catalog');
+  return {
+    ...actual,
+    uniqueSlug: (...args: unknown[]) => catalogMock.uniqueSlug(...args),
+    readCollection: catalogMock2.readCollection,
+    // slugify is intentionally left as the real implementation (via ...actual): the set-rotation
+    // test below needs distinct slugs for the set name and each product name, which a single
+    // fixed mock return value can't produce.
+  };
+});
 
 const { registerConfirmAndPublish } = await import('../../src/tools/confirmAndPublish');
 
@@ -119,5 +130,42 @@ describe('confirm_and_publish (post)', () => {
     registerConfirmAndPublish(server as never, 'token');
 
     await expect(server.call('confirm_and_publish', { draftId: 'nope' })).rejects.toThrow(/No draft found/);
+  });
+});
+
+describe('confirm_and_publish (set)', () => {
+  it('publishes the new set, its products, and auto-closes the previous active set', async () => {
+    draftsMock.findDraftKind.mockResolvedValue('set');
+    draftsMock.readDraft.mockResolvedValue({
+      kind: 'set',
+      name: 'Sunset Terracotta',
+      startDate: '2027-01-01',
+      products: [
+        { name: 'Terracotta Bowl', priceCents: 3200, image: 'https://example.com/bowl.jpg', imageAlt: 'A terracotta bowl', vendorUrl: 'https://vendor.example.com/terracotta-bowl' },
+      ],
+    });
+    catalogMock2.readCollection.mockResolvedValue([
+      { id: 'coastal-blue', data: { name: 'Coastal Blue', startDate: '2026-07-01', endDate: '2026-12-31', productIds: ['coastal-blue-platter'] } },
+    ]);
+    githubMock.commitFilesToMain.mockResolvedValue('commit-sha');
+
+    const server = fakeServer();
+    registerConfirmAndPublish(server as never, 'token');
+
+    await server.call('confirm_and_publish', { draftId: 'set1' });
+
+    expect(githubMock.commitFilesToMain).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.arrayContaining([
+        expect.objectContaining({ path: 'src/content/sets/sunset-terracotta.json' }),
+        expect.objectContaining({ path: 'src/content/products/terracotta-bowl.json' }),
+        expect.objectContaining({
+          path: 'src/content/sets/coastal-blue.json',
+          content: expect.stringContaining('"endDate": "2026-12-31"'),
+        }),
+      ]),
+      expect.stringContaining('Sunset Terracotta'),
+    );
+    expect(draftsMock.deleteDraftBranch).toHaveBeenCalledWith(expect.anything(), 'set', 'set1');
   });
 });
