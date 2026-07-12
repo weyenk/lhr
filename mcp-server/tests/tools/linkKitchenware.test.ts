@@ -43,12 +43,18 @@ beforeEach(() => {
 });
 
 describe('link_kitchenware', () => {
-  it('suggests the active set products when no productIds are given', async () => {
+  it('suggests only the active set products when no productIds are given', async () => {
     catalogMock.readCollection.mockImplementation(async (_client: unknown, dir: string) => {
       if (dir === 'src/content/sets') {
-        return [{ id: 'coastal-blue', data: { name: 'Coastal Blue', startDate: '2026-01-01', endDate: '2026-12-31' } }];
+        return [
+          { id: 'coastal-blue', data: { name: 'Coastal Blue', startDate: '2026-01-01', endDate: '2026-12-31' } },
+          { id: 'sunset-terracotta', data: { name: 'Sunset Terracotta', startDate: '2020-01-01', endDate: '2020-12-31' } },
+        ];
       }
-      return [{ id: 'coastal-blue-platter', data: { name: 'Coastal Blue Serving Platter', priceCents: 4800, setId: 'coastal-blue' } }];
+      return [
+        { id: 'coastal-blue-platter', data: { name: 'Coastal Blue Serving Platter', priceCents: 4800, setId: 'coastal-blue' } },
+        { id: 'terracotta-bowl', data: { name: 'Terracotta Bowl', priceCents: 3200, setId: 'sunset-terracotta' } },
+      ];
     });
     const server = fakeServer();
     registerLinkKitchenware(server as never, 'token');
@@ -56,6 +62,7 @@ describe('link_kitchenware', () => {
     const result = (await server.call('link_kitchenware', { draftId: 'abc1' })) as { content: { text: string }[] };
 
     expect(result.content[0].text).toContain('coastal-blue-platter');
+    expect(result.content[0].text).not.toContain('terracotta-bowl');
     expect(draftsMock.writeDraft).not.toHaveBeenCalled();
   });
 
