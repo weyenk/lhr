@@ -27,6 +27,7 @@ describe('fetchAndStorePhoto', () => {
 
     const result = await fetchAndStorePhoto('https://icloud.com/share/abc');
 
+    expect(global.fetch).toHaveBeenCalledWith('https://icloud.com/share/abc');
     expect(result).toBe('https://blob.vercel-storage.com/posts/abc.jpeg');
     expect(mockPut).toHaveBeenCalledWith(
       expect.stringMatching(/^posts\/.+\.jpeg$/),
