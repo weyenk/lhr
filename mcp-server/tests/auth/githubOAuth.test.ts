@@ -1,13 +1,11 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 
-const kvStore = new Map<string, unknown>();
-vi.mock('@vercel/kv', () => ({
-  kv: {
-    get: vi.fn(async (key: string) => kvStore.get(key) ?? null),
-    set: vi.fn(async (key: string, value: unknown) => {
-      kvStore.set(key, value);
-    }),
-  },
+const clientStore = new Map<string, unknown>();
+vi.mock('../../src/auth/clientStore', () => ({
+  saveClient: vi.fn(async (client: { client_id: string }) => {
+    clientStore.set(client.client_id, client);
+  }),
+  loadClient: vi.fn(async (clientId: string) => clientStore.get(clientId) ?? null),
 }));
 
 vi.stubEnv('AUTHOR_GITHUB_USERNAME', 'weyenk');
@@ -17,7 +15,7 @@ const { createGitHubOAuthProvider } = await import('../../src/auth/githubOAuth')
 const originalFetch = global.fetch;
 
 beforeEach(() => {
-  kvStore.clear();
+  clientStore.clear();
 });
 
 afterEach(() => {

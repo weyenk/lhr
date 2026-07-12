@@ -28,7 +28,7 @@ async function fetchGitHubUser(token: string): Promise<{ login: string }> {
  * is unsupported.
  *
  * GitHub has no public DCR registration endpoint to proxy to, so registered clients (e.g.
- * from claude.ai's DCR flow) must be stored locally in our own KV-backed client store
+ * from claude.ai's DCR flow) must be stored locally in our own Blob-backed client store
  * instead. We subclass and override the read-only `clientsStore` getter to supply both
  * `getClient` and `registerClient` backed by `clientStore.ts`, while leaving
  * `verifyAccessToken` and the GitHub `endpoints` untouched from the base implementation.
