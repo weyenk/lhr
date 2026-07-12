@@ -93,4 +93,35 @@ describe('add_affiliate_link', () => {
       expect.any(String),
     );
   });
+
+  it('appends onto existing affiliateLinkIds and pendingAffiliateLinks rather than replacing them', async () => {
+    draftsMock.readDraft.mockResolvedValue({
+      ...createBaseDraft(),
+      affiliateLinkIds: ['existing-link'],
+      pendingAffiliateLinks: [{ id: 'first-pending-ab12', label: 'First pending', url: 'https://vendor.example.com/first', tag: 'first' }],
+    });
+    catalogMock.readCollection.mockResolvedValue([
+      { id: 'jerk-seasoning', data: { label: 'The jerk seasoning we used', url: 'https://vendor.example.com/jerk-seasoning', tag: 'jerk-seasoning' } },
+    ]);
+    const server = fakeServer();
+    registerAddAffiliateLink(server as never, 'token');
+
+    await server.call('add_affiliate_link', {
+      draftId: 'abc1',
+      label: 'Jerk seasoning',
+      url: 'https://vendor.example.com/jerk-seasoning',
+      tag: 'jerk-seasoning',
+    });
+
+    expect(draftsMock.writeDraft).toHaveBeenCalledWith(
+      expect.anything(),
+      'post',
+      'abc1',
+      expect.objectContaining({
+        affiliateLinkIds: ['existing-link', 'jerk-seasoning'],
+        pendingAffiliateLinks: [{ id: 'first-pending-ab12', label: 'First pending', url: 'https://vendor.example.com/first', tag: 'first' }],
+      }),
+      expect.any(String),
+    );
+  });
 });
