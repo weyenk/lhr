@@ -30,6 +30,12 @@ describe('createGitHubOAuthProvider', () => {
     expect(provider).toBeDefined();
   });
 
+  it('throws immediately if AUTHOR_GITHUB_USERNAME is unset', () => {
+    vi.stubEnv('AUTHOR_GITHUB_USERNAME', '');
+    expect(() => createGitHubOAuthProvider()).toThrow(/AUTHOR_GITHUB_USERNAME is not set/);
+    vi.stubEnv('AUTHOR_GITHUB_USERNAME', 'weyenk');
+  });
+
   it('accepts a token belonging to the allowlisted author', async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,

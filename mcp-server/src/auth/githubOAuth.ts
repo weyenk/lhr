@@ -52,7 +52,12 @@ class GitHubOAuthServerProvider extends ProxyOAuthServerProvider {
 }
 
 export function createGitHubOAuthProvider(): ProxyOAuthServerProvider {
-  const authorGitHubUsername = process.env.AUTHOR_GITHUB_USERNAME!;
+  const authorGitHubUsername = process.env.AUTHOR_GITHUB_USERNAME;
+  if (!authorGitHubUsername) {
+    throw new Error(
+      'AUTHOR_GITHUB_USERNAME is not set — the server cannot verify who is authorized to authenticate. Set it in the deployment environment (see docs/AUTHORING-SETUP.md).',
+    );
+  }
 
   return new GitHubOAuthServerProvider({
     endpoints: {
@@ -66,6 +71,11 @@ export function createGitHubOAuthProvider(): ProxyOAuthServerProvider {
       }
       return { token, clientId: 'lhr-authoring', scopes: ['repo'] };
     },
+    // Required by ProxyOptions's type, but never actually invoked: the
+    // GitHubOAuthServerProvider subclass above fully overrides the
+    // `clientsStore` getter (the only place the base class reads
+    // `_getClient`), so this callback is dead at runtime. Kept in sync with
+    // the subclass's getClient by delegating to the same loadClient call.
     getClient: async (clientId: string) => {
       const stored = await loadClient(clientId);
       return stored ?? undefined;
