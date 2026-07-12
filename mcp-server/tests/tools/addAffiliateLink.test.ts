@@ -94,7 +94,7 @@ describe('add_affiliate_link', () => {
     );
   });
 
-  it('appends onto existing affiliateLinkIds and pendingAffiliateLinks rather than replacing them', async () => {
+  it('appends onto existing affiliateLinkIds rather than replacing them (match branch)', async () => {
     draftsMock.readDraft.mockResolvedValue({
       ...createBaseDraft(),
       affiliateLinkIds: ['existing-link'],
@@ -120,6 +120,38 @@ describe('add_affiliate_link', () => {
       expect.objectContaining({
         affiliateLinkIds: ['existing-link', 'jerk-seasoning'],
         pendingAffiliateLinks: [{ id: 'first-pending-ab12', label: 'First pending', url: 'https://vendor.example.com/first', tag: 'first' }],
+      }),
+      expect.any(String),
+    );
+  });
+
+  it('appends onto existing pendingAffiliateLinks rather than replacing them (no-match branch)', async () => {
+    draftsMock.readDraft.mockResolvedValue({
+      ...createBaseDraft(),
+      affiliateLinkIds: ['existing-link'],
+      pendingAffiliateLinks: [{ id: 'first-pending-ab12', label: 'First pending', url: 'https://vendor.example.com/first', tag: 'first' }],
+    });
+    catalogMock.readCollection.mockResolvedValue([]);
+    const server = fakeServer();
+    registerAddAffiliateLink(server as never, 'token');
+
+    await server.call('add_affiliate_link', {
+      draftId: 'abc1',
+      label: 'Second pending',
+      url: 'https://vendor.example.com/second',
+      tag: 'second',
+    });
+
+    expect(draftsMock.writeDraft).toHaveBeenCalledWith(
+      expect.anything(),
+      'post',
+      'abc1',
+      expect.objectContaining({
+        affiliateLinkIds: ['existing-link'],
+        pendingAffiliateLinks: [
+          { id: 'first-pending-ab12', label: 'First pending', url: 'https://vendor.example.com/first', tag: 'first' },
+          expect.objectContaining({ label: 'Second pending', url: 'https://vendor.example.com/second', tag: 'second' }),
+        ],
       }),
       expect.any(String),
     );
