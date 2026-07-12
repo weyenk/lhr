@@ -4,6 +4,7 @@
   "type": "module",
   "workspaces": ["mcp-server", "packages/schemas"],
   "scripts": {
+    "postinstall": "npm run build --workspace=@lhr/schemas",
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
