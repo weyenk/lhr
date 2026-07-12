@@ -95,12 +95,11 @@ describe('add_content_step', () => {
     );
   });
 
-  it('appends onto existing ingredients, steps, and sections rather than replacing them', async () => {
+  it('appends onto existing ingredients and steps rather than replacing them', async () => {
     draftsMock.readDraft.mockResolvedValue({
       ...baseDraft,
       ingredients: [{ item: 'Chicken thighs', amount: '2 lbs' }],
       steps: ['Marinate overnight.'],
-      sections: [{ heading: 'Why blue', body: 'It photographs beautifully.' }],
     });
     const server = fakeServer();
     registerAddContentStep(server as never, 'token');
@@ -109,7 +108,6 @@ describe('add_content_step', () => {
       draftId: 'abc1',
       ingredient: { item: 'Jerk seasoning', amount: '3 tbsp' },
       step: 'Grill over indirect heat.',
-      section: { heading: 'Care instructions', body: 'Hand wash only.' },
     });
 
     expect(draftsMock.writeDraft).toHaveBeenCalledWith(
@@ -122,6 +120,30 @@ describe('add_content_step', () => {
           { item: 'Jerk seasoning', amount: '3 tbsp' },
         ],
         steps: ['Marinate overnight.', 'Grill over indirect heat.'],
+      }),
+      expect.any(String),
+    );
+  });
+
+  it('appends onto existing sections rather than replacing them', async () => {
+    draftsMock.readDraft.mockResolvedValue({
+      ...baseDraft,
+      postType: 'article' as const,
+      sections: [{ heading: 'Why blue', body: 'It photographs beautifully.' }],
+    });
+    const server = fakeServer();
+    registerAddContentStep(server as never, 'token');
+
+    await server.call('add_content_step', {
+      draftId: 'abc1',
+      section: { heading: 'Care instructions', body: 'Hand wash only.' },
+    });
+
+    expect(draftsMock.writeDraft).toHaveBeenCalledWith(
+      expect.anything(),
+      'post',
+      'abc1',
+      expect.objectContaining({
         sections: [
           { heading: 'Why blue', body: 'It photographs beautifully.' },
           { heading: 'Care instructions', body: 'Hand wash only.' },
@@ -129,5 +151,27 @@ describe('add_content_step', () => {
       }),
       expect.any(String),
     );
+  });
+
+  it('rejects an ingredient on an article draft without writing anything', async () => {
+    draftsMock.readDraft.mockResolvedValue({ ...baseDraft, postType: 'article' });
+    const server = fakeServer();
+    registerAddContentStep(server as never, 'token');
+
+    await expect(
+      server.call('add_content_step', { draftId: 'abc1', ingredient: { item: 'Chicken' } }),
+    ).rejects.toThrow(/article draft/);
+    expect(draftsMock.writeDraft).not.toHaveBeenCalled();
+  });
+
+  it('rejects a section on a recipe draft without writing anything', async () => {
+    draftsMock.readDraft.mockResolvedValue(baseDraft);
+    const server = fakeServer();
+    registerAddContentStep(server as never, 'token');
+
+    await expect(
+      server.call('add_content_step', { draftId: 'abc1', section: { heading: 'X', body: 'Y' } }),
+    ).rejects.toThrow(/recipe draft/);
+    expect(draftsMock.writeDraft).not.toHaveBeenCalled();
   });
 });

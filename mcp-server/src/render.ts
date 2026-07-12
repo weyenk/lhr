@@ -1,7 +1,7 @@
 import yaml from 'js-yaml';
 import type { DraftPost } from './drafts';
 
-export function renderPostMdx(draft: DraftPost): string {
+export function buildPostFrontmatter(draft: DraftPost): Record<string, unknown> {
   const frontmatter: Record<string, unknown> = {
     type: draft.postType,
     title: draft.title,
@@ -19,5 +19,13 @@ export function renderPostMdx(draft: DraftPost): string {
     frontmatter.sections = draft.sections;
   }
 
+  return frontmatter;
+}
+
+export function renderFrontmatterYaml(frontmatter: Record<string, unknown>): string {
   return `---\n${yaml.dump(frontmatter)}---\n`;
+}
+
+export function renderPostMdx(draft: DraftPost): string {
+  return renderFrontmatterYaml(buildPostFrontmatter(draft));
 }

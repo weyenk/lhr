@@ -23,6 +23,13 @@ export function registerAddContentStep(server: McpServer, accessToken: string): 
       const draft = await readDraft(client, 'post', draftId);
       if (draft.kind !== 'post') throw new Error(`Draft ${draftId} is not a post draft`);
 
+      if ((ingredient !== undefined || step !== undefined) && draft.postType !== 'recipe') {
+        throw new Error(`Draft ${draftId} is an article draft; ingredient/step only apply to recipes.`);
+      }
+      if (section !== undefined && draft.postType !== 'article') {
+        throw new Error(`Draft ${draftId} is a recipe draft; section only applies to articles.`);
+      }
+
       if (title !== undefined) draft.title = title;
       if (ingredient !== undefined) draft.ingredients = [...draft.ingredients, ingredient];
       if (step !== undefined) draft.steps = [...draft.steps, step];
