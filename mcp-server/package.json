@@ -3,10 +3,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "npm run build --workspace=@lhr/schemas && tsc -p tsconfig.json",
     "test": "vitest run"
   },
   "dependencies": {
+    "@lhr/schemas": "*",
     "@modelcontextprotocol/sdk": "^1.12.0",
     "@octokit/rest": "^21.1.0",
     "@vercel/blob": "^0.27.0",

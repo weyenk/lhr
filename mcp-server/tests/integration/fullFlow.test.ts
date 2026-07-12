@@ -55,7 +55,7 @@ const { registerAttachPhoto } = await import('../../src/tools/attachPhoto');
 const { registerLinkKitchenware } = await import('../../src/tools/linkKitchenware');
 const { registerAddAffiliateLink } = await import('../../src/tools/addAffiliateLink');
 const { registerConfirmAndPublish } = await import('../../src/tools/confirmAndPublish');
-const { postSchema } = await import('../../../src/content/schemas');
+const { postSchema } = await import('@lhr/schemas');
 
 function fakeServer() {
   const handlers = new Map<string, (input: unknown) => Promise<{ content: { type: string; text: string }[] }>>();

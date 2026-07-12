@@ -4,7 +4,7 @@ import { createGitHubClient, commitFilesToMain, listFiles, type FileWrite } from
 import { readDraft, findDraftKind, deleteDraftBranch, type DraftSet } from '../drafts';
 import { readCollection, slugify, uniqueSlug } from '../catalog';
 import { buildPostFrontmatter, renderFrontmatterYaml } from '../render';
-import { postSchema, setSchema, productSchema } from '../../../src/content/schemas';
+import { postSchema, setSchema, productSchema } from '@lhr/schemas';
 
 type GitHubClient = ReturnType<typeof createGitHubClient>;
 
