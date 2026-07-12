@@ -1,6 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import request from 'supertest';
-import app from '../src/server';
+
+vi.stubEnv('AUTHOR_GITHUB_USERNAME', 'test-author');
+
+const { default: app } = await import('../src/server');
 
 describe('GET /health', () => {
   it('responds with ok status', async () => {
