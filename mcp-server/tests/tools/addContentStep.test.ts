@@ -94,4 +94,40 @@ describe('add_content_step', () => {
       expect.any(String),
     );
   });
+
+  it('appends onto existing ingredients, steps, and sections rather than replacing them', async () => {
+    draftsMock.readDraft.mockResolvedValue({
+      ...baseDraft,
+      ingredients: [{ item: 'Chicken thighs', amount: '2 lbs' }],
+      steps: ['Marinate overnight.'],
+      sections: [{ heading: 'Why blue', body: 'It photographs beautifully.' }],
+    });
+    const server = fakeServer();
+    registerAddContentStep(server as never, 'token');
+
+    await server.call('add_content_step', {
+      draftId: 'abc1',
+      ingredient: { item: 'Jerk seasoning', amount: '3 tbsp' },
+      step: 'Grill over indirect heat.',
+      section: { heading: 'Care instructions', body: 'Hand wash only.' },
+    });
+
+    expect(draftsMock.writeDraft).toHaveBeenCalledWith(
+      expect.anything(),
+      'post',
+      'abc1',
+      expect.objectContaining({
+        ingredients: [
+          { item: 'Chicken thighs', amount: '2 lbs' },
+          { item: 'Jerk seasoning', amount: '3 tbsp' },
+        ],
+        steps: ['Marinate overnight.', 'Grill over indirect heat.'],
+        sections: [
+          { heading: 'Why blue', body: 'It photographs beautifully.' },
+          { heading: 'Care instructions', body: 'Hand wash only.' },
+        ],
+      }),
+      expect.any(String),
+    );
+  });
 });
