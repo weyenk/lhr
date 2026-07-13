@@ -154,24 +154,28 @@ Captured via /setup on <today's date>. Re-run /setup to revise.
 - **Form of address / pet peeves:** <answer 5>
 ```
 
+On a "revise specific sections" rerun where Topic 7 (persona) was not selected, leave `docs/PERSONA.md` completely unchanged; only rewrite it if Topic 7 was selected for revision.
+
 `docs/PERSONA.md` is referenced today by `.claude/agents/chief-of-staff.md` line 12 as a dangling "if it exists" check; once this step runs, it exists and that file's persona-loading instruction takes effect.
 
 ## Step 3: Draft proposed diffs — do not write yet
 
-Draft (but do not write to disk) changes to the following four files, based on the interview:
+Draft (but do not write to disk) changes to the following files, based on the interview:
+
+On a "revise specific sections" rerun (Step 0), `docs/CONSTITUTION.md` and `docs/RULES.md` may already contain entries added by a prior `/setup` run. Before drafting any new entry below, read the current file and check whether a prior `/setup`-added entry already covers the same topic (niche framing, content pillars, funnel intensity, cadence, pricing philosophy, community roadmap). If so, draft an update/replacement to that existing entry instead of appending a new one — only append a genuinely new entry when no prior `/setup`-added entry already covers that topic.
 
 **`docs/CONSTITUTION.md`** — if Topic 6 flagged anything as a hard principle, draft it as a new numbered principle appended after the existing numbered principles. If Topic 6 flagged nothing, draft the Topic 1 niche statement as new descriptive framing text added near the top of the file (above principle 1), not as a numbered principle.
 
 **`docs/RULES.md`** — draft new numbered entries (continuing the existing numbering) for whichever of these actually surfaced concrete answers in the interview: content pillars (Topic 3), funnel intensity (Topic 3), cadence if changed from the ~26/6-months default (Topic 3), pricing philosophy (Topic 4), community roadmap cadence/moderation capacity (Topic 5). Skip any that Topic 6 already promoted to `docs/CONSTITUTION.md` instead.
 
-**`.claude/agents/community-builder.md`, `content-strategist.md`, `store-merchandiser.md`** — rewrite each stub's body (keep the existing frontmatter shape: `name`, `description`, `tools`, `model`, `memory: project`) following the same style as `.claude/agents/seo-auditor.md` and `.claude/agents/monetization-scout.md` (a short "You are a ___ for <niche>" opener, then a "What to do" or numbered "When invoked" list, grounded in the interview answers rather than generic lifestyle-brand boilerplate). Keep each stub's current tool grant (`tools: Read, Grep, Glob, WebFetch`) unless the interview surfaced a concrete need for write access — if so, name the specific new tool and why in the diff presentation so the author can see exactly what capability is being added.
+**`.claude/agents/community-builder.md`, `content-strategist.md`, `store-merchandiser.md`** — rewrite each stub's body (keep the existing frontmatter shape: `name`, `description`, `tools`, `model`, `memory: project`) following the same style as `.claude/agents/seo-auditor.md` and `.claude/agents/monetization-scout.md` (a short "You are a ___ for <niche>" opener, then a "What to do" or numbered "When invoked" list, grounded in the interview answers rather than generic lifestyle-brand boilerplate). Keep each stub's existing `tools:` line exactly as currently written (note: `community-builder.md` and `content-strategist.md` currently have `Read, Grep, Glob, WebFetch`; `store-merchandiser.md` currently has only `Read, Grep, Glob` — copy each file's actual current value, don't assume they match) unless the interview surfaced a concrete need for write access — if so, name the specific new tool and why in the diff presentation so the author can see exactly what capability is being added.
 
-Present all four proposed diffs together in one message (unified-diff style or clear before/after per file), and ask via `AskUserQuestion`:
+Present all proposed diffs together in one message (unified-diff style or clear before/after per file), and ask via `AskUserQuestion`:
 
 Question: "Apply these changes to CONSTITUTION.md, RULES.md, and the three agent stubs?"
 Options: "Apply all", "Apply none (keep current files, I'll re-run /setup later to revise)"
 
-If the author wants to approve some but not others, treat that as a free-text answer (available via "Other") and apply only the ones they name.
+If the author wants to approve some but not others, treat that as a free-text answer (available via "Other") and apply only the ones they name. Note: choosing a partial approval means Step 4 (CLAUDE.md creation) will be skipped this run — let the author know before they commit to a partial approval.
 
 **If approved (fully or partially):** write only the approved files via `Edit`/`Write`. `docs/BUSINESS-PLAN.md` and `docs/PERSONA.md` from Step 2 are kept regardless of this decision — they were already written and are not affected by this gate.
 
@@ -179,7 +183,7 @@ If the author wants to approve some but not others, treat that as a free-text an
 
 ## Step 4: Create the root CLAUDE.md (final step)
 
-**Precondition:** only run this step if every diff proposed in Step 3 was approved and successfully written (a full "Apply all", or a partial approval where every file the author named was written without error). If anything in Step 3 was declined or failed to write, stop after Step 3 — do not create `CLAUDE.md`.
+**Precondition:** only run this step if Step 3's diffs were approved in full ("Apply all") and written successfully. If anything in Step 3 was declined — even partially, i.e. any of CONSTITUTION.md, RULES.md, or the three agent stubs — or failed to write, stop after Step 3 — do not create `CLAUDE.md`. This matches the project's intent that chief-of-staff only becomes the session default once the project is fully configured, not partially.
 
 Check whether a root `CLAUDE.md` already exists (Glob `CLAUDE.md` at repo root).
 
