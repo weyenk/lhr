@@ -6,7 +6,7 @@ import { del, list, put } from '@vercel/blob';
 export async function putJson<T>(path: string, value: T): Promise<void> {
   try {
     await put(path, JSON.stringify(value), {
-      access: 'public',
+      access: 'private',
       addRandomSuffix: false,
       contentType: 'application/json',
     });
@@ -23,7 +23,10 @@ export async function getJson<T>(path: string): Promise<T | null> {
     if (!match) {
       return null;
     }
-    const response = await fetch(match.url);
+    // Private blobs require the same read/write token used to create them.
+    const response = await fetch(match.url, {
+      headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` },
+    });
     if (!response.ok) {
       return null;
     }

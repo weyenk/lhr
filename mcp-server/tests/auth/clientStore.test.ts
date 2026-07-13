@@ -3,11 +3,11 @@ import { describe, expect, it, vi, beforeEach, afterAll } from 'vitest';
 const blobStore = new Map<string, string>();
 const mockPut = vi.fn(async (pathname: string, body: string) => {
   blobStore.set(pathname, body);
-  return { url: `https://example.public.blob.vercel-storage.com/${pathname}` };
+  return { url: `https://example.private.blob.vercel-storage.com/${pathname}` };
 });
 const mockList = vi.fn(async ({ prefix }: { prefix: string }) => ({
   blobs: blobStore.has(prefix)
-    ? [{ pathname: prefix, url: `https://example.public.blob.vercel-storage.com/${prefix}` }]
+    ? [{ pathname: prefix, url: `https://example.private.blob.vercel-storage.com/${prefix}` }]
     : [],
 }));
 vi.mock('@vercel/blob', () => ({
@@ -24,7 +24,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   global.fetch = vi.fn(async (input: RequestInfo | URL) => {
     const url = String(input);
-    const pathname = url.replace('https://example.public.blob.vercel-storage.com/', '');
+    const pathname = url.replace('https://example.private.blob.vercel-storage.com/', '');
     const body = blobStore.get(pathname);
     return body
       ? ({ ok: true, json: async () => JSON.parse(body) } as Response)
@@ -43,7 +43,7 @@ describe('clientStore', () => {
     expect(mockPut).toHaveBeenCalledWith(
       'oauth-clients/client-abc.json',
       expect.any(String),
-      expect.objectContaining({ access: 'public', addRandomSuffix: false }),
+      expect.objectContaining({ access: 'private', addRandomSuffix: false }),
     );
 
     const loaded = await loadClient('client-abc');

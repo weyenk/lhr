@@ -1,13 +1,15 @@
 import { describe, expect, it, vi, beforeEach, afterAll } from 'vitest';
 
+vi.stubEnv('BLOB_READ_WRITE_TOKEN', 'test-blob-token');
+
 const blobStore = new Map<string, string>();
 const mockPut = vi.fn(async (pathname: string, body: string) => {
   blobStore.set(pathname, body);
-  return { url: `https://example.public.blob.vercel-storage.com/${pathname}` };
+  return { url: `https://example.private.blob.vercel-storage.com/${pathname}` };
 });
 const mockList = vi.fn(async ({ prefix }: { prefix: string }) => ({
   blobs: blobStore.has(prefix)
-    ? [{ pathname: prefix, url: `https://example.public.blob.vercel-storage.com/${prefix}` }]
+    ? [{ pathname: prefix, url: `https://example.private.blob.vercel-storage.com/${prefix}` }]
     : [],
 }));
 const mockDel = vi.fn(async (pathname: string) => {
@@ -26,9 +28,10 @@ const originalFetch = global.fetch;
 beforeEach(() => {
   blobStore.clear();
   vi.clearAllMocks();
-  global.fetch = vi.fn(async (input: RequestInfo | URL) => {
+  global.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    expect(init?.headers).toEqual({ Authorization: 'Bearer test-blob-token' });
     const url = String(input);
-    const pathname = url.replace('https://example.public.blob.vercel-storage.com/', '');
+    const pathname = url.replace('https://example.private.blob.vercel-storage.com/', '');
     const body = blobStore.get(pathname);
     return body
       ? ({ ok: true, json: async () => JSON.parse(body) } as Response)
@@ -46,7 +49,7 @@ describe('blobStore', () => {
     expect(mockPut).toHaveBeenCalledWith(
       'some/path.json',
       JSON.stringify({ hello: 'world' }),
-      expect.objectContaining({ access: 'public', addRandomSuffix: false }),
+      expect.objectContaining({ access: 'private', addRandomSuffix: false }),
     );
     const loaded = await getJson('some/path.json');
     expect(loaded).toEqual({ hello: 'world' });
