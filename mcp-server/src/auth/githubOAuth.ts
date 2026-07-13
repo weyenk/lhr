@@ -3,6 +3,7 @@ import type { Response } from 'express';
 import type { AuthorizationParams, OAuthServerProvider } from '@modelcontextprotocol/sdk/server/auth/provider.js';
 import type { OAuthRegisteredClientsStore } from '@modelcontextprotocol/sdk/server/auth/clients.js';
 import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js';
+import { InvalidTokenError } from '@modelcontextprotocol/sdk/server/auth/errors.js';
 import type { OAuthClientInformationFull, OAuthTokens } from '@modelcontextprotocol/sdk/shared/auth.js';
 import { loadClient, saveClient } from './clientStore';
 import {
@@ -19,6 +20,7 @@ import {
 const GITHUB_AUTHORIZE_URL = 'https://github.com/login/oauth/authorize';
 const GITHUB_TOKEN_URL = 'https://github.com/login/oauth/access_token';
 const ACCESS_TOKEN_TTL_MS = 8 * 60 * 60 * 1000;
+const PENDING_AUTHORIZATION_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
 async function fetchGitHubUser(githubAccessToken: string): Promise<{ login: string }> {
   const res = await fetch('https://api.github.com/user', {
@@ -86,6 +88,10 @@ class GitHubOAuthServerProvider implements OAuthServerProvider {
     const pending = await loadPendingAuthorization(sessionId);
     if (!pending) {
       throw new Error('Unknown or expired authorization session');
+    }
+    if (Date.now() - pending.createdAt > PENDING_AUTHORIZATION_TTL_MS) {
+      await deletePendingAuthorization(sessionId);
+      throw new Error('Authorization session has expired');
     }
     await deletePendingAuthorization(sessionId);
 
@@ -160,14 +166,14 @@ class GitHubOAuthServerProvider implements OAuthServerProvider {
   async verifyAccessToken(token: string): Promise<AuthInfo> {
     const issued = await loadIssuedToken(token);
     if (!issued) {
-      throw new Error('Unknown access token');
+      throw new InvalidTokenError('Unknown access token');
     }
     if (issued.expiresAt < Date.now()) {
-      throw new Error('Access token has expired');
+      throw new InvalidTokenError('Access token has expired');
     }
     const user = await fetchGitHubUser(issued.githubAccessToken);
     if (user.login !== this.authorGitHubUsername) {
-      throw new Error(`GitHub user ${user.login} is not the authorized author`);
+      throw new InvalidTokenError(`GitHub user ${user.login} is not the authorized author`);
     }
     return {
       token: issued.githubAccessToken,

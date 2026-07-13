@@ -161,6 +161,19 @@ describe('createGitHubOAuthProvider', () => {
     );
   });
 
+  it('handleGitHubCallback() rejects an expired pending authorization session', async () => {
+    pending.set('session-1', {
+      clientId: 'client-abc',
+      redirectUri: 'https://claude.ai/api/mcp/callback',
+      codeChallenge: 'challenge-1',
+      state: 'downstream-state',
+      createdAt: Date.now() - 11 * 60 * 1000,
+    });
+
+    const provider = createGitHubOAuthProvider();
+    await expect(provider.handleGitHubCallback('gh-code-1', 'session-1')).rejects.toThrow(/expired/);
+  });
+
   it('handleGitHubCallback() rejects a non-allowlisted GitHub user', async () => {
     pending.set('session-1', {
       clientId: 'client-abc',
