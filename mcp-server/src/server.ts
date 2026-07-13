@@ -1,8 +1,6 @@
 import express from 'express';
-import { randomUUID } from 'node:crypto';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
-import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 import { mcpAuthRouter } from '@modelcontextprotocol/sdk/server/auth/router.js';
 import { requireBearerAuth } from '@modelcontextprotocol/sdk/server/auth/middleware/bearerAuth.js';
 import { createGitHubOAuthProvider } from './auth/githubOAuth.js';
@@ -47,55 +45,45 @@ app.get('/callback', async (req, res) => {
 
 const authMiddleware = requireBearerAuth({ verifier: provider });
 
-const transports: Record<string, StreamableHTTPServerTransport> = {};
-
 function createServer(accessToken: string): McpServer {
   const server = new McpServer({ name: 'lhr-authoring', version: '1.0.0' });
   registerTools(server, accessToken);
   return server;
 }
 
+// Stateless mode: Vercel gives no guarantee that two requests in the same MCP
+// session land on the same serverless instance, so a session tracked in
+// in-memory state (e.g. a `Record<sessionId, transport>`) is invisible to
+// whichever instance handles the next request and fails with a spurious
+// "no valid session ID" error. Creating a fresh transport/server per request
+// avoids relying on that continuity; the SDK supports this via
+// `sessionIdGenerator: undefined`.
 app.post('/mcp', authMiddleware, async (req, res) => {
-  const sessionId = req.headers['mcp-session-id'] as string | undefined;
-  let transport: StreamableHTTPServerTransport;
-
-  if (sessionId && transports[sessionId]) {
-    transport = transports[sessionId];
-  } else if (!sessionId && isInitializeRequest(req.body)) {
-    transport = new StreamableHTTPServerTransport({
-      sessionIdGenerator: () => randomUUID(),
-      onsessioninitialized: (id) => {
-        transports[id] = transport;
-      },
-    });
-    transport.onclose = () => {
-      if (transport.sessionId) delete transports[transport.sessionId];
-    };
-    const accessToken = (req as unknown as { auth: { token: string } }).auth.token;
-    const server = createServer(accessToken);
-    await server.connect(transport);
-  } else {
-    res.status(400).json({
-      jsonrpc: '2.0',
-      error: { code: -32000, message: 'Bad Request: No valid session ID provided' },
-      id: null,
-    });
-    return;
-  }
-
+  const accessToken = (req as unknown as { auth: { token: string } }).auth.token;
+  const server = createServer(accessToken);
+  const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
+  res.on('close', () => {
+    transport.close();
+    server.close();
+  });
+  await server.connect(transport);
   await transport.handleRequest(req, res, req.body);
 });
 
-async function handleSessionRequest(req: express.Request, res: express.Response): Promise<void> {
-  const sessionId = req.headers['mcp-session-id'] as string | undefined;
-  if (!sessionId || !transports[sessionId]) {
-    res.status(400).send('Invalid or missing session ID');
-    return;
-  }
-  await transports[sessionId].handleRequest(req, res);
-}
+app.get('/mcp', authMiddleware, (_req, res) => {
+  res.status(405).json({
+    jsonrpc: '2.0',
+    error: { code: -32000, message: 'Method not allowed.' },
+    id: null,
+  });
+});
 
-app.get('/mcp', authMiddleware, handleSessionRequest);
-app.delete('/mcp', authMiddleware, handleSessionRequest);
+app.delete('/mcp', authMiddleware, (_req, res) => {
+  res.status(405).json({
+    jsonrpc: '2.0',
+    error: { code: -32000, message: 'Method not allowed.' },
+    id: null,
+  });
+});
 
 export default app;
