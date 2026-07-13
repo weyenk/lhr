@@ -176,3 +176,24 @@ If the author wants to approve some but not others, treat that as a free-text an
 **If approved (fully or partially):** write only the approved files via `Edit`/`Write`. `docs/BUSINESS-PLAN.md` and `docs/PERSONA.md` from Step 2 are kept regardless of this decision — they were already written and are not affected by this gate.
 
 **If declined entirely:** write nothing from this step. `docs/BUSINESS-PLAN.md` and `docs/PERSONA.md` remain as written in Step 2. Skip Step 4 entirely and end the skill here, telling the author they can re-run `/setup` later to revise and re-propose.
+
+## Step 4: Create the root CLAUDE.md (final step)
+
+**Precondition:** only run this step if every diff proposed in Step 3 was approved and successfully written (a full "Apply all", or a partial approval where every file the author named was written without error). If anything in Step 3 was declined or failed to write, stop after Step 3 — do not create `CLAUDE.md`.
+
+Check whether a root `CLAUDE.md` already exists (Glob `CLAUDE.md` at repo root).
+
+- **Doesn't exist** (expected on first successful run): create it with this content:
+
+```markdown
+# LHR Project Instructions
+
+Every session in this project should operate as the `chief-of-staff` agent by default.
+
+At the start of the session:
+1. Read `.claude/agents/chief-of-staff.md` and adopt its role, tool access, and "How you work" behavior for this entire session.
+2. Read `docs/PERSONA.md` and adopt the tone/voice it defines.
+3. Route any nontrivial request through the roster in `.claude/agents/*.md` the same way `chief-of-staff.md` describes, rather than acting as a generic assistant.
+```
+
+- **Already exists** (a rerun after a prior successful `/setup`): read the existing content; if it already contains this chief-of-staff bootstrap instruction, leave it unchanged and tell the author so. If it exists but doesn't yet contain it (e.g. the author wrote a `CLAUDE.md` by hand in between runs), show the author the proposed addition and ask before appending — don't silently overwrite author-written content.
