@@ -197,3 +197,7 @@ At the start of the session:
 ```
 
 - **Already exists** (a rerun after a prior successful `/setup`): read the existing content; if it already contains this chief-of-staff bootstrap instruction, leave it unchanged and tell the author so. If it exists but doesn't yet contain it (e.g. the author wrote a `CLAUDE.md` by hand in between runs), show the author the proposed addition and ask before appending — don't silently overwrite author-written content.
+
+## Step 5: Close out
+
+Summarize what was written this run: which of `docs/BUSINESS-PLAN.md`, `docs/PERSONA.md`, `docs/CONSTITUTION.md`, `docs/RULES.md`, the three agent stubs, and `CLAUDE.md` actually changed, and which were skipped (declined) or left untouched (rerun with unselected topics). Do not claim `CLAUDE.md` was created if Step 4 didn't run.
