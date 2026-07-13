@@ -1,8 +1,8 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { createGitHubClient } from '../github';
-import { readDraft, writeDraft } from '../drafts';
-import { fetchAndStorePhoto } from '../blob';
+import { createGitHubClient } from '../github.js';
+import { readDraft, writeDraft } from '../drafts.js';
+import { fetchAndStorePhoto } from '../blob.js';
 
 export function registerAttachPhoto(server: McpServer, accessToken: string): void {
   server.registerTool(

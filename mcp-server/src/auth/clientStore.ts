@@ -1,4 +1,4 @@
-import { getJson, putJson } from './blobStore';
+import { getJson, putJson } from './blobStore.js';
 
 export interface RegisteredClient {
   client_id: string;

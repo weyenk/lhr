@@ -1,4 +1,4 @@
-import { deleteJson, getJson, putJson } from './blobStore';
+import { deleteJson, getJson, putJson } from './blobStore.js';
 
 export interface PendingAuthorization {
   clientId: string;

@@ -1,4 +1,4 @@
-import { getFile, listFiles, type GitHubClient } from './github';
+import { getFile, listFiles, type GitHubClient } from './github.js';
 
 export interface CatalogEntry<T> {
   id: string;

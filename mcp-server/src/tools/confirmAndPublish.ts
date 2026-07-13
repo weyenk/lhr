@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { createGitHubClient, commitFilesToMain, listFiles, type FileWrite } from '../github';
-import { readDraft, findDraftKind, deleteDraftBranch, type DraftSet } from '../drafts';
-import { readCollection, slugify, uniqueSlug } from '../catalog';
-import { buildPostFrontmatter, renderFrontmatterYaml } from '../render';
+import { createGitHubClient, commitFilesToMain, listFiles, type FileWrite } from '../github.js';
+import { readDraft, findDraftKind, deleteDraftBranch, type DraftSet } from '../drafts.js';
+import { readCollection, slugify, uniqueSlug } from '../catalog.js';
+import { buildPostFrontmatter, renderFrontmatterYaml } from '../render.js';
 import { postSchema, setSchema, productSchema } from '@lhr/schemas';
 
 type GitHubClient = ReturnType<typeof createGitHubClient>;

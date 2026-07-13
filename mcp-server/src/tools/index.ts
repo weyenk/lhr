@@ -1,12 +1,12 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { registerStartPost } from './startPost';
-import { registerAddContentStep } from './addContentStep';
-import { registerAttachPhoto } from './attachPhoto';
-import { registerLinkKitchenware } from './linkKitchenware';
-import { registerAddAffiliateLink } from './addAffiliateLink';
-import { registerPreviewPost } from './previewPost';
-import { registerConfirmAndPublish } from './confirmAndPublish';
-import { registerStartNewSet } from './startNewSet';
+import { registerStartPost } from './startPost.js';
+import { registerAddContentStep } from './addContentStep.js';
+import { registerAttachPhoto } from './attachPhoto.js';
+import { registerLinkKitchenware } from './linkKitchenware.js';
+import { registerAddAffiliateLink } from './addAffiliateLink.js';
+import { registerPreviewPost } from './previewPost.js';
+import { registerConfirmAndPublish } from './confirmAndPublish.js';
+import { registerStartNewSet } from './startNewSet.js';
 
 export function registerTools(server: McpServer, accessToken: string): void {
   registerStartPost(server, accessToken);

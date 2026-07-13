@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { createGitHubClient } from '../github';
-import { createDraft, listDrafts, type DraftPost } from '../drafts';
+import { createGitHubClient } from '../github.js';
+import { createDraft, listDrafts, type DraftPost } from '../drafts.js';
 
 export function registerStartPost(server: McpServer, accessToken: string): void {
   server.registerTool(

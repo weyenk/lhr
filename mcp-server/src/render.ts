@@ -1,5 +1,5 @@
 import yaml from 'js-yaml';
-import type { DraftPost } from './drafts';
+import type { DraftPost } from './drafts.js';
 
 export function buildPostFrontmatter(draft: DraftPost): Record<string, unknown> {
   const frontmatter: Record<string, unknown> = {

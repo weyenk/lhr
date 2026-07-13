@@ -1,9 +1,9 @@
 import { randomBytes } from 'node:crypto';
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { createGitHubClient } from '../github';
-import { readDraft, writeDraft } from '../drafts';
-import { readCollection } from '../catalog';
+import { createGitHubClient } from '../github.js';
+import { readDraft, writeDraft } from '../drafts.js';
+import { readCollection } from '../catalog.js';
 
 interface AffiliateLinkData {
   label: string;

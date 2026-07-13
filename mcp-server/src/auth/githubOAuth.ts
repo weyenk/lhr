@@ -5,7 +5,7 @@ import type { OAuthRegisteredClientsStore } from '@modelcontextprotocol/sdk/serv
 import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js';
 import { InvalidTokenError } from '@modelcontextprotocol/sdk/server/auth/errors.js';
 import type { OAuthClientInformationFull, OAuthTokens } from '@modelcontextprotocol/sdk/shared/auth.js';
-import { loadClient, saveClient } from './clientStore';
+import { loadClient, saveClient } from './clientStore.js';
 import {
   deleteIssuedCode,
   deletePendingAuthorization,
@@ -15,7 +15,7 @@ import {
   saveIssuedCode,
   saveIssuedToken,
   savePendingAuthorization,
-} from './oauthStore';
+} from './oauthStore.js';
 
 const GITHUB_AUTHORIZE_URL = 'https://github.com/login/oauth/authorize';
 const GITHUB_TOKEN_URL = 'https://github.com/login/oauth/access_token';

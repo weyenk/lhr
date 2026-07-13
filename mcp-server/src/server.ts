@@ -5,8 +5,8 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 import { mcpAuthRouter } from '@modelcontextprotocol/sdk/server/auth/router.js';
 import { requireBearerAuth } from '@modelcontextprotocol/sdk/server/auth/middleware/bearerAuth.js';
-import { createGitHubOAuthProvider } from './auth/githubOAuth';
-import { registerTools } from './tools';
+import { createGitHubOAuthProvider } from './auth/githubOAuth.js';
+import { registerTools } from './tools/index.js';
 
 const app = express();
 app.use(express.json());

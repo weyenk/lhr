@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { z } from 'zod';
-import { createBranch, deleteBranch, getFile, listBranches, putFile, type GitHubClient } from './github';
+import { createBranch, deleteBranch, getFile, listBranches, putFile, type GitHubClient } from './github.js';
 
 export const draftPostSchema = z.object({
   kind: z.literal('post'),
