@@ -31,6 +31,21 @@ describe('GET /health', () => {
   });
 });
 
+describe('POST /register', () => {
+  it('succeeds when the request carries Vercel-style forwarded headers', async () => {
+    // Vercel's edge always adds these on every request. Without `trust proxy`
+    // set on the app, express-rate-limit throws on them instead of just
+    // warning, and every /register (and /authorize) call 500s.
+    const res = await request(app)
+      .post('/register')
+      .set('X-Forwarded-For', '203.0.113.1')
+      .set('Forwarded', 'for=203.0.113.1')
+      .send({ redirect_uris: ['https://client.example/callback'] });
+    expect(res.status).toBe(201);
+    expect(res.body.client_id).toBeTruthy();
+  });
+});
+
 describe('GET /callback', () => {
   it('rejects a callback missing code or state', async () => {
     const res = await request(app).get('/callback');

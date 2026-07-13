@@ -9,6 +9,11 @@ import { createGitHubOAuthProvider } from './auth/githubOAuth.js';
 import { registerTools } from './tools/index.js';
 
 const app = express();
+// Vercel's edge proxies every request through exactly one hop, adding
+// X-Forwarded-For/Forwarded headers. Without this, express-rate-limit (used
+// by the MCP SDK's /register and /authorize routes) throws on those headers
+// instead of just warning, turning every request into a 500.
+app.set('trust proxy', 1);
 app.use(express.json());
 
 app.get('/health', (_req, res) => {
