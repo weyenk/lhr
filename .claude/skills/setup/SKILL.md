@@ -155,3 +155,24 @@ Captured via /setup on <today's date>. Re-run /setup to revise.
 ```
 
 `docs/PERSONA.md` is referenced today by `.claude/agents/chief-of-staff.md` line 12 as a dangling "if it exists" check; once this step runs, it exists and that file's persona-loading instruction takes effect.
+
+## Step 3: Draft proposed diffs — do not write yet
+
+Draft (but do not write to disk) changes to the following four files, based on the interview:
+
+**`docs/CONSTITUTION.md`** — if Topic 6 flagged anything as a hard principle, draft it as a new numbered principle appended after the existing numbered principles. If Topic 6 flagged nothing, draft the Topic 1 niche statement as new descriptive framing text added near the top of the file (above principle 1), not as a numbered principle.
+
+**`docs/RULES.md`** — draft new numbered entries (continuing the existing numbering) for whichever of these actually surfaced concrete answers in the interview: content pillars (Topic 3), funnel intensity (Topic 3), cadence if changed from the ~26/6-months default (Topic 3), pricing philosophy (Topic 4), community roadmap cadence/moderation capacity (Topic 5). Skip any that Topic 6 already promoted to `docs/CONSTITUTION.md` instead.
+
+**`.claude/agents/community-builder.md`, `content-strategist.md`, `store-merchandiser.md`** — rewrite each stub's body (keep the existing frontmatter shape: `name`, `description`, `tools`, `model`, `memory: project`) following the same style as `.claude/agents/seo-auditor.md` and `.claude/agents/monetization-scout.md` (a short "You are a ___ for <niche>" opener, then a "What to do" or numbered "When invoked" list, grounded in the interview answers rather than generic lifestyle-brand boilerplate). Keep each stub's current tool grant (`tools: Read, Grep, Glob, WebFetch`) unless the interview surfaced a concrete need for write access — if so, name the specific new tool and why in the diff presentation so the author can see exactly what capability is being added.
+
+Present all four proposed diffs together in one message (unified-diff style or clear before/after per file), and ask via `AskUserQuestion`:
+
+Question: "Apply these changes to CONSTITUTION.md, RULES.md, and the three agent stubs?"
+Options: "Apply all", "Apply none (keep current files, I'll re-run /setup later to revise)"
+
+If the author wants to approve some but not others, treat that as a free-text answer (available via "Other") and apply only the ones they name.
+
+**If approved (fully or partially):** write only the approved files via `Edit`/`Write`. `docs/BUSINESS-PLAN.md` and `docs/PERSONA.md` from Step 2 are kept regardless of this decision — they were already written and are not affected by this gate.
+
+**If declined entirely:** write nothing from this step. `docs/BUSINESS-PLAN.md` and `docs/PERSONA.md` remain as written in Step 2. Skip Step 4 entirely and end the skill here, telling the author they can re-run `/setup` later to revise and re-propose.
