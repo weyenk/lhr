@@ -19,8 +19,26 @@ const provider = createGitHubOAuthProvider();
 
 if (process.env.MCP_SERVER_URL) {
   const baseUrl = new URL(process.env.MCP_SERVER_URL);
-  app.use(mcpAuthRouter({ provider, issuerUrl: new URL('https://github.com/login/oauth/'), baseUrl }));
+  app.use(mcpAuthRouter({ provider, issuerUrl: baseUrl, baseUrl }));
 }
+
+app.get('/callback', async (req, res) => {
+  const { code, state, error } = req.query;
+  if (typeof error === 'string') {
+    res.status(400).send(`GitHub authorization failed: ${error}`);
+    return;
+  }
+  if (typeof code !== 'string' || typeof state !== 'string') {
+    res.status(400).send('Missing code or state from GitHub callback');
+    return;
+  }
+  try {
+    const { redirectTo } = await provider.handleGitHubCallback(code, state);
+    res.redirect(redirectTo);
+  } catch (err) {
+    res.status(400).send(err instanceof Error ? err.message : 'GitHub authorization failed');
+  }
+});
 
 const authMiddleware = requireBearerAuth({ verifier: provider });
 
