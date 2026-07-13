@@ -1,4 +1,4 @@
-import { list, put } from '@vercel/blob';
+import { getJson, putJson } from './blobStore';
 
 export interface RegisteredClient {
   client_id: string;
@@ -10,23 +10,9 @@ function blobPath(clientId: string): string {
 }
 
 export async function saveClient(client: RegisteredClient): Promise<void> {
-  await put(blobPath(client.client_id), JSON.stringify(client), {
-    access: 'public',
-    addRandomSuffix: false,
-    contentType: 'application/json',
-  });
+  await putJson(blobPath(client.client_id), client);
 }
 
 export async function loadClient(clientId: string): Promise<RegisteredClient | null> {
-  const path = blobPath(clientId);
-  const { blobs } = await list({ prefix: path });
-  const match = blobs.find((blob) => blob.pathname === path);
-  if (!match) {
-    return null;
-  }
-  const response = await fetch(match.url);
-  if (!response.ok) {
-    return null;
-  }
-  return (await response.json()) as RegisteredClient;
+  return getJson<RegisteredClient>(blobPath(clientId));
 }
