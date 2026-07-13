@@ -1,4 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { InvalidTokenError } from '@modelcontextprotocol/sdk/server/auth/errors.js';
 
 const clients = new Map<string, unknown>();
 vi.mock('../../src/auth/clientStore', () => ({
@@ -276,5 +277,14 @@ describe('createGitHubOAuthProvider', () => {
 
     const provider = createGitHubOAuthProvider();
     await expect(provider.verifyAccessToken('opaque-1')).rejects.toThrow(/not the authorized author/);
+  });
+
+  it('verifyAccessToken() surfaces a GitHub-side revoked token as an InvalidTokenError, not a generic Error', async () => {
+    tokens.set('opaque-1', { clientId: 'client-abc', githubAccessToken: 'gh-token-123', expiresAt: Date.now() + 1000 * 60 });
+    global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 401 }) as unknown as typeof fetch;
+
+    const provider = createGitHubOAuthProvider();
+    await expect(provider.verifyAccessToken('opaque-1')).rejects.toBeInstanceOf(InvalidTokenError);
+    await expect(provider.verifyAccessToken('opaque-1')).rejects.toThrow(/GitHub token verification failed: 401/);
   });
 });

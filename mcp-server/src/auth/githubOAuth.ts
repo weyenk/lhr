@@ -171,7 +171,12 @@ class GitHubOAuthServerProvider implements OAuthServerProvider {
     if (issued.expiresAt < Date.now()) {
       throw new InvalidTokenError('Access token has expired');
     }
-    const user = await fetchGitHubUser(issued.githubAccessToken);
+    let user: { login: string };
+    try {
+      user = await fetchGitHubUser(issued.githubAccessToken);
+    } catch (err) {
+      throw new InvalidTokenError(err instanceof Error ? err.message : 'GitHub token verification failed');
+    }
     if (user.login !== this.authorGitHubUsername) {
       throw new InvalidTokenError(`GitHub user ${user.login} is not the authorized author`);
     }
