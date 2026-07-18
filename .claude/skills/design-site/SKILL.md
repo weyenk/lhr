@@ -46,3 +46,46 @@ To write a section:
 - **If the file exists but this section doesn't yet:** append the new section after whatever sections already exist. On a fresh run this lands sections in canonical topic order automatically, since topics run in that order.
 - **If the file exists and this section already exists (a "revise" rerun):** replace everything from that section's heading up to (but not including) the next heading of the same or higher level, leaving everything before and after byte-for-byte untouched.
 - For the six page-layout topics specifically: the shared `## Page Layouts` heading is created once, by whichever of those topics is written first in a given run. Each topic then writes/replaces only its own `###` subsection(s) beneath it, leaving sibling subsections untouched.
+
+## Step 1: Run the interview
+
+Ask the following eleven topics **one question at a time** — never bundle multiple topics into one prompt. After capturing each topic's answer(s) and reflecting them back in 1-2 sentences, write that topic's section immediately (per "Writing docs/BRAND.md sections" above), then move to the next topic.
+
+### Topic 1: Kitchen grounding & mood *(photos + text)*
+
+Ask the author to share photos of the actual space her content is/will be photographed in. If none are available, ask her to describe it in words instead (materials, colors, lighting).
+
+From the photos (or description), name back what you observe as fixed environmental colors/materials — for example: "I'm seeing black granite counters, exposed red brick, warm gray-driftwood cabinet fronts, stainless steel appliances, and matte black fixtures." Confirm this reading with the author before moving on; correct it if she says something's off.
+
+Then ask, as a secondary question: "Any reference sites or brands whose vibe you want, plus a few mood adjectives?" If she names sites, `WebFetch` them and note back what you see (color tendencies, type feel, density, photography style) — this is flavor, not a constraint the way the kitchen anchors are.
+
+**Capture:** environment anchor colors/materials (primary input), reference sites/mood adjectives (secondary). Write the `## Kitchen Grounding` section:
+
+```markdown
+## Kitchen Grounding
+- Environment anchor colors/materials: <observed anchors, from photos or description>
+- Note: these anchors inform palette mood/undertone, not literal hex-sampling
+- Mood adjectives / reference sites (secondary influence): <captured answer, or "None given">
+```
+
+### Topic 2: Palette *(visual companion)*
+
+Generate 2-3 candidate palettes (primary, accent, background, text roles, each a hex value) that complement the Topic 1 anchor mood — e.g. anchors like black granite / red brick / warm gray wood call for warm neutrals with a grounded accent, not a palette that fights them.
+
+**Before presenting any candidate**, check its text/background pairing against WCAG AA: text-on-background must be ≥4.5:1, and any UI element (buttons, borders) against its background must be ≥3:1. If a candidate fails, adjust the failing role (lighten/darken it) until it passes, or drop that candidate — never present a failing palette as a choice. If **every** candidate fails after adjustment attempts, generate new candidates rather than offering a known-bad option.
+
+Add semantic state colors to every candidate — error, sold-out, sale/discount — distinct from the brand colors, so status is never conveyed by brand-accent color alone.
+
+Present the passing candidates via the visual companion as swatch cards; the author picks one or asks for a tweak.
+
+**Capture:** the chosen palette's roles + hex values, its contrast-check result, its semantic colors, and the harmonization reasoning. Write the `## Palette` section:
+
+```markdown
+## Palette
+- Primary/background: <hex>
+- Text: <hex>
+- Accent: <hex> — <role/usage>
+- Contrast check: confirmed WCAG AA (4.5:1 text, 3:1 UI) for <text hex> on <background hex>
+- Semantic state colors: error <hex>, sold-out <hex>, sale/discount <hex>
+- Note on how this was chosen to harmonize with the kitchen anchors above: <reasoning>
+```
