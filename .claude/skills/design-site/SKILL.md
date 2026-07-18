@@ -152,3 +152,81 @@ Establish a shared spacing scale and column grid once, plus explicit mobile-vs-d
 - Column grid: <e.g. 12-column desktop grid, max-width Npx>
 - Mobile-vs-desktop intent: <e.g. single-column stack below Npx, breakpoint>
 ```
+
+### Topic 7: Home / listing page layout *(visual companion)*
+
+Show 2-3 layout wireframes for the existing home page (currently `src/pages/index.astro`, an unstyled list of post links), built on the Grid, Spacing & Mobile Layout system from Topic 6.
+
+**Capture:** the chosen layout's component list and arrangement. Write the `### Home / Listing` subsection under `## Page Layouts` (creating the parent heading if this is the first page-layout topic run this session):
+
+```markdown
+## Page Layouts
+
+### Home / Listing
+- Components: <e.g. hero for most recent post, grid of post cards below>
+- Arrangement: <description>
+- Notes: <any page-specific notes>
+- *Depends on: Palette, Typography, Grid, Spacing & Mobile Layout*
+```
+
+### Topic 8: Recipe post layout *(visual companion)*
+
+Show 2-3 wireframes for the placement of ingredients, steps, kitchenware cards, and affiliate links, building on the existing `src/layouts/RecipeLayout.astro` structure (read the file to ground the options in its actual current sections) and the Topic 6 grid.
+
+**Capture:** the chosen layout's component list and arrangement. Write the `### Recipe Post` subsection under `## Page Layouts` (append after `### Home / Listing`, or create the parent heading if this is the first page-layout topic run):
+
+```markdown
+### Recipe Post
+- Components: <e.g. hero photo, two-column ingredients/steps on desktop, kitchenware cards inline>
+- Arrangement: <description>
+- Notes: <any page-specific notes>
+- *Depends on: Palette, Typography, Grid, Spacing & Mobile Layout*
+```
+
+### Topic 9: Article post layout *(visual companion)*
+
+Show 2-3 wireframes building on the existing `src/layouts/ArticleLayout.astro` structure (read the file) and the Topic 6 grid.
+
+**Capture:** the chosen layout's component list and arrangement. Write the `### Article Post` subsection under `## Page Layouts`:
+
+```markdown
+### Article Post
+- Components: <e.g. hero photo, single-column prose, kitchenware cards at end>
+- Arrangement: <description>
+- Notes: <any page-specific notes>
+- *Depends on: Palette, Typography, Grid, Spacing & Mobile Layout*
+```
+
+### Topic 10: Product / shop listing page layout *(visual companion)*
+
+This page doesn't exist yet. Show 2-3 wireframes designed against the existing `products`/`sets` content collections (read `src/content.config.ts` and `src/content/schemas.ts` to ground the options in the real fields available) and the Topic 6 grid.
+
+**Capture:** the chosen layout's component list and arrangement. Write the `### Product / Shop Listing` subsection under `## Page Layouts`:
+
+```markdown
+### Product / Shop Listing
+- Components: <e.g. grid of product cards grouped by current set>
+- Arrangement: <description>
+- Notes: forward-looking — this page and any content beyond the existing products/sets schemas don't exist yet
+- *Depends on: Palette, Typography, Grid, Spacing & Mobile Layout*
+```
+
+### Topic 11: About & community page layout *(visual companion)*
+
+Neither page nor its content model exists yet, so keep this lighter-weight: capture structural intent, not final content. Show 1-2 simple wireframes for each via the visual companion.
+
+**Capture:** structural intent for both pages. Write the `### About` and `### Community` subsections under `## Page Layouts` (both from this one topic):
+
+```markdown
+### About
+- Components: <e.g. single long-form page, photo + story>
+- Arrangement: <description>
+- Notes: forward-looking — page and content model don't exist yet
+- *Depends on: Palette, Typography, Grid, Spacing & Mobile Layout*
+
+### Community
+- Components: <e.g. placeholder "coming soon" structure, newsletter signup>
+- Arrangement: <description>
+- Notes: forward-looking — page and content model don't exist yet
+- *Depends on: Palette, Typography, Grid, Spacing & Mobile Layout*
+```
