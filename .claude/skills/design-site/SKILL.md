@@ -89,3 +89,38 @@ Present the passing candidates via the visual companion as swatch cards; the aut
 - Semantic state colors: error <hex>, sold-out <hex>, sale/discount <hex>
 - Note on how this was chosen to harmonize with the kitchen anchors above: <reasoning>
 ```
+
+### Topic 3: Tone & imagery direction *(text)*
+
+Voice is discovered **fresh** — never inferred from existing site content, since the current posts (e.g. "Jerk Chicken for a Crowd") are placeholder seed data, not an established authored voice. Ask, one at a time:
+
+1. "Give me a few adjectives for how the writing should sound."
+2. "Any writers or publications whose voice you admire, even loosely?"
+3. Optional: "If you want, give me one sample sentence in the voice you're going for."
+4. "What's the photography style — natural light or staged, minimal styling or busy, candid mid-action shots or composed stills? Keep this grounded in what's actually achievable in your kitchen space from Topic 1."
+5. "Any imagery treatment beyond the shot itself — a preferred crop ratio, a color-grading/filter approach — that would help reconcile real photos with the palette we just picked?"
+
+**Capture:** voice adjectives, admired writers/publications, optional sample sentence, photography style, imagery post-processing/treatment. Write the `## Tone & Imagery Direction` section:
+
+```markdown
+## Tone & Imagery Direction
+- Voice adjectives: <captured answer>
+- Admired writers/publications: <captured answer, or "None given">
+- Sample sentence: <captured answer, or "None given">
+- Photography style: <captured answer>, grounded in the actual kitchen space from Kitchen Grounding
+- Imagery post-processing/treatment: <captured answer>
+```
+
+### Topic 4: Typography *(visual companion)*
+
+Generate 2-3 heading/body font pairings, chosen to match the voice/tone from Topic 3 — not picked before it. Show each pairing with real sample text: the site name, a sample headline, and a line of sample body copy.
+
+**Capture:** the chosen heading font (family + fallback stack + any weight/case notes) and body font (family + fallback stack). Write the `## Typography` section:
+
+```markdown
+## Typography
+- Heading font: <family>, fallback stack `<fallback stack>` — <weight/case notes, if any>
+- Body font: <family>, fallback stack `<fallback stack>`
+- Scale notes: <any size-relationship notes surfaced, or "None captured">
+- *Depends on: Tone & Imagery Direction*
+```
