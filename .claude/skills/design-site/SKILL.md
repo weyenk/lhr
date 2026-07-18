@@ -123,6 +123,7 @@ Generate 2-3 heading/body font pairings, chosen to match the voice/tone from Top
 - Body font: <family>, fallback stack `<fallback stack>`
 - Scale notes: <any size-relationship notes surfaced, or "None captured">
 - *Depends on: Tone & Imagery Direction*
+```
 
 ### Topic 5: Wordmark, logo & iconography *(visual companion)*
 
@@ -150,5 +151,4 @@ Establish a shared spacing scale and column grid once, plus explicit mobile-vs-d
 - Spacing scale: <e.g. 8px base unit: 8/16/24/32/48/64>
 - Column grid: <e.g. 12-column desktop grid, max-width Npx>
 - Mobile-vs-desktop intent: <e.g. single-column stack below Npx, breakpoint>
-```
 ```
