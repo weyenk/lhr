@@ -123,4 +123,32 @@ Generate 2-3 heading/body font pairings, chosen to match the voice/tone from Top
 - Body font: <family>, fallback stack `<fallback stack>`
 - Scale notes: <any size-relationship notes surfaced, or "None captured">
 - *Depends on: Tone & Imagery Direction*
+
+### Topic 5: Wordmark, logo & iconography *(visual companion)*
+
+Using the palette and typography already chosen, generate rough directional concepts: an icon/symbol idea, a wordmark treatment (how the site name is typeset), and a small supporting icon style (e.g. for nav/UI elements). Explicitly tell the author these are directional only, not production-ready logo/icon art.
+
+**Capture:** the chosen directional concept description. Write the `## Wordmark, Logo & Iconography` section:
+
+```markdown
+## Wordmark, Logo & Iconography
+- Directional concept: <shape/symbol idea>
+- Wordmark treatment: <typographic treatment of the site name>
+- Supporting icon style: <captured answer>
+- Note: directional only, not production-ready art
+- *Depends on: Palette, Typography*
+```
+
+### Topic 6: Grid, spacing & mobile layout intent *(visual companion)*
+
+Establish a shared spacing scale and column grid once, plus explicit mobile-vs-desktop layout intent, so the six page-layout topics below inherit a system rather than each making ad hoc structural decisions. Show 2-3 options via the visual companion (e.g. differing base spacing units or grid widths) if there's a genuine choice to make; otherwise propose one sensible default and confirm it with the author.
+
+**Capture:** the spacing scale, column grid, and mobile-layout intent. Write the `## Grid, Spacing & Mobile Layout` section:
+
+```markdown
+## Grid, Spacing & Mobile Layout
+- Spacing scale: <e.g. 8px base unit: 8/16/24/32/48/64>
+- Column grid: <e.g. 12-column desktop grid, max-width Npx>
+- Mobile-vs-desktop intent: <e.g. single-column stack below Npx, breakpoint>
+```
 ```
