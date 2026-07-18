@@ -15,7 +15,7 @@ Several topics below are marked *(visual companion)*. The first time one of thos
 
 > "This next part might be easier if I show you — I can put together mockups, swatches, and comparisons in a browser tab as we go. It's still new and can be token-intensive. Want me to? I'll open it for you."
 
-**If accepted:** start the server (`scripts/start-server.sh --project-dir <repo root> --open`, per the `superpowers:brainstorming` visual-companion guide) and use it for this and every later *(visual companion)* topic — write real options (swatches, font samples, wireframes, directional logo concepts) to a new file in `screen_dir` each time, and read `state_dir/events` on the next turn for the author's selection, combined with their terminal reply.
+**If accepted:** start the server by following the `superpowers:brainstorming` visual-companion guide, and use it for this and every later *(visual companion)* topic — write real options (swatches, font samples, wireframes, directional logo concepts) to a new file in `screen_dir` each time, and read `state_dir/events` on the next turn for the author's selection, combined with their terminal reply.
 
 **If declined**, or if the server becomes unreachable mid-interview: fall back to describing 2-3 options in text for that topic and every later *(visual companion)* topic. Don't re-offer once declined.
 
@@ -35,7 +35,7 @@ Check whether `docs/BRAND.md` exists (Glob or Read).
 
   **Dependency cascade:** if "Palette" and/or "Typography" is among the selected topics, ask one more `AskUserQuestion` (multiSelect: true): "Palette/Typography feeds Wordmark, Logo & Iconography and all six page-layout sections. Re-review any of those too?" Options: "Wordmark, logo & iconography", "Home / listing page layout", "Recipe post layout", "Article post layout", "Product / shop listing page layout", "About & community page layout" (author can select none). Add whichever are selected to this run's set of topics.
 
-  For any dependent section the author does **not** select for re-review, add (or update) a one-line note at the very top of that section's existing content: `> Note: last decided against a Palette/Typography that has since changed (revised <today's date>).` — so staleness is visible in the doc, not silently hidden.
+  For any dependent section the author does **not** select for re-review, add (or update) a one-line note at the very top of that section's existing content: `> Note: last decided under a Palette/Typography that has since changed (revised <today's date>).` — so staleness is visible in the doc, not silently hidden. For "About & community page layout" specifically, this means prepending the note separately to both the `### About` and `### Community` subsections (one note per subsection), not a single shared note for the pair.
 
 ## Writing docs/BRAND.md sections
 
