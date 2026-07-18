@@ -230,3 +230,9 @@ Neither page nor its content model exists yet, so keep this lighter-weight: capt
 - Notes: forward-looking — page and content model don't exist yet
 - *Depends on: Palette, Typography, Grid, Spacing & Mobile Layout*
 ```
+
+## Step 2: Close out
+
+Summarize what was written this run: which of the eleven `docs/BRAND.md` sections were newly written, which were revised, and which were left untouched (a rerun with unselected topics). If any dependent sections (Wordmark/Logo/Iconography, page layouts) were left stale because the author declined to re-review them after a Palette/Typography change, say so explicitly, and remind the author they can re-run `/design-site` later to revise any section.
+
+Never claim to have produced CSS, Astro components, or any other implementation artifact — `docs/BRAND.md` is the entire scope of this skill.
