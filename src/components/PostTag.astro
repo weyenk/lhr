@@ -1,0 +1,9 @@
+---
+interface Props {
+  type: 'recipe' | 'article';
+}
+
+const { type } = Astro.props;
+const label = type === 'recipe' ? 'Recipe' : 'Article';
+---
+<span class="post-tag font-heading text-[10px] font-bold uppercase tracking-wide text-accent">{label}</span>
