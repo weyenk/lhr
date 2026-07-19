@@ -79,7 +79,7 @@ Below 768px: photo stacks above the bio text.
 ## Shared components
 
 - **Type tag/badge**: small uppercase label in terracotta, used to mark Recipe vs. Article on Home list items and post pages.
-- **Button/CTA style**: terracotta fill, white text, rounded corners, bold — reserved for explicit calls to action (e.g., a "Shop this set" link styled as a button on `ProductCard.astro`).
+- **Button/CTA style**: terracotta fill, white text, rounded corners, bold — reserved for explicit calls to action. *Not implemented in this pass*: the approved implementation plan kept `ProductCard.astro` as a plain shadow card (matching the shared card language) with a driftwood-gray "Shop this set" section heading rather than a terracotta CTA button on the card itself. Revisit if a dedicated CTA button treatment is wanted later.
 - **`ProductCard.astro`**: restyled into the shared card language — product image, name, price, linking out to `vendorUrl`.
 - **`AffiliateLink.astro`**: restyled into the shared card language as a simple text/icon link row.
 - **Icons**: 1.5px-stroke line icons with rounded joins, in terracotta or driftwood-gray, used for the hamburger toggle and footer social placeholders.
