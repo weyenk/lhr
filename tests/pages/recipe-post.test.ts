@@ -19,4 +19,10 @@ describe('recipe post page', () => {
     expect(html).toContain('data-umami-event="affiliate-click"');
     expect(html).toContain('affiliate link');
   }, 60000);
+
+  it('gives kitchenware and affiliate links the shared card styling', () => {
+    const html = readFileSync('dist/posts/jerk-chicken-platter/index.html', 'utf-8');
+    expect(html).toMatch(/class="product-card[^"]*rounded-lg[^"]*shadow-md/);
+    expect(html).toMatch(/class="affiliate-link[^"]*rounded-lg[^"]*shadow-md/);
+  }, 60000);
 });

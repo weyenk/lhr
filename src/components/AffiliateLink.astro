@@ -9,7 +9,7 @@ interface Props {
 const { id, data } = Astro.props;
 ---
 <a
-  class="affiliate-link"
+  class="affiliate-link block rounded-lg bg-white p-3 shadow-md text-sm font-medium text-text hover:text-accent"
   href={data.url}
   target="_blank"
   rel="noopener sponsored"
@@ -17,5 +17,5 @@ const { id, data } = Astro.props;
   data-umami-event-link={id}
 >
   {data.label}
-  <small class="affiliate-link__disclosure">(affiliate link)</small>
+  <small class="affiliate-link__disclosure block text-[10px] font-normal text-accent-secondary">(affiliate link)</small>
 </a>
