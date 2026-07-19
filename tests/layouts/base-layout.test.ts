@@ -1,6 +1,6 @@
 import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 
 describe('Umami analytics script', () => {
   it('is included in the build when Umami env vars are set', () => {
@@ -22,4 +22,25 @@ describe('Umami analytics script', () => {
     const html = readFileSync('dist/index.html', 'utf-8');
     expect(html).not.toContain('data-website-id');
   }, 60000);
+});
+
+describe('site header', () => {
+  beforeAll(() => {
+    execSync('npm run build', { stdio: 'inherit' });
+  }, 60000);
+
+  it('renders the wordmark and links to Home and About', () => {
+    const html = readFileSync('dist/index.html', 'utf-8');
+    expect(html).toContain('site-header');
+    expect(html).toContain('site-header__nav');
+    expect(html).toContain('href="/"');
+    expect(html).toContain('href="/about/"');
+  });
+
+  it('renders an accessible mobile nav toggle', () => {
+    const html = readFileSync('dist/index.html', 'utf-8');
+    expect(html).toContain('data-nav-toggle');
+    expect(html).toContain('aria-label="Toggle navigation"');
+    expect(html).toContain('aria-expanded="false"');
+  });
 });
