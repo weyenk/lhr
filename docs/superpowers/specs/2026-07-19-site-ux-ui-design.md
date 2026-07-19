@@ -60,7 +60,7 @@ Replaces the current bare `<ul>` of post links entirely.
 
 ### Recipe Post (`src/layouts/RecipeLayout.astro`)
 
-Full-width hero photo, then a type tag + title, then a two-column area: the steps list takes the wide primary column (8 cols) since it's most-referenced while actively cooking, and the ingredients live in a smaller bordered/shadow card sidebar (4 cols) alongside. Below that, a kitchenware ("Shop this set") and affiliate-links ("Also mentioned") card strip spans full width, cards laid out side by side on desktop.
+Full-width hero photo, then a type tag + title, then a two-column area: the steps list takes the wide primary column (8 cols) since it's most-referenced while actively cooking, and the ingredients live in a smaller shadow-card sidebar (4 cols) alongside, using the same shared card treatment described below. Below that, a kitchenware ("Shop this set") and affiliate-links ("Also mentioned") card strip spans full width, cards laid out side by side on desktop.
 
 Below 768px: hero → ingredients card → steps → kitchenware/affiliate strip, all single-column.
 
