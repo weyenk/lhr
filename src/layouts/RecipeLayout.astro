@@ -33,7 +33,7 @@ const { Content } = await render(post);
     <PostTag type="recipe" />
     <h1 class="mt-1 mb-4 font-heading text-2xl font-bold text-text">{data.title}</h1>
     <div class="recipe-post__layout grid grid-cols-1 gap-6 md:grid-cols-12">
-      <div class="md:col-span-8">
+      <div class="order-2 md:order-none md:col-span-8">
         <ol class="recipe-post__steps list-decimal space-y-2 pl-5 text-sm">
           {data.steps.map((step) => <li>{step}</li>)}
         </ol>
@@ -41,7 +41,7 @@ const { Content } = await render(post);
           <Content />
         </div>
       </div>
-      <div class="md:col-span-4">
+      <div class="order-1 md:order-none md:col-span-4">
         <ul class="recipe-post__ingredients rounded-lg bg-white p-4 text-sm shadow-md">
           {data.ingredients.map((ingredient) => (
             <li class="mb-1">{ingredient.amount ? `${ingredient.amount} ` : ''}{ingredient.item}</li>
