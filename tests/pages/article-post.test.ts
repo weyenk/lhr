@@ -15,4 +15,11 @@ describe('article post page', () => {
     expect(html).toContain('data-umami-event="kitchenware-click"');
     expect(html).not.toContain('recipe-post__ingredients');
   }, 60000);
+
+  it('wraps the prose and sidebar in a two-column layout grid', () => {
+    const html = readFileSync('dist/posts/why-coastal-blue/index.html', 'utf-8');
+    expect(html).toContain('article-post__layout');
+    expect(html).toContain('article-post__prose');
+    expect(html).toContain('article-post__sidebar');
+  }, 60000);
 });
