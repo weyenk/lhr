@@ -1,5 +1,6 @@
 ---
 import BaseLayout from './BaseLayout.astro';
+import PostTag from '../components/PostTag.astro';
 import ProductCard from '../components/ProductCard.astro';
 import AffiliateLink from '../components/AffiliateLink.astro';
 import { render, type CollectionEntry } from 'astro:content';
@@ -23,29 +24,50 @@ const linkedAffiliateLinks = getEntriesByIds(data.affiliateLinkIds, affiliateLin
 const { Content } = await render(post);
 ---
 <BaseLayout title={data.title}>
-  <article class="recipe-post">
-    <h1>{data.title}</h1>
-    <img src={data.coverPhoto} alt={data.coverPhotoAlt} />
-    <ul class="recipe-post__ingredients">
-      {data.ingredients.map((ingredient) => (
-        <li>{ingredient.amount ? `${ingredient.amount} ` : ''}{ingredient.item}</li>
-      ))}
-    </ul>
-    <ol class="recipe-post__steps">
-      {data.steps.map((step) => <li>{step}</li>)}
-    </ol>
-    <Content />
-    {linkedProducts.length > 0 && (
-      <section class="recipe-post__kitchenware">
-        <h2>Shop this set</h2>
-        {linkedProducts.map((product) => <ProductCard id={product.id} data={product.data} />)}
-      </section>
-    )}
-    {linkedAffiliateLinks.length > 0 && (
-      <section class="recipe-post__affiliate-links">
-        <h2>Also mentioned</h2>
-        {linkedAffiliateLinks.map((link) => <AffiliateLink id={link.id} data={link.data} />)}
-      </section>
+  <article class="recipe-post mx-auto max-w-[1200px] px-4 py-8">
+    <img
+      src={data.coverPhoto}
+      alt={data.coverPhotoAlt}
+      class="mb-4 aspect-[3/2] w-full rounded-lg object-cover md:aspect-[16/6]"
+    />
+    <PostTag type="recipe" />
+    <h1 class="mt-1 mb-4 font-heading text-2xl font-bold text-text">{data.title}</h1>
+    <div class="recipe-post__layout grid grid-cols-1 gap-6 md:grid-cols-12">
+      <div class="md:col-span-8">
+        <ol class="recipe-post__steps list-decimal space-y-2 pl-5 text-sm">
+          {data.steps.map((step) => <li>{step}</li>)}
+        </ol>
+        <div class="recipe-post__content mt-6 space-y-3 text-sm leading-relaxed">
+          <Content />
+        </div>
+      </div>
+      <div class="md:col-span-4">
+        <ul class="recipe-post__ingredients rounded-lg bg-white p-4 text-sm shadow-md">
+          {data.ingredients.map((ingredient) => (
+            <li class="mb-1">{ingredient.amount ? `${ingredient.amount} ` : ''}{ingredient.item}</li>
+          ))}
+        </ul>
+      </div>
+    </div>
+    {(linkedProducts.length > 0 || linkedAffiliateLinks.length > 0) && (
+      <div class="recipe-post__strip mt-8 grid grid-cols-1 gap-4 md:grid-cols-2">
+        {linkedProducts.length > 0 && (
+          <section class="recipe-post__kitchenware">
+            <h2 class="mb-2 font-heading text-sm font-bold uppercase tracking-wide text-accent-secondary">Shop this set</h2>
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {linkedProducts.map((product) => <ProductCard id={product.id} data={product.data} />)}
+            </div>
+          </section>
+        )}
+        {linkedAffiliateLinks.length > 0 && (
+          <section class="recipe-post__affiliate-links">
+            <h2 class="mb-2 font-heading text-sm font-bold uppercase tracking-wide text-accent-secondary">Also mentioned</h2>
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {linkedAffiliateLinks.map((link) => <AffiliateLink id={link.id} data={link.data} />)}
+            </div>
+          </section>
+        )}
+      </div>
     )}
   </article>
 </BaseLayout>

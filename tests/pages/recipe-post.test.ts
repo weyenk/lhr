@@ -25,4 +25,10 @@ describe('recipe post page', () => {
     expect(html).toMatch(/class="product-card[^"]*rounded-lg[^"]*shadow-md/);
     expect(html).toMatch(/class="affiliate-link[^"]*rounded-lg[^"]*shadow-md/);
   }, 60000);
+
+  it('wraps steps and ingredients in a two-column layout grid', () => {
+    const html = readFileSync('dist/posts/jerk-chicken-platter/index.html', 'utf-8');
+    expect(html).toContain('recipe-post__layout');
+    expect(html).toContain('grid-cols-12');
+  }, 60000);
 });
