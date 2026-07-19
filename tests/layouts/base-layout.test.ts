@@ -44,3 +44,16 @@ describe('site header', () => {
     expect(html).toContain('aria-expanded="false"');
   });
 });
+
+describe('site footer', () => {
+  beforeAll(() => {
+    execSync('npm run build', { stdio: 'inherit' });
+  }, 60000);
+
+  it('renders the wordmark and copyright line', () => {
+    const html = readFileSync('dist/index.html', 'utf-8');
+    const year = new Date().getFullYear();
+    expect(html).toContain('site-footer');
+    expect(html).toContain(`© ${year} Love Heat Relationship`);
+  });
+});
