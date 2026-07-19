@@ -1,4 +1,6 @@
 ---
+import '../styles/global.css';
+
 interface Props {
   title: string;
 }
@@ -12,11 +14,17 @@ const umamiWebsiteId = import.meta.env.PUBLIC_UMAMI_WEBSITE_ID;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700&family=Karla:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
     {umamiUrl && umamiWebsiteId && (
       <script defer src={umamiUrl} data-website-id={umamiWebsiteId}></script>
     )}
   </head>
-  <body>
+  <body class="bg-background text-text font-body">
     <slot />
   </body>
 </html>
