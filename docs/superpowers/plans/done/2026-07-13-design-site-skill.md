@@ -1,5 +1,7 @@
 # `/design-site` Skill Implementation Plan
 
+**Status:** Done — merged via PR #6/#7; `.claude/skills/design-site/SKILL.md` and `docs/BRAND.md` exist on `main`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Build `.claude/skills/design-site/SKILL.md`, a rerunnable `/design-site` interview that walks the site's author through eleven brand/layout topics — kitchen-grounded palette, tone, typography, wordmark/logo/iconography, a shared grid/spacing/mobile baseline, and layout intent for all six planned pages — writing each topic's answer directly into `docs/BRAND.md` as it's captured.
@@ -57,7 +59,7 @@ description: One-time, rerunnable interview that walks the site's author through
 
 # /design-site — Visual & Brand Design Interview
 
-Walks the author through an eleven-topic interview and writes the results directly to `docs/BRAND.md`. This is the one-time (but rerunnable) interview described in `docs/superpowers/specs/2026-07-13-design-site-skill-design.md`. The skill only ever produces `docs/BRAND.md` — it never writes CSS, Astro components, or invokes any implementation skill.
+Walks the author through an eleven-topic interview and writes the results directly to `docs/BRAND.md`. This is the one-time (but rerunnable) interview described in `docs/superpowers/specs/done/2026-07-13-design-site-skill-design.md`. The skill only ever produces `docs/BRAND.md` — it never writes CSS, Astro components, or invokes any implementation skill.
 
 **Tools this skill uses:** Read, Write, Edit, Glob, AskUserQuestion, WebFetch, and the visual companion (see below).
 

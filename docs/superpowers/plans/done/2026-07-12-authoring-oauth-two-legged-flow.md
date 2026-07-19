@@ -1,5 +1,7 @@
 # Authoring MCP Server: Two-Legged GitHub OAuth Implementation Plan
 
+**Status:** Done — `mcp-server/src/auth/githubOAuth.ts` exists on `main` (later patched: "replace sunset Vercel KV with Blob-backed OAuth client store").
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Replace the authoring MCP server's transparent GitHub OAuth proxy (which cannot work — GitHub rejects both the mismatched client_id and the mismatched redirect_uri domain) with a real two-legged OAuth flow, so `docs/AUTHORING-SETUP.md` step 6 (connecting claude.ai to the server via GitHub login) actually succeeds end-to-end.

@@ -1,5 +1,7 @@
 # Authoring MCP Server + Article Sections Implementation Plan
 
+**Status:** Done — merged via PR #1 (`feature/authoring-mcp-server`); `mcp-server/` exists on `main`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Build the authoring MCP server that lets the author create posts and rotate kitchenware sets entirely from the Claude.ai app, plus migrate the article content schema to structured sections that the server's tools depend on.
