@@ -1,7 +1,7 @@
 # `/setup` Skill — Design
 
 **Date:** 2026-07-13
-**Status:** Approved for planning
+**Status:** Done — `.claude/skills/setup/SKILL.md`, `docs/CONSTITUTION.md`, and `docs/RULES.md` exist on `main`.
 
 ## 1. Overview & Goals
 

@@ -1,7 +1,7 @@
 # Shopify Commerce Integration — Design
 
 **Date:** 2026-07-13
-**Status:** Approved for planning
+**Status:** Active — not started. No implementation plan written yet; no Shopify code exists in `src/`. Listed as backlog item 1 in `docs/BACKLOG.md`.
 
 ## 1. Overview & Goals
 

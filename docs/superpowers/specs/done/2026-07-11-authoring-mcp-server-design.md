@@ -1,8 +1,8 @@
 # LHR Authoring MCP Server + Claude Authoring Skill — Design
 
 **Date:** 2026-07-11
-**Status:** Approved for planning
-**Builds on:** `docs/superpowers/specs/2026-07-11-content-platform-authoring-skill-design.md` (§2, §4), which this spec supersedes for MCP server and authoring workflow details. That spec's site content model (§3), constitution (§6), and repo layout (§5) still apply.
+**Status:** Done — `mcp-server/` exists on `main`, merged via PR #1.
+**Builds on:** `docs/superpowers/specs/active/2026-07-11-content-platform-authoring-skill-design.md` (§2, §4), which this spec supersedes for MCP server and authoring workflow details. That spec's site content model (§3), constitution (§6), and repo layout (§5) still apply.
 
 ## 1. Overview & Goals
 

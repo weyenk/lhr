@@ -5,7 +5,7 @@ description: One-time, rerunnable interview that collects this site's business p
 
 # /setup — Business Plan & Persona Interview
 
-Collects the missing business-plan and persona information directly from the author and wires it into the repo. This is the one-time (but rerunnable) interview described in `docs/superpowers/specs/2026-07-13-setup-skill-design.md`.
+Collects the missing business-plan and persona information directly from the author and wires it into the repo. This is the one-time (but rerunnable) interview described in `docs/superpowers/specs/done/2026-07-13-setup-skill-design.md`.
 
 **Tools this skill uses:** Read, Write, Edit, Glob, AskUserQuestion.
 

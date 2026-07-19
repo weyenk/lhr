@@ -1,5 +1,7 @@
 # `/setup` Skill Implementation Plan
 
+**Status:** Done — `.claude/skills/setup/SKILL.md`, `docs/CONSTITUTION.md`, and `docs/RULES.md` exist on `main`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Build `.claude/skills/setup/SKILL.md`, a rerunnable `/setup` interview that produces `docs/BUSINESS-PLAN.md` and `docs/PERSONA.md` directly, proposes gated diffs to `docs/CONSTITUTION.md`, `docs/RULES.md`, and the three empty agent stubs, and — only once everything else has succeeded — creates a root `CLAUDE.md` that makes `chief-of-staff` the default session behavior.
@@ -55,7 +57,7 @@ description: One-time, rerunnable interview that collects this site's business p
 
 # /setup — Business Plan & Persona Interview
 
-Collects the missing business-plan and persona information directly from the author and wires it into the repo. This is the one-time (but rerunnable) interview described in `docs/superpowers/specs/2026-07-13-setup-skill-design.md`.
+Collects the missing business-plan and persona information directly from the author and wires it into the repo. This is the one-time (but rerunnable) interview described in `docs/superpowers/specs/done/2026-07-13-setup-skill-design.md`.
 
 **Tools this skill uses:** Read, Write, Edit, Glob, AskUserQuestion.
 

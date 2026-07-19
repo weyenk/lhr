@@ -1,5 +1,7 @@
 # Site Foundation Implementation Plan
 
+**Status:** Done — Astro site, content schemas, and governance docs (`docs/CONSTITUTION.md`, `docs/RULES.md`) exist and are deployed.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Stand up the deployable Astro site for loveheatrelationship.com — content schema, recipe/article templates, kitchenware/affiliate-link display with disclosure and analytics tracking, and the governance docs — as the foundation the MCP authoring server (Plan 2) and Claude authoring skill (Plan 3) will build on.

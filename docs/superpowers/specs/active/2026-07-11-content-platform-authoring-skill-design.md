@@ -1,7 +1,7 @@
 # LHR Content Platform + Authoring Skill — Design
 
 **Date:** 2026-07-11
-**Status:** Approved for planning
+**Status:** Active — mixed. §2 (MCP server) and §4 (authoring workflow) are superseded by `2026-07-11-authoring-mcp-server-design.md` (its own §2, §4). §3 (content model), §5 (repo layout), and §6 (constitution) are still authoritative — no later spec has replaced them. Not filed under `superseded/` because it's still partly load-bearing; revisit if §3/§5/§6 content model logic ever moves elsewhere.
 
 ## 1. Overview & Goals
 

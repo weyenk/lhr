@@ -1,7 +1,7 @@
 # `/design-site` Skill — Design
 
 **Date:** 2026-07-13
-**Status:** Approved for planning
+**Status:** Done — merged via PR #6/#7; `.claude/skills/design-site/SKILL.md` and `docs/BRAND.md` exist on `main`.
 
 ## 1. Overview & Goals
 
