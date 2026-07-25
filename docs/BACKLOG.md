@@ -45,10 +45,10 @@ status; the rest are polish or growth.
 2. **Visual/brand design system** — the site is currently unstyled HTML with no
    branding.
 3. **Legal pages** — done in code (`/privacy-policy/`, `/terms-of-service/`,
-   `/affiliate-disclosure/`, linked from the footer). Still needs the author's (and
+   `/affiliate-disclosure/`, linked from the footer). Governing law in the Terms is
+   set to Wisconsin (the LLC's state of formation). Still needs the author's (and
    ideally a lawyer's) review before publishing, plus a real contact inbox at
-   `hello@loveheatrelationship.com` and a governing-law jurisdiction in the Terms —
-   both are left as placeholders in the drafts.
+   `hello@loveheatrelationship.com` — currently a placeholder in the drafts.
 4. **SEO foundations** — sitemap.xml, robots.txt, Open Graph tags, canonical URLs, and
    the schema.org Recipe markup the original content-platform spec flagged but never
    built.
