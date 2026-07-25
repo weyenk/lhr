@@ -1,0 +1,64 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const lastUpdated = 'July 25, 2026';
+---
+<BaseLayout title="Privacy Policy — Love Heat Relationship">
+  <div class="legal-page mx-auto max-w-[800px] px-4 py-8">
+    <h1 class="mb-2 font-heading text-2xl font-bold text-text">Privacy Policy</h1>
+    <p class="legal-page__updated mb-6 text-xs text-accent-secondary">Last updated: {lastUpdated}</p>
+
+    <div class="legal-page__body space-y-6 text-sm leading-relaxed">
+      <section>
+        <p>Love Heat Relationship ("LHR," "we," "us") publishes home-cooking and travel-food content at loveheatrelationship.com (the "Site"). This policy explains what information the Site collects, how it's used, and the choices you have. We keep this deliberately short because we deliberately collect very little.</p>
+      </section>
+
+      <section>
+        <h2 class="mb-2 font-heading text-lg font-bold text-text">Analytics</h2>
+        <p>We use <a href="https://umami.is" target="_blank" rel="noopener" class="text-accent underline">Umami</a>, a self-hosted, open-source, cookieless analytics tool. Umami does not use cookies, does not assign you a persistent identifier, and does not track you across other websites. It gives us aggregate information such as which pages were viewed, approximate country, referrer, browser, and device type — none of which is tied to your name, email address, or any other identifying information.</p>
+        <p>We also track a small number of custom events (<code>affiliate-click</code>, <code>kitchenware-click</code>) so we can see which affiliate links and kitchenware picks people find useful. These events record which link or product was clicked, not who clicked it.</p>
+        <p>We do not use Google Analytics, Meta Pixel, advertising networks, or any other third-party or closed-source tracking tool. Per our own operating rules, we won't add paid or closed tracking without first updating this policy.</p>
+      </section>
+
+      <section>
+        <h2 class="mb-2 font-heading text-lg font-bold text-text">Cookies</h2>
+        <p>The Site itself does not set cookies for tracking or advertising purposes. The only client-side script beyond analytics is a small bit of JavaScript that toggles the mobile navigation menu; it doesn't store or transmit any data.</p>
+      </section>
+
+      <section>
+        <h2 class="mb-2 font-heading text-lg font-bold text-text">Information you provide directly</h2>
+        <p>The Site does not currently have user accounts, comments, or a newsletter/email signup, so we don't collect names, email addresses, or other contact information through the Site. If that changes, we'll update this policy before any such feature goes live.</p>
+      </section>
+
+      <section>
+        <h2 class="mb-2 font-heading text-lg font-bold text-text">Affiliate links &amp; third-party sites</h2>
+        <p>The Site contains affiliate links — including through the Amazon Associates program and other retail/vendor partners — as described in our <a href="/affiliate-disclosure/" class="text-accent underline">Affiliate Disclosure</a>. When you click one of those links, you leave this Site and land on a third party's website, which has its own privacy policy and may use its own cookies or tracking to attribute purchases. We don't control, and aren't responsible for, how those third parties handle your information. We recommend reviewing the privacy policy of any site you visit after clicking a link from here.</p>
+      </section>
+
+      <section>
+        <h2 class="mb-2 font-heading text-lg font-bold text-text">Hosting &amp; server logs</h2>
+        <p>The Site is hosted on Vercel. Like most hosting providers, Vercel automatically logs standard technical request information (such as IP address, request timestamp, and user agent) for security and infrastructure purposes. This is separate from, and not part of, the Umami analytics described above, and we don't otherwise access or use it.</p>
+      </section>
+
+      <section>
+        <h2 class="mb-2 font-heading text-lg font-bold text-text">Children's privacy</h2>
+        <p>The Site is not directed at children under 13, and we do not knowingly collect information from children.</p>
+      </section>
+
+      <section>
+        <h2 class="mb-2 font-heading text-lg font-bold text-text">Your choices &amp; rights</h2>
+        <p>Because the Site doesn't collect personal information directly, there is generally nothing tied to you for us to access, correct, or delete. If you believe that's not the case, or you have a question or request under a law such as the GDPR or CCPA, contact us using the details below and we'll respond.</p>
+      </section>
+
+      <section>
+        <h2 class="mb-2 font-heading text-lg font-bold text-text">Changes to this policy</h2>
+        <p>If we change what we collect or how we use it, we'll update this page and the "last updated" date above.</p>
+      </section>
+
+      <section>
+        <h2 class="mb-2 font-heading text-lg font-bold text-text">Contact</h2>
+        <p>Questions about this policy? Email <a href="mailto:hello@loveheatrelationship.com" class="text-accent underline">hello@loveheatrelationship.com</a>.</p>
+      </section>
+    </div>
+  </div>
+</BaseLayout>
