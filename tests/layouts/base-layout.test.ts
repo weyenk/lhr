@@ -56,4 +56,11 @@ describe('site footer', () => {
     expect(html).toContain('site-footer');
     expect(html).toContain(`© ${year} Love Heat Relationship`);
   });
+
+  it('links to the legal pages', () => {
+    const html = readFileSync('dist/index.html', 'utf-8');
+    expect(html).toContain('href="/privacy-policy/"');
+    expect(html).toContain('href="/terms-of-service/"');
+    expect(html).toContain('href="/affiliate-disclosure/"');
+  });
 });
