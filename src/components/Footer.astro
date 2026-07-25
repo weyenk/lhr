@@ -1,7 +1,9 @@
 ---
+import EmailSignup from './EmailSignup.astro';
 const year = new Date().getFullYear();
 ---
 <footer class="site-footer border-t border-accent-secondary py-6 text-center text-xs text-accent-secondary">
+  <EmailSignup variant="compact" />
   <div class="mb-1 font-heading text-sm font-bold text-text">lhr</div>
   <div>© {year} Love Heat Relationship</div>
   <nav class="site-footer__legal mt-2 flex justify-center gap-3">

@@ -1,0 +1,60 @@
+---
+interface Props {
+  variant: 'compact' | 'standalone';
+}
+
+const { variant } = Astro.props;
+const formId = import.meta.env.PUBLIC_CONVERTKIT_FORM_ID;
+---
+{formId && (
+  variant === 'standalone' ? (
+    <div class="email-signup email-signup--standalone rounded-lg bg-white p-6 shadow-md">
+      <h2 class="mb-1 font-heading text-lg font-bold text-text">Get new recipes & articles</h2>
+      <p class="mb-4 text-sm text-accent-secondary">No spam, unsubscribe anytime.</p>
+      <form
+        class="email-signup__form flex flex-col gap-3 sm:flex-row"
+        action={`https://app.kit.com/forms/${formId}/subscriptions`}
+        method="post"
+      >
+        <input
+          type="email"
+          name="email_address"
+          required
+          aria-label="Email address"
+          placeholder="you@example.com"
+          class="flex-1 rounded-md border border-accent-secondary bg-background px-3 py-2 text-sm text-text"
+        />
+        <button
+          type="submit"
+          class="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+        >
+          Subscribe
+        </button>
+      </form>
+    </div>
+  ) : (
+    <div class="email-signup email-signup--compact mb-4">
+      <p class="mb-2 font-heading text-sm font-bold text-text">Get new recipes & articles</p>
+      <form
+        class="email-signup__form flex justify-center gap-2"
+        action={`https://app.kit.com/forms/${formId}/subscriptions`}
+        method="post"
+      >
+        <input
+          type="email"
+          name="email_address"
+          required
+          aria-label="Email address"
+          placeholder="you@example.com"
+          class="w-48 rounded-md border border-accent-secondary bg-background px-2 py-1 text-xs text-text"
+        />
+        <button
+          type="submit"
+          class="rounded-md bg-accent px-3 py-1 text-xs font-medium text-white hover:opacity-90"
+        >
+          Subscribe
+        </button>
+      </form>
+    </div>
+  )
+)}
