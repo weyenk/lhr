@@ -7,12 +7,17 @@ items are resolved, added, or reprioritized.
 
 ## Status to confirm (unclear from the repo alone)
 
-- **Umami analytics server** — the site's tracking code (pageviews, `affiliate-click`,
-  `kitchenware-click` events) is fully wired in `BaseLayout.astro` and the link
-  components, but it only does anything once a real Umami instance is provisioned
-  (Fly.io/Railway, per `docs/DEPLOYMENT.md`) and `PUBLIC_UMAMI_WEBSITE_ID` is set in
-  Vercel. `.env.example` still shows that value blank — confirm whether this step has
-  actually been done, or the site is tracking nothing.
+- **Umami analytics server** — confirmed **not yet provisioned**. The site's tracking
+  code (pageviews, `affiliate-click`, `kitchenware-click` events) is fully wired and
+  tested in `BaseLayout.astro` and the link components, but it no-ops until a real
+  Umami instance is stood up (Fly.io/Railway, see `docs/DEPLOYMENT.md`) and
+  `PUBLIC_UMAMI_URL` / `PUBLIC_UMAMI_WEBSITE_ID` are set in Vercel. `.env.example`
+  still shows those values blank — the site is tracking nothing until this happens.
+- **ConvertKit account/form** — same situation as Umami: the email signup component
+  (footer + `/community/` page) is built and reads `PUBLIC_CONVERTKIT_FORM_ID`, but
+  no real ConvertKit account or form exists yet, so it no-ops (renders nothing).
+  Creating the account/form and setting the env var in Vercel is a manual step, see
+  `docs/DEPLOYMENT.md`.
 - **Domain + Vercel connection** — confirm `loveheatrelationship.com` DNS actually
   points at the Vercel project (also a manual step per `docs/DEPLOYMENT.md`).
 
@@ -49,8 +54,10 @@ status; the rest are polish or growth.
 4. **SEO foundations** — sitemap.xml, robots.txt, Open Graph tags, canonical URLs, and
    the schema.org Recipe markup the original content-platform spec flagged but never
    built.
-5. **Email capture / newsletter** — nothing currently converts a reader into a repeat
-   visitor; usually the highest-leverage piece for a content site's revenue.
+5. **Email capture / newsletter** — built: a ConvertKit-backed signup component lives
+   in the site footer and on a new `/community/` "coming soon" page, per
+   `docs/BRAND.md`'s Community page spec. It no-ops until the ConvertKit account/form
+   manual step above is done — see `docs/DEPLOYMENT.md`.
 6. **Error + uptime monitoring** — nothing currently alerts if the site breaks or a
    deploy fails silently.
 7. **Analytics dashboard / conversion review** — once Umami is confirmed live, decide
