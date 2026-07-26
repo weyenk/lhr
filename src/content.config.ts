@@ -1,6 +1,6 @@
 import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
-import { postSchema, productSchema, affiliateLinkSchema, setSchema } from './content/schemas';
+import { postSchema, productSchema, affiliateLinkSchema, setSchema, ingredientLinkSchema } from './content/schemas';
 
 const posts = defineCollection({
   loader: glob({ pattern: '**/*.mdx', base: './src/content/posts' }),
@@ -22,4 +22,9 @@ const sets = defineCollection({
   schema: setSchema,
 });
 
-export const collections = { posts, products, affiliateLinks, sets };
+const ingredientLinks = defineCollection({
+  loader: glob({ pattern: '**/*.json', base: './src/content/ingredient-links' }),
+  schema: ingredientLinkSchema,
+});
+
+export const collections = { posts, products, affiliateLinks, sets, ingredientLinks };

@@ -4,6 +4,7 @@ import { registerAddContentStep } from './addContentStep.js';
 import { registerAttachPhoto } from './attachPhoto.js';
 import { registerLinkKitchenware } from './linkKitchenware.js';
 import { registerAddAffiliateLink } from './addAffiliateLink.js';
+import { registerSuggestAffiliateLinks } from './suggestAffiliateLinks.js';
 import { registerPreviewPost } from './previewPost.js';
 import { registerConfirmAndPublish } from './confirmAndPublish.js';
 import { registerStartNewSet } from './startNewSet.js';
@@ -14,6 +15,7 @@ export function registerTools(server: McpServer, accessToken: string): void {
   registerAttachPhoto(server, accessToken);
   registerLinkKitchenware(server, accessToken);
   registerAddAffiliateLink(server, accessToken);
+  registerSuggestAffiliateLinks(server, accessToken);
   registerPreviewPost(server, accessToken);
   registerConfirmAndPublish(server, accessToken);
   registerStartNewSet(server, accessToken);

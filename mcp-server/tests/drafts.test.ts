@@ -39,6 +39,7 @@ const emptyRecipeDraft = {
   kitchenwareIds: [],
   affiliateLinkIds: [],
   pendingAffiliateLinks: [],
+  pendingIngredientLinks: [],
 };
 
 beforeEach(() => {
@@ -142,6 +143,17 @@ describe('summarizeDraftPost', () => {
     expect(summary).toContain('Title: Jerk Chicken');
     expect(summary).toContain('Ingredients: 1');
     expect(summary).toContain('Steps: 1');
+  });
+
+  it('includes the count of pending ingredient links', () => {
+    const summary = summarizeDraftPost({
+      ...emptyRecipeDraft,
+      title: 'Jerk Chicken',
+      ingredients: [{ item: 'Chicken' }],
+      steps: ['Grill it'],
+      pendingIngredientLinks: [{ ingredient: 'jerk seasoning', affiliateLinkId: 'sauce-ab12' }],
+    });
+    expect(summary).toContain('Ingredient links to remember: 1');
   });
 
   it('includes article-specific section count', () => {

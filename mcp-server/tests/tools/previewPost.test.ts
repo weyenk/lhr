@@ -36,6 +36,7 @@ describe('preview_post', () => {
       kitchenwareIds: [],
       affiliateLinkIds: [],
       pendingAffiliateLinks: [],
+      pendingIngredientLinks: [],
     });
     const server = fakeServer();
     registerPreviewPost(server as never, 'token');

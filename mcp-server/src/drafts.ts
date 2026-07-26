@@ -15,6 +15,7 @@ export const draftPostSchema = z.object({
   pendingAffiliateLinks: z
     .array(z.object({ id: z.string(), label: z.string(), url: z.string().url(), tag: z.string() }))
     .default([]),
+  pendingIngredientLinks: z.array(z.object({ ingredient: z.string(), affiliateLinkId: z.string() })).default([]),
 });
 
 export const draftSetSchema = z.object({
@@ -138,5 +139,6 @@ export function summarizeDraftPost(draft: DraftPost): string {
   lines.push(`Photos: ${draft.photos.length}`);
   lines.push(`Kitchenware linked: ${draft.kitchenwareIds.length}`);
   lines.push(`Affiliate links: ${draft.affiliateLinkIds.length + draft.pendingAffiliateLinks.length}`);
+  lines.push(`Ingredient links to remember: ${draft.pendingIngredientLinks.length}`);
   return lines.join('\n');
 }
