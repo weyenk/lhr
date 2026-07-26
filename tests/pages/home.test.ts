@@ -47,7 +47,10 @@ describe('home page', () => {
     const html = readFileSync('dist/2/index.html', 'utf-8');
     expect((html.match(/article-card/g) ?? []).length).toBe(5);
     expect(html).toContain('href="/posts/pistachio-granita-with-brioche-con-tuppo-a-sicilian-morning-ritual/"');
-    expect(html).toContain('href="/"');
+
+    const paginationNav = html.match(/<nav class="home__pagination[^>]*>[\s\S]*?<\/nav>/);
+    expect(paginationNav).not.toBeNull();
+    expect(paginationNav![0]).toContain('href="/"');
   });
 
   it('renders numbered pagination controls with the current page marked', () => {

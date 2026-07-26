@@ -26,8 +26,11 @@ const mainColumnHeight = (isFirstPage ? HERO_HEIGHT_PX : 0) + page.data.length *
 const sidebarCount = Math.max(1, Math.round(mainColumnHeight / SIDEBAR_ITEM_HEIGHT_PX));
 const sidebarPosts = sidebarPool.slice(0, sidebarCount);
 const pageNumbers = Array.from({ length: page.lastPage }, (_, i) => i + 1);
+const pageHref = (n: number) => (n === 1 ? '/' : `/${n}/`);
+const prevPage = page.currentPage > 1 ? page.currentPage - 1 : null;
+const nextPage = page.currentPage < page.lastPage ? page.currentPage + 1 : null;
 ---
-<BaseLayout title="Love Heat Relationship">
+<BaseLayout title={isFirstPage ? 'Love Heat Relationship' : `Love Heat Relationship — Page ${page.currentPage}`}>
   <div class="mx-auto max-w-[1200px] px-4 py-8">
     <h1 class="sr-only">Love Heat Relationship</h1>
     <div class="grid grid-cols-1 gap-6 md:grid-cols-12">
@@ -52,8 +55,8 @@ const pageNumbers = Array.from({ length: page.lastPage }, (_, i) => i + 1);
           ))}
         </div>
         <nav class="home__pagination mt-6 flex items-center justify-center gap-4 text-sm font-medium" aria-label="Pagination">
-          {page.url.prev ? (
-            <a href={page.url.prev} class="text-text hover:text-accent">‹ Prev</a>
+          {prevPage ? (
+            <a href={pageHref(prevPage)} class="text-text hover:text-accent">‹ Prev</a>
           ) : (
             <span class="text-accent-secondary">‹ Prev</span>
           )}
@@ -61,15 +64,15 @@ const pageNumbers = Array.from({ length: page.lastPage }, (_, i) => i + 1);
             {pageNumbers.map((n) => (
               <li>
                 <a
-                  href={n === 1 ? '/' : `/${n}/`}
+                  href={pageHref(n)}
                   aria-current={n === page.currentPage ? 'page' : undefined}
                   class={n === page.currentPage ? 'font-bold text-accent' : 'text-text hover:text-accent'}
                 >{n}</a>
               </li>
             ))}
           </ul>
-          {page.url.next ? (
-            <a href={page.url.next} class="text-text hover:text-accent">Next ›</a>
+          {nextPage ? (
+            <a href={pageHref(nextPage)} class="text-text hover:text-accent">Next ›</a>
           ) : (
             <span class="text-accent-secondary">Next ›</span>
           )}
