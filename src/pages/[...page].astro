@@ -4,6 +4,10 @@ import PostTag from '../components/PostTag.astro';
 import ArticleCard from '../components/ArticleCard.astro';
 import { getCollection } from 'astro:content';
 
+const HERO_HEIGHT_PX = 500;
+const CARD_HEIGHT_PX = 180;
+const SIDEBAR_ITEM_HEIGHT_PX = 70;
+
 export async function getStaticPaths({ paginate }) {
   const CARDS_PER_PAGE = 5;
   const posts = (await getCollection('posts')).sort(
@@ -18,6 +22,9 @@ export async function getStaticPaths({ paginate }) {
 
 const { page, hero, sidebarPool } = Astro.props;
 const isFirstPage = page.currentPage === 1;
+const mainColumnHeight = (isFirstPage ? HERO_HEIGHT_PX : 0) + page.data.length * CARD_HEIGHT_PX;
+const sidebarCount = Math.max(1, Math.round(mainColumnHeight / SIDEBAR_ITEM_HEIGHT_PX));
+const sidebarPosts = sidebarPool.slice(0, sidebarCount);
 const pageNumbers = Array.from({ length: page.lastPage }, (_, i) => i + 1);
 ---
 <BaseLayout title="Love Heat Relationship">
@@ -68,8 +75,8 @@ const pageNumbers = Array.from({ length: page.lastPage }, (_, i) => i + 1);
           )}
         </nav>
       </div>
-      <ul class="home__recent-list md:col-span-4">
-        {sidebarPool.map((post) => (
+      <ul class="home__recent-list hidden md:block md:col-span-4">
+        {sidebarPosts.map((post) => (
           <li class="home__recent-item mb-3 rounded-lg bg-white p-3 shadow-md">
             <a href={`/posts/${post.id}/`} class="block">
               <PostTag type={post.data.type} />

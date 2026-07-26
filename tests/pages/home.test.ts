@@ -67,4 +67,26 @@ describe('home page', () => {
     expect(html).toContain('post-tag');
     expect(html).toContain('>Recipe<');
   });
+
+  it('hides the sidebar below the md breakpoint', () => {
+    const html = readFileSync('dist/index.html', 'utf-8');
+    expect(html).toContain('home__recent-list hidden md:block');
+  });
+
+  it('sizes the sidebar to roughly match the main column on each page', () => {
+    const countItems = (html: string) => (html.match(/home__recent-item/g) ?? []).length;
+
+    // Page 1: hero (500px) + 5 cards (180px each) = 1400px of main column,
+    // at ~70px per sidebar row -> round(1400 / 70) = 20 items.
+    const page1 = readFileSync('dist/index.html', 'utf-8');
+    expect(countItems(page1)).toBe(20);
+
+    // Page 2: no hero, 5 cards = 900px -> round(900 / 70) = 13 items.
+    const page2 = readFileSync('dist/2/index.html', 'utf-8');
+    expect(countItems(page2)).toBe(13);
+
+    // Page 5 (last): no hero, 1 leftover card = 180px -> round(180 / 70) = 3 items.
+    const page5 = readFileSync('dist/5/index.html', 'utf-8');
+    expect(countItems(page5)).toBe(3);
+  });
 });
