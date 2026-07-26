@@ -6,10 +6,15 @@
     {
       "item": "Prosecco (dry)",
       "amount": "3 oz"
+    },
+    {
+      "item": "St-Germain elderflower liqueur",
+      "amount": "1.5 oz"
     }
   ],
   "steps": [
-    "Fill a large wine glass or stemless glass with ice."
+    "Fill a large wine glass or stemless glass with ice.",
+    "Muddle the mint leaves together with a squeeze of lime in the glass."
   ],
   "sections": [],
   "photos": [],
