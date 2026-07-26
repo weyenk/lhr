@@ -26,8 +26,7 @@ items are resolved, added, or reprioritized.
 These don't live in this repo as specs, but they block treating this as a real
 business and are easy to forget while heads-down on code:
 
-- **Business entity formation** — LLC or sole proprietorship, plus an EIN. Protects
-  you personally and is required to open a business bank account.
+- ~~**Business entity formation**~~ — done. LLC + EIN obtained.
 - **Business bank account** — kept separate from personal, for sane bookkeeping and
   taxes.
 - **Sales tax registration** — only applies if products are sold directly rather than
@@ -41,32 +40,25 @@ business and are easy to forget while heads-down on code:
 
 ## Specs still to write (code/site)
 
-Roughly in priority order — items 1 and 3 are the two blocking "live and legit"
+Roughly in priority order — item 1 is the remaining blocker for "live and legit"
 status; the rest are polish or growth.
 
 1. **Ecommerce platform** — Shopify vs. a custom cart vs. staying affiliate-only.
    Foundational: it determines what the product/cart UI even needs to be, and
    whether sales tax registration applies.
-2. **Visual/brand design system** — the site is currently unstyled HTML with no
-   branding.
-3. **Legal pages** — done in code (`/privacy-policy/`, `/terms-of-service/`,
-   `/affiliate-disclosure/`, linked from the footer). Governing law in the Terms is
-   set to Wisconsin (the LLC's state of formation). Still needs the author's (and
-   ideally a lawyer's) review before publishing, plus a real contact inbox at
-   `hello@loveheatrelationship.com` — currently a placeholder in the drafts.
-4. **SEO foundations** — sitemap.xml, robots.txt, Open Graph tags, canonical URLs, and
+2. **SEO foundations** — sitemap.xml, robots.txt, Open Graph tags, canonical URLs, and
    the schema.org Recipe markup the original content-platform spec flagged but never
    built.
-5. **Email capture / newsletter** — built: a ConvertKit-backed signup component lives
+3. **Email capture / newsletter** — built: a ConvertKit-backed signup component lives
    in the site footer and on a new `/community/` "coming soon" page, per
    `docs/BRAND.md`'s Community page spec. It no-ops until the ConvertKit account/form
    manual step above is done — see `docs/DEPLOYMENT.md`.
-6. **Error + uptime monitoring** — nothing currently alerts if the site breaks or a
+4. **Error + uptime monitoring** — nothing currently alerts if the site breaks or a
    deploy fails silently.
-7. **Analytics dashboard / conversion review** — once Umami is confirmed live, decide
+5. **Analytics dashboard / conversion review** — once Umami is confirmed live, decide
    what "success" looks like (e.g. affiliate click-through rate) and set up a regular
    review; `analytics-reviewer` agent is ready for this once there's data.
-8. **Community features** — forums, giveaways, raffles. `giveaway-compliance-checker`
+6. **Community features** — forums, giveaways, raffles. `giveaway-compliance-checker`
    agent exists for the legal-risk side, but nothing is built yet.
-9. **Content scale-up plan** — once ecommerce and design exist, filling out the
+7. **Content scale-up plan** — once ecommerce and design exist, filling out the
    ~26-posts/6-months cadence for real; `content-strategist` is ready for this.
