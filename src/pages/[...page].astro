@@ -1,0 +1,93 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PostTag from '../components/PostTag.astro';
+import ArticleCard from '../components/ArticleCard.astro';
+import { getCollection } from 'astro:content';
+
+const HERO_HEIGHT_PX = 655;
+const CARD_HEIGHT_PX = 200;
+const SIDEBAR_ITEM_HEIGHT_PX = 98;
+
+export async function getStaticPaths({ paginate }) {
+  const CARDS_PER_PAGE = 5;
+  const posts = (await getCollection('posts')).sort(
+    (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
+  );
+  const [hero, ...cardPosts] = posts;
+  return paginate(cardPosts, {
+    pageSize: CARDS_PER_PAGE,
+    props: { hero, sidebarPool: cardPosts },
+  });
+}
+
+const { page, hero, sidebarPool } = Astro.props;
+const isFirstPage = page.currentPage === 1;
+const mainColumnHeight = (isFirstPage ? HERO_HEIGHT_PX : 0) + page.data.length * CARD_HEIGHT_PX;
+const sidebarCount = Math.max(1, Math.round(mainColumnHeight / SIDEBAR_ITEM_HEIGHT_PX));
+const sidebarPosts = sidebarPool.slice(0, sidebarCount);
+const pageNumbers = Array.from({ length: page.lastPage }, (_, i) => i + 1);
+const pageHref = (n: number) => (n === 1 ? '/' : `/${n}/`);
+const prevPage = page.currentPage > 1 ? page.currentPage - 1 : null;
+const nextPage = page.currentPage < page.lastPage ? page.currentPage + 1 : null;
+---
+<BaseLayout title={isFirstPage ? 'Love Heat Relationship' : `Love Heat Relationship — Page ${page.currentPage}`}>
+  <div class="mx-auto max-w-[1200px] px-4 py-8">
+    <h1 class="sr-only">Love Heat Relationship</h1>
+    <div class="grid grid-cols-1 gap-6 md:grid-cols-12">
+      <div class="md:col-span-8">
+        {isFirstPage && hero && (
+          <a
+            href={`/posts/${hero.id}/`}
+            class="home__featured mb-6 block rounded-lg bg-white p-4 shadow-md"
+          >
+            <img
+              src={hero.data.coverPhoto}
+              alt={hero.data.coverPhotoAlt}
+              class="mb-3 aspect-[3/2] w-full rounded-md object-cover"
+            />
+            <PostTag type={hero.data.type} />
+            <h2 class="mt-1 font-heading text-xl font-bold text-text">{hero.data.title}</h2>
+          </a>
+        )}
+        <div class="home__cards flex flex-col gap-6">
+          {page.data.map((post) => (
+            <ArticleCard post={post} />
+          ))}
+        </div>
+        <nav class="home__pagination mt-6 flex items-center justify-center gap-4 text-sm font-medium" aria-label="Pagination">
+          {prevPage ? (
+            <a href={pageHref(prevPage)} class="text-text hover:text-accent">‹ Prev</a>
+          ) : (
+            <span class="text-accent-secondary">‹ Prev</span>
+          )}
+          <ul class="flex gap-2">
+            {pageNumbers.map((n) => (
+              <li>
+                <a
+                  href={pageHref(n)}
+                  aria-current={n === page.currentPage ? 'page' : undefined}
+                  class={n === page.currentPage ? 'font-bold text-accent' : 'text-text hover:text-accent'}
+                >{n}</a>
+              </li>
+            ))}
+          </ul>
+          {nextPage ? (
+            <a href={pageHref(nextPage)} class="text-text hover:text-accent">Next ›</a>
+          ) : (
+            <span class="text-accent-secondary">Next ›</span>
+          )}
+        </nav>
+      </div>
+      <ul class="home__recent-list hidden md:block md:col-span-4">
+        {sidebarPosts.map((post) => (
+          <li class="home__recent-item mb-3 rounded-lg bg-white p-3 shadow-md">
+            <a href={`/posts/${post.id}/`} class="block">
+              <PostTag type={post.data.type} />
+              <h3 class="mt-1 font-heading text-sm font-medium text-text">{post.data.title}</h3>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </div>
+</BaseLayout>
