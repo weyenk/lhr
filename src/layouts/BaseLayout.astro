@@ -10,6 +10,7 @@ interface Props {
 const { title } = Astro.props;
 const umamiUrl = import.meta.env.PUBLIC_UMAMI_URL;
 const umamiWebsiteId = import.meta.env.PUBLIC_UMAMI_WEBSITE_ID;
+const umamiRecorderUrl = import.meta.env.PUBLIC_UMAMI_RECORDER_URL;
 ---
 <html lang="en">
   <head>
@@ -25,6 +26,9 @@ const umamiWebsiteId = import.meta.env.PUBLIC_UMAMI_WEBSITE_ID;
     />
     {umamiUrl && umamiWebsiteId && (
       <script defer src={umamiUrl} data-website-id={umamiWebsiteId}></script>
+    )}
+    {umamiRecorderUrl && umamiWebsiteId && (
+      <script defer src={umamiRecorderUrl} data-website-id={umamiWebsiteId}></script>
     )}
   </head>
   <body class="bg-background text-text font-body">
