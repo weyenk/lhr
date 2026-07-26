@@ -8,16 +8,22 @@ export function registerStartPost(server: McpServer, accessToken: string): void 
     'start_post',
     {
       title: 'Start or resume a post',
-      description: 'Lists any unfinished draft posts of the given type and offers to resume one, or starts a new draft.',
+      description:
+        'Lists any unfinished draft posts of the given type and offers to resume one, or starts a new draft. Pass startNew to begin an additional draft even while others are open.',
       inputSchema: {
         type: z.enum(['recipe', 'article']).describe('Which kind of post to start'),
+        startNew: z
+          .boolean()
+          .optional()
+          .default(false)
+          .describe('Start a new draft even if unfinished drafts already exist'),
       },
     },
-    async ({ type }: { type: 'recipe' | 'article' }) => {
+    async ({ type, startNew }: { type: 'recipe' | 'article'; startNew?: boolean }) => {
       const client = createGitHubClient(accessToken);
       const openDrafts = await listDrafts(client, 'post');
 
-      if (openDrafts.length > 0) {
+      if (openDrafts.length > 0 && !startNew) {
         const list = openDrafts.map((d) => `- ${d.id}: "${d.title || '(untitled)'}"`).join('\n');
         return {
           content: [

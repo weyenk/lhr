@@ -57,4 +57,22 @@ describe('start_post', () => {
     );
     expect(result.content[0].text).toContain('new1');
   });
+
+  it('creates a new draft when drafts exist but startNew is true', async () => {
+    drafts.listDrafts.mockResolvedValue([{ id: 'abc1', branch: 'draft/post-abc1', title: 'Jerk Chicken' }]);
+    drafts.createDraft.mockResolvedValue({ id: 'new2', branch: 'draft/post-new2' });
+    const server = fakeServer();
+    registerStartPost(server as never, 'token');
+
+    const result = (await server.call('start_post', { type: 'recipe', startNew: true })) as {
+      content: { text: string }[];
+    };
+
+    expect(drafts.createDraft).toHaveBeenCalledWith(
+      expect.anything(),
+      'post',
+      expect.objectContaining({ kind: 'post', postType: 'recipe' }),
+    );
+    expect(result.content[0].text).toContain('new2');
+  });
 });
