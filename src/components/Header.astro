@@ -6,39 +6,41 @@ const navLinks = [
 ];
 ---
 <header class="site-header border-b border-accent-secondary">
-  <div class="mx-auto max-w-[1200px] px-4 py-4 text-center">
-    <a href="/" class="inline-block">
-      <img
-        src="/logo/lhr-logo.png"
-        alt="Love Heat Relationship"
-        class="h-10 w-auto mx-auto"
-      />
-    </a>
-    <button
-      type="button"
-      data-nav-toggle
-      aria-label="Toggle navigation"
-      aria-expanded="false"
-      class="site-header__toggle mt-2 inline-flex items-center justify-center md:hidden"
-    >
-      <svg
-        width="22"
-        height="22"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="1.5"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        class="text-accent"
-        aria-hidden="true"
+  <div class="mx-auto max-w-[1200px] px-4 py-4">
+    <div class="flex items-center justify-between md:justify-center md:relative">
+      <a href="/" class="inline-block">
+        <img
+          src="/logo/lhr-logo.png"
+          alt="Love Heat Relationship"
+          class="h-10 w-auto"
+        />
+      </a>
+      <button
+        type="button"
+        data-nav-toggle
+        aria-label="Toggle navigation"
+        aria-expanded="false"
+        class="site-header__toggle inline-flex items-center justify-center md:hidden"
       >
-        <line x1="4" y1="7" x2="20" y2="7" />
-        <line x1="4" y1="12" x2="20" y2="12" />
-        <line x1="4" y1="17" x2="20" y2="17" />
-      </svg>
-    </button>
-    <nav data-nav-menu class="site-header__nav hidden mt-2 text-sm font-medium md:flex md:justify-center md:gap-6">
+        <svg
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          class="text-accent"
+          aria-hidden="true"
+        >
+          <line x1="4" y1="7" x2="20" y2="7" />
+          <line x1="4" y1="12" x2="20" y2="12" />
+          <line x1="4" y1="17" x2="20" y2="17" />
+        </svg>
+      </button>
+    </div>
+    <nav data-nav-menu class="site-header__nav hidden mt-2 text-sm font-medium text-center md:flex md:justify-center md:gap-6">
       {navLinks.map((link) => (
         <a href={link.href} class="block py-1 text-text hover:text-accent md:inline">{link.label}</a>
       ))}
