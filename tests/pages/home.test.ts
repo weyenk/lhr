@@ -12,24 +12,59 @@ describe('home page', () => {
     expect(html).toContain('Love Heat Relationship');
   });
 
-  it('lists links to all published posts', () => {
-    const html = readFileSync('dist/index.html', 'utf-8');
-    expect(html).toContain('href="/posts/jerk-chicken-platter/"');
-    expect(html).toContain('Jerk Chicken for a Crowd');
-    expect(html).toContain('href="/posts/why-coastal-blue/"');
-    expect(html).toContain('Why We Chose the Coastal Blue Set');
+  it('shows the most recent post as the hero, only on page 1', () => {
+    const page1 = readFileSync('dist/index.html', 'utf-8');
+    expect(page1).toContain('home__featured');
+    expect(page1).toContain('href="/posts/when-gray-skies-call-for-warm-spice-an-apple-cinnamon-muffin-story/"');
+    expect(page1).toContain('When Gray Skies Call for Warm Spice: An Apple Cinnamon Muffin Story');
+
+    const page2 = readFileSync('dist/2/index.html', 'utf-8');
+    expect(page2).not.toContain('home__featured');
   });
 
-  it('splits posts into a featured card and a recent-posts list', () => {
+  it('shows exactly 5 article cards on page 1, excluding the hero post', () => {
     const html = readFileSync('dist/index.html', 'utf-8');
-    expect(html).toContain('home__featured');
-    expect(html).toContain('home__recent-list');
+    // Count occurrences of the card's own class rather than checking
+    // individual post hrefs are absent: the sidebar is allowed to (and,
+    // before Task 2's sizing, does) list every post regardless of which
+    // page's cards are showing, so a post's href can legitimately appear
+    // via the sidebar without being one of this page's cards.
+    expect((html.match(/article-card/g) ?? []).length).toBe(5);
+    expect(html).toContain('href="/posts/date-night-chicken-crust-pizza-with-whiskey-caramelized-onions-amp-bacon/"');
+    expect(html).toContain('href="/posts/oaxacan-velvet-the-grounding-ritual-of-chicken-mole-negro/"');
+    expect(html).toContain('href="/posts/the-pursuit-of-wok-hei-sesame-chicken-at-home/"');
+    expect(html).toContain('href="/posts/suan-la-fen-a-journey-to-the-heart-of-sichuan-from-my-own-kitchen/"');
+    expect(html).toContain('href="/posts/lemon-pepper-wet-an-atlanta-homecoming/"');
   });
 
-  it('tags each post with its type', () => {
+  it('renders a truncated excerpt on each article card', () => {
+    const html = readFileSync('dist/index.html', 'utf-8');
+    expect(html).toContain('line-clamp-3');
+    expect(html).toContain('Skip the delivery with this ultimate low-carb date night pizza!');
+  });
+
+  it('paginates to a second page with the next 5 posts and a link back', () => {
+    const html = readFileSync('dist/2/index.html', 'utf-8');
+    expect((html.match(/article-card/g) ?? []).length).toBe(5);
+    expect(html).toContain('href="/posts/pistachio-granita-with-brioche-con-tuppo-a-sicilian-morning-ritual/"');
+    expect(html).toContain('href="/"');
+  });
+
+  it('renders numbered pagination controls with the current page marked', () => {
+    const html = readFileSync('dist/index.html', 'utf-8');
+    expect(html).toContain('home__pagination');
+    expect(html).toContain('aria-current="page"');
+  });
+
+  it('has a final page with just the single oldest leftover post', () => {
+    const html = readFileSync('dist/5/index.html', 'utf-8');
+    expect((html.match(/article-card/g) ?? []).length).toBe(1);
+    expect(html).toContain('href="/posts/arancini-a-sicilian-street-food-sensation/"');
+  });
+
+  it('tags each card with its post type', () => {
     const html = readFileSync('dist/index.html', 'utf-8');
     expect(html).toContain('post-tag');
     expect(html).toContain('>Recipe<');
-    expect(html).toContain('>Article<');
   });
 });
