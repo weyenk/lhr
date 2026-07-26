@@ -7,14 +7,23 @@ const navLinks = [
 ---
 <header class="site-header sticky top-0 z-50 border-b border-accent-secondary bg-background">
   <div class="mx-auto max-w-[1200px] px-4 py-4">
-    <div class="flex items-center justify-between md:justify-center md:relative">
-      <a href="/" class="inline-block">
+    <div class="flex items-center justify-between gap-4">
+      <a href="/" class="inline-flex shrink-0 items-center gap-2">
         <img
           src="/logo/lhr-logo.png"
           alt="Love Heat Relationship"
           class="h-10 w-auto"
         />
+        <span class="font-heading text-2xl font-bold tracking-tight text-text md:hidden">lhr</span>
+        <span class="hidden font-heading text-2xl font-bold tracking-tight text-text md:inline">Love Heat Relationship</span>
       </a>
+
+      <nav class="hidden items-center gap-6 text-sm font-medium md:flex">
+        {navLinks.map((link) => (
+          <a href={link.href} class="text-text hover:text-accent">{link.label}</a>
+        ))}
+      </nav>
+
       <button
         type="button"
         data-nav-toggle
@@ -40,9 +49,9 @@ const navLinks = [
         </svg>
       </button>
     </div>
-    <nav data-nav-menu class="site-header__nav hidden mt-2 text-sm font-medium text-center md:flex md:justify-center md:gap-6">
+    <nav data-nav-menu class="site-header__nav hidden mt-2 text-sm font-medium text-center md:hidden">
       {navLinks.map((link) => (
-        <a href={link.href} class="block py-1 text-text hover:text-accent md:inline">{link.label}</a>
+        <a href={link.href} class="block py-1 text-text hover:text-accent">{link.label}</a>
       ))}
     </nav>
   </div>
