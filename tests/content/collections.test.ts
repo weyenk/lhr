@@ -19,4 +19,16 @@ describe('content collections', () => {
     const jerkSeasoning = links.find((l) => l.id === 'jerk-seasoning');
     expect(jerkSeasoning?.data.tag).toBe('jerk-seasoning');
   });
+
+  it('loads the seed ingredient link', async () => {
+    const ingredientLinks = await getCollection('ingredientLinks');
+    const jerkSeasoning = ingredientLinks.find((l) => l.id === 'jerk-seasoning');
+    expect(jerkSeasoning?.data.affiliateLinkId).toBe('jerk-seasoning');
+  });
+
+  it('has no duplicate ingredient values in the ingredient-links collection', async () => {
+    const ingredientLinks = await getCollection('ingredientLinks');
+    const values = ingredientLinks.map((l) => l.data.ingredient);
+    expect(new Set(values).size).toBe(values.length);
+  });
 });
