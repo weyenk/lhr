@@ -2,11 +2,12 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PostTag from '../components/PostTag.astro';
 import ArticleCard from '../components/ArticleCard.astro';
+import SidebarPostCard from '../components/SidebarPostCard.astro';
 import { getCollection } from 'astro:content';
 
 const HERO_HEIGHT_PX = 655;
 const CARD_HEIGHT_PX = 200;
-const SIDEBAR_ITEM_HEIGHT_PX = 98;
+const SIDEBAR_ITEM_HEIGHT_PX = 380;
 
 export async function getStaticPaths({ paginate }) {
   const CARDS_PER_PAGE = 5;
@@ -78,13 +79,10 @@ const nextPage = page.currentPage < page.lastPage ? page.currentPage + 1 : null;
           )}
         </nav>
       </div>
-      <ul class="home__recent-list hidden md:block md:col-span-4">
+      <ul class="home__recent-list hidden md:block md:col-span-4 flex flex-col gap-6">
         {sidebarPosts.map((post) => (
-          <li class="home__recent-item mb-3 rounded-lg bg-white p-3 shadow-md">
-            <a href={`/posts/${post.id}/`} class="block">
-              <PostTag type={post.data.type} />
-              <h3 class="mt-1 font-heading text-sm font-medium text-text">{post.data.title}</h3>
-            </a>
+          <li class="home__recent-item">
+            <SidebarPostCard post={post} />
           </li>
         ))}
       </ul>

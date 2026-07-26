@@ -80,16 +80,28 @@ describe('home page', () => {
     const countItems = (html: string) => (html.match(/home__recent-item/g) ?? []).length;
 
     // Page 1: hero (655px) + 5 cards (200px each) = 1655px of main column,
-    // at ~98px per sidebar row -> round(1655 / 98) = 17 items.
+    // at ~380px per sidebar row -> round(1655 / 380) = 4 items.
     const page1 = readFileSync('dist/index.html', 'utf-8');
-    expect(countItems(page1)).toBe(17);
+    expect(countItems(page1)).toBe(4);
 
-    // Page 2: no hero, 5 cards = 1000px -> round(1000 / 98) = 10 items.
+    // Page 2: no hero, 5 cards = 1000px -> round(1000 / 380) = 3 items.
     const page2 = readFileSync('dist/2/index.html', 'utf-8');
-    expect(countItems(page2)).toBe(10);
+    expect(countItems(page2)).toBe(3);
 
-    // Page 5 (last): no hero, 1 leftover card = 200px -> round(200 / 98) = 2 items.
+    // Page 5 (last): no hero, 1 leftover card = 200px -> round(200 / 380) = 1 item.
     const page5 = readFileSync('dist/5/index.html', 'utf-8');
-    expect(countItems(page5)).toBe(2);
+    expect(countItems(page5)).toBe(1);
+  });
+
+  it('renders sidebar items as borderless image cards with a subheadline', () => {
+    const html = readFileSync('dist/index.html', 'utf-8');
+    const sidebarMatch = html.match(/<ul class="home__recent-list[^>]*>[\s\S]*?<\/ul>/);
+    expect(sidebarMatch).not.toBeNull();
+    const sidebarHtml = sidebarMatch![0];
+
+    expect(sidebarHtml).toContain('<img');
+    expect(sidebarHtml).toContain('Skip the delivery with this ultimate low-carb date night pizza!');
+    expect(sidebarHtml).not.toContain('bg-white');
+    expect(sidebarHtml).not.toContain('shadow-md');
   });
 });
