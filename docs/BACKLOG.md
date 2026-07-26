@@ -26,8 +26,7 @@ items are resolved, added, or reprioritized.
 These don't live in this repo as specs, but they block treating this as a real
 business and are easy to forget while heads-down on code:
 
-- **Business entity formation** — LLC or sole proprietorship, plus an EIN. Protects
-  you personally and is required to open a business bank account.
+- ~~**Business entity formation**~~ — done. LLC + EIN obtained.
 - **Business bank account** — kept separate from personal, for sane bookkeeping and
   taxes.
 - **Sales tax registration** — only applies if products are sold directly rather than
