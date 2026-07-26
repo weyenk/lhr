@@ -25,7 +25,8 @@ const { page, hero, sidebarPool } = Astro.props;
 const isFirstPage = page.currentPage === 1;
 const mainColumnHeight = (isFirstPage ? HERO_HEIGHT_PX : 0) + page.data.length * CARD_HEIGHT_PX;
 const sidebarCount = Math.max(1, Math.round(mainColumnHeight / SIDEBAR_ITEM_HEIGHT_PX));
-const sidebarPosts = sidebarPool.slice(0, sidebarCount);
+const sidebarOffset = page.end + 1;
+const sidebarPosts = sidebarPool.slice(sidebarOffset, sidebarOffset + sidebarCount);
 const pageNumbers = Array.from({ length: page.lastPage }, (_, i) => i + 1);
 const pageHref = (n: number) => (n === 1 ? '/' : `/${n}/`);
 const prevPage = page.currentPage > 1 ? page.currentPage - 1 : null;
@@ -79,7 +80,7 @@ const nextPage = page.currentPage < page.lastPage ? page.currentPage + 1 : null;
           )}
         </nav>
       </div>
-      <ul class="home__recent-list hidden md:block md:col-span-4 flex flex-col gap-6">
+      <ul class="home__recent-list hidden md:block md:col-span-4 space-y-6">
         {sidebarPosts.map((post) => (
           <li class="home__recent-item">
             <SidebarPostCard post={post} />

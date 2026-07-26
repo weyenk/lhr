@@ -88,9 +88,12 @@ describe('home page', () => {
     const page2 = readFileSync('dist/2/index.html', 'utf-8');
     expect(countItems(page2)).toBe(3);
 
-    // Page 5 (last): no hero, 1 leftover card = 200px -> round(200 / 380) = 1 item.
+    // Page 5 (last): no hero, 1 leftover card = 200px -> round(200 / 380) = 1
+    // would-be item, but the sidebar now starts right after this page's own
+    // card (sidebarOffset) and there are no posts left in the pool past that
+    // point, so the sidebar is empty here.
     const page5 = readFileSync('dist/5/index.html', 'utf-8');
-    expect(countItems(page5)).toBe(1);
+    expect(countItems(page5)).toBe(0);
   });
 
   it('renders sidebar items as borderless image cards with a subheadline', () => {
@@ -100,8 +103,12 @@ describe('home page', () => {
     const sidebarHtml = sidebarMatch![0];
 
     expect(sidebarHtml).toContain('<img');
-    expect(sidebarHtml).toContain('Skip the delivery with this ultimate low-carb date night pizza!');
+    expect(sidebarHtml).toContain('A taste of Sicily in every bite: Pistachio granita with buttery brioche con tuppo—because summer mornings deserve a little magic.');
     expect(sidebarHtml).not.toContain('bg-white');
     expect(sidebarHtml).not.toContain('shadow-md');
+
+    const listOpenTag = sidebarHtml.match(/<ul class="home__recent-list[^>]*>/)![0];
+    expect(listOpenTag).toMatch(/\bspace-y-/);
+    expect(listOpenTag).not.toMatch(/(^|\s)flex(\s|")/);
   });
 });

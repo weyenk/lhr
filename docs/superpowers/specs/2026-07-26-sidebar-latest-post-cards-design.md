@@ -71,13 +71,42 @@ image on top, text below, directly on the page background:
   cards, pagination, mobile `hidden md:block` sidebar behavior) is
   unchanged.
 
+### Sidebar draws from posts after the current page's cards
+
+The existing `sidebarPool: cardPosts` prop always slices from index 0, so
+every page's sidebar showed the same top-of-pool posts regardless of which
+page's cards were showing — on page 1 specifically, all 4 sidebar posts
+were also 4 of the 5 main-column cards. That was tolerable when the
+sidebar was plain text; it's much more visible once both places show the
+same cover photo. `sidebarPosts` now starts right after the current page's
+own cards, using Astro's pagination `page.end` (the 0-based index, within
+`cardPosts`, of the current page's last card):
+
+```
+const sidebarOffset = page.end + 1;
+const sidebarPosts = sidebarPool.slice(sidebarOffset, sidebarOffset + sidebarCount);
+```
+
+On the last page, this can legitimately slice past the end of the pool —
+`Array.slice` on an out-of-range start just returns `[]`, so the sidebar is
+empty there rather than erroring or repeating earlier posts. That's the
+same "don't show more than you have room for" tolerance the sidebar
+already had.
+
 ### Sidebar count after retuning
 
-With `SIDEBAR_ITEM_HEIGHT_PX = 380`, `sidebarCount = round(mainColumnHeight / 380)`:
+With `SIDEBAR_ITEM_HEIGHT_PX = 380`, `sidebarCount = round(mainColumnHeight / 380)`,
+and the offset above applied:
 
-- Page 1 (hero + 5 cards): `655 + 5*200 = 1655` → `round(1655/380) = 4`
-- Page 2 (5 cards, no hero): `5*200 = 1000` → `round(1000/380) = 3`
-- Last page (1 leftover card): `200` → `round(200/380) = 1` (floor of `max(1, ...)` also applies)
+- Page 1 (hero + 5 cards, `cardPosts[0..4]`): `655 + 5*200 = 1655` →
+  `round(1655/380) = 4` → sidebar shows `cardPosts[5..8]` (no overlap with
+  the 5 main-column cards).
+- Page 2 (5 cards, no hero, `cardPosts[5..9]`): `5*200 = 1000` →
+  `round(1000/380) = 3` → sidebar shows `cardPosts[10..12]`.
+- Last page (1 leftover card, `cardPosts[20..20]`, the only index left in
+  a 21-post pool): `200` → `round(200/380) = 1`, but `sidebarOffset` is 21
+  against a 21-length pool, so the slice is empty → sidebar shows **0**
+  items on the last page.
 
 These replace the current test's expected counts of 17 / 10 / 2 for the
 same three pages.
@@ -85,16 +114,32 @@ same three pages.
 ### Test updates (`tests/pages/home.test.ts`)
 
 - `'sizes the sidebar to roughly match the main column on each page'`:
-  update expected counts to 4 / 3 / 1 per the retuned constant above.
+  update expected counts to 4 / 3 / 0 per the retuned constant and offset
+  above (page 1 / page 2 / last page).
 - `'hides the sidebar below the md breakpoint'`: unchanged, still asserts
   `home__recent-list hidden md:block`.
 - New assertion: sidebar items render an `<img>` and the post's excerpt
   text (mirroring the existing "renders a truncated excerpt" pattern for
   `ArticleCard`), confirming the sidebar now shows images/subheadlines
-  rather than bare titles.
+  rather than bare titles. Since the sidebar now starts at `cardPosts[5]`
+  on page 1 (see offset above), this checks for
+  `pistachio-granita-with-brioche-con-tuppo-a-sicilian-morning-ritual`'s
+  excerpt: "A taste of Sicily in every bite: Pistachio granita with buttery
+  brioche con tuppo—because summer mornings deserve a little magic."
+  (note the em dash before "because").
 - New assertion: a sidebar item does **not** carry `bg-white`/`shadow-md`
   (confirms the borderless treatment), while the hero and main-column
   `ArticleCard`s still do (unchanged).
+- New assertion: the sidebar `<ul>` carries a spacing utility (`space-y-`)
+  and not a bare `flex` class — `flex`/`flex-col`/`gap-*` collide with the
+  `hidden`/`md:block` display toggle already on that element (Tailwind
+  resolves same-specificity utilities by stylesheet order, not class-list
+  order, so `hidden` or the `md:block` media-query rule always wins over
+  `flex`, silently making `gap-*` inert). `space-y-*` applies margin to
+  children instead of relying on the element being a flex container, so it
+  works regardless of which display utility wins — the same pattern
+  already used for the sidebar in `src/layouts/ArticleLayout.astro`
+  (`article-post__sidebar space-y-4 md:col-span-4`).
 
 ## Out of scope
 
