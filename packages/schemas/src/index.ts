@@ -13,6 +13,10 @@ const basePostFields = {
 export const recipePostSchema = z.object({
   type: z.literal('recipe'),
   ...basePostFields,
+  yields: z.number().int().positive().optional(),
+  yieldsUnit: z.string().optional(),
+  prepMinutes: z.number().int().positive().optional(),
+  cookMinutes: z.number().int().positive().optional(),
   ingredients: z
     .array(
       z.object({

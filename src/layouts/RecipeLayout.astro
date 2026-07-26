@@ -22,6 +22,22 @@ if (data.type !== 'recipe') {
 const linkedProducts = getEntriesByIds(data.kitchenwareIds, products);
 const linkedAffiliateLinks = getEntriesByIds(data.affiliateLinkIds, affiliateLinks);
 const { Content } = await render(post);
+
+function formatMinutes(minutes: number): string {
+  if (minutes < 60) return `${minutes} minutes`;
+  const hours = Math.floor(minutes / 60);
+  const remainder = minutes % 60;
+  const hoursText = `${hours} hour${hours === 1 ? '' : 's'}`;
+  return remainder === 0 ? hoursText : `${hoursText} ${remainder} minutes`;
+}
+
+const recipeMeta = [
+  data.yields ? `Yields ${data.yields}${data.yieldsUnit ? ` ${data.yieldsUnit}` : ''}` : null,
+  data.prepMinutes ? `Prep ${formatMinutes(data.prepMinutes)}` : null,
+  data.cookMinutes ? `Cook ${formatMinutes(data.cookMinutes)}` : null,
+]
+  .filter(Boolean)
+  .join(' · ');
 ---
 <BaseLayout title={data.title}>
   <article class="recipe-post mx-auto max-w-[1200px] px-4 py-8">
@@ -35,7 +51,8 @@ const { Content } = await render(post);
     <div class="recipe-post__content space-y-3 text-sm leading-relaxed">
       <Content />
     </div>
-    <h2 class="mt-8 mb-4 font-heading text-sm font-bold uppercase tracking-wide text-accent-secondary">Recipe</h2>
+    <h2 class={`mt-8 font-heading text-sm font-bold uppercase tracking-wide text-accent-secondary ${recipeMeta ? 'mb-1' : 'mb-4'}`}>Recipe</h2>
+    {recipeMeta && <p class="recipe-post__meta mb-4 text-sm italic text-text">{recipeMeta}</p>}
     <div class="recipe-post__layout grid grid-cols-1 gap-6 md:grid-cols-12">
       <div class="order-2 md:order-none md:col-span-8">
         <ol class="recipe-post__steps list-decimal space-y-2 pl-5 text-sm">
