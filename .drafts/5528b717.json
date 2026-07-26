@@ -2,11 +2,19 @@
   "kind": "post",
   "postType": "recipe",
   "title": "Hugo Spritz",
-  "ingredients": [],
-  "steps": [],
+  "ingredients": [
+    {
+      "item": "Prosecco (dry)",
+      "amount": "3 oz"
+    }
+  ],
+  "steps": [
+    "Fill a large wine glass or stemless glass with ice."
+  ],
   "sections": [],
   "photos": [],
   "kitchenwareIds": [],
   "affiliateLinkIds": [],
-  "pendingAffiliateLinks": []
+  "pendingAffiliateLinks": [],
+  "pendingIngredientLinks": []
 }
