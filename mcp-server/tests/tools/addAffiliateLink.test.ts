@@ -37,6 +37,7 @@ function createBaseDraft() {
     kitchenwareIds: [],
     affiliateLinkIds: [],
     pendingAffiliateLinks: [],
+    pendingIngredientLinks: [],
   };
 }
 
@@ -47,9 +48,11 @@ beforeEach(() => {
 describe('add_affiliate_link', () => {
   it('reuses an existing catalog entry matched by URL', async () => {
     draftsMock.readDraft.mockResolvedValue(createBaseDraft());
-    catalogMock.readCollection.mockResolvedValue([
-      { id: 'jerk-seasoning', data: { label: 'The jerk seasoning we used', url: 'https://vendor.example.com/jerk-seasoning', tag: 'jerk-seasoning' } },
-    ]);
+    catalogMock.readCollection.mockImplementation((_client: unknown, dirPath: string) =>
+      dirPath === 'src/content/affiliate-links'
+        ? [{ id: 'jerk-seasoning', data: { label: 'The jerk seasoning we used', url: 'https://vendor.example.com/jerk-seasoning', tag: 'jerk-seasoning' } }]
+        : [],
+    );
     const server = fakeServer();
     registerAddAffiliateLink(server as never, 'token');
 
@@ -71,7 +74,9 @@ describe('add_affiliate_link', () => {
 
   it('stages a new pending entry when no URL match exists', async () => {
     draftsMock.readDraft.mockResolvedValue(createBaseDraft());
-    catalogMock.readCollection.mockResolvedValue([]);
+    catalogMock.readCollection.mockImplementation((_client: unknown, dirPath: string) =>
+      dirPath === 'src/content/affiliate-links' ? [] : [],
+    );
     const server = fakeServer();
     registerAddAffiliateLink(server as never, 'token');
 
@@ -100,9 +105,11 @@ describe('add_affiliate_link', () => {
       affiliateLinkIds: ['existing-link'],
       pendingAffiliateLinks: [{ id: 'first-pending-ab12', label: 'First pending', url: 'https://vendor.example.com/first', tag: 'first' }],
     });
-    catalogMock.readCollection.mockResolvedValue([
-      { id: 'jerk-seasoning', data: { label: 'The jerk seasoning we used', url: 'https://vendor.example.com/jerk-seasoning', tag: 'jerk-seasoning' } },
-    ]);
+    catalogMock.readCollection.mockImplementation((_client: unknown, dirPath: string) =>
+      dirPath === 'src/content/affiliate-links'
+        ? [{ id: 'jerk-seasoning', data: { label: 'The jerk seasoning we used', url: 'https://vendor.example.com/jerk-seasoning', tag: 'jerk-seasoning' } }]
+        : [],
+    );
     const server = fakeServer();
     registerAddAffiliateLink(server as never, 'token');
 
@@ -131,7 +138,9 @@ describe('add_affiliate_link', () => {
       affiliateLinkIds: ['existing-link'],
       pendingAffiliateLinks: [{ id: 'first-pending-ab12', label: 'First pending', url: 'https://vendor.example.com/first', tag: 'first' }],
     });
-    catalogMock.readCollection.mockResolvedValue([]);
+    catalogMock.readCollection.mockImplementation((_client: unknown, dirPath: string) =>
+      dirPath === 'src/content/affiliate-links' ? [] : [],
+    );
     const server = fakeServer();
     registerAddAffiliateLink(server as never, 'token');
 
@@ -153,6 +162,125 @@ describe('add_affiliate_link', () => {
           expect.objectContaining({ label: 'Second pending', url: 'https://vendor.example.com/second', tag: 'second' }),
         ],
       }),
+      expect.any(String),
+    );
+  });
+
+  it('stages a new ingredient-link entry when the ingredient has no existing mapping (URL match branch)', async () => {
+    draftsMock.readDraft.mockResolvedValue(createBaseDraft());
+    catalogMock.readCollection.mockImplementation((_client: unknown, dirPath: string) =>
+      dirPath === 'src/content/affiliate-links'
+        ? [{ id: 'jerk-seasoning', data: { label: 'The jerk seasoning we used', url: 'https://vendor.example.com/jerk-seasoning', tag: 'jerk-seasoning' } }]
+        : [],
+    );
+    const server = fakeServer();
+    registerAddAffiliateLink(server as never, 'token');
+
+    await server.call('add_affiliate_link', {
+      draftId: 'abc1',
+      label: 'Jerk seasoning',
+      url: 'https://vendor.example.com/jerk-seasoning',
+      tag: 'jerk-seasoning',
+      ingredient: '2 tbsp jerk seasoning',
+    });
+
+    expect(draftsMock.writeDraft).toHaveBeenCalledWith(
+      expect.anything(),
+      'post',
+      'abc1',
+      expect.objectContaining({
+        affiliateLinkIds: ['jerk-seasoning'],
+        pendingIngredientLinks: [{ ingredient: 'jerk seasoning', affiliateLinkId: 'jerk-seasoning' }],
+      }),
+      expect.any(String),
+    );
+  });
+
+  it('stages a new ingredient-link entry pointing at a newly-pending affiliate link (no URL match branch)', async () => {
+    draftsMock.readDraft.mockResolvedValue(createBaseDraft());
+    catalogMock.readCollection.mockResolvedValue([]);
+    const server = fakeServer();
+    registerAddAffiliateLink(server as never, 'token');
+
+    await server.call('add_affiliate_link', {
+      draftId: 'abc1',
+      label: 'New sauce',
+      url: 'https://vendor.example.com/new-sauce',
+      tag: 'new-sauce',
+      ingredient: '1 cup new sauce',
+    });
+
+    expect(draftsMock.writeDraft).toHaveBeenCalledWith(
+      expect.anything(),
+      'post',
+      'abc1',
+      expect.objectContaining({
+        pendingAffiliateLinks: [expect.objectContaining({ label: 'New sauce', tag: 'new-sauce' })],
+        pendingIngredientLinks: [expect.objectContaining({ ingredient: 'new sauce' })],
+      }),
+      expect.any(String),
+    );
+    const [, , , writtenDraft] = draftsMock.writeDraft.mock.calls[0] as [
+      unknown,
+      unknown,
+      unknown,
+      { pendingAffiliateLinks: { id: string }[]; pendingIngredientLinks: { affiliateLinkId: string }[] },
+    ];
+    expect(writtenDraft.pendingIngredientLinks[0].affiliateLinkId).toBe(writtenDraft.pendingAffiliateLinks[0].id);
+  });
+
+  it('returns a conflict message and does not modify pendingIngredientLinks when the ingredient already maps elsewhere', async () => {
+    draftsMock.readDraft.mockResolvedValue(createBaseDraft());
+    catalogMock.readCollection.mockImplementation((_client: unknown, dirPath: string) =>
+      dirPath === 'src/content/affiliate-links'
+        ? [{ id: 'jerk-seasoning', data: { label: 'The jerk seasoning we used', url: 'https://vendor.example.com/jerk-seasoning', tag: 'jerk-seasoning' } }]
+        : dirPath === 'src/content/ingredient-links'
+          ? [{ id: 'jerk-seasoning', data: { ingredient: 'jerk seasoning', affiliateLinkId: 'some-other-link' } }]
+          : [],
+    );
+    const server = fakeServer();
+    registerAddAffiliateLink(server as never, 'token');
+
+    const result = (await server.call('add_affiliate_link', {
+      draftId: 'abc1',
+      label: 'Jerk seasoning',
+      url: 'https://vendor.example.com/jerk-seasoning',
+      tag: 'jerk-seasoning',
+      ingredient: 'jerk seasoning',
+    })) as { content: { text: string }[] };
+
+    expect(result.content[0].text.toLowerCase()).toContain('already linked');
+    expect(draftsMock.writeDraft).toHaveBeenCalledWith(
+      expect.anything(),
+      'post',
+      'abc1',
+      expect.objectContaining({ pendingIngredientLinks: [] }),
+      expect.any(String),
+    );
+  });
+
+  it('does not touch pendingIngredientLinks when the ingredient param is omitted', async () => {
+    draftsMock.readDraft.mockResolvedValue(createBaseDraft());
+    catalogMock.readCollection.mockImplementation((_client: unknown, dirPath: string) =>
+      dirPath === 'src/content/affiliate-links'
+        ? [{ id: 'jerk-seasoning', data: { label: 'The jerk seasoning we used', url: 'https://vendor.example.com/jerk-seasoning', tag: 'jerk-seasoning' } }]
+        : [],
+    );
+    const server = fakeServer();
+    registerAddAffiliateLink(server as never, 'token');
+
+    await server.call('add_affiliate_link', {
+      draftId: 'abc1',
+      label: 'Jerk seasoning',
+      url: 'https://vendor.example.com/jerk-seasoning',
+      tag: 'jerk-seasoning',
+    });
+
+    expect(draftsMock.writeDraft).toHaveBeenCalledWith(
+      expect.anything(),
+      'post',
+      'abc1',
+      expect.objectContaining({ pendingIngredientLinks: [] }),
       expect.any(String),
     );
   });
