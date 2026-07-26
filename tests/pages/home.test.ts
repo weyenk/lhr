@@ -79,17 +79,17 @@ describe('home page', () => {
   it('sizes the sidebar to roughly match the main column on each page', () => {
     const countItems = (html: string) => (html.match(/home__recent-item/g) ?? []).length;
 
-    // Page 1: hero (500px) + 5 cards (180px each) = 1400px of main column,
-    // at ~70px per sidebar row -> round(1400 / 70) = 20 items.
+    // Page 1: hero (655px) + 5 cards (200px each) = 1655px of main column,
+    // at ~98px per sidebar row -> round(1655 / 98) = 17 items.
     const page1 = readFileSync('dist/index.html', 'utf-8');
-    expect(countItems(page1)).toBe(20);
+    expect(countItems(page1)).toBe(17);
 
-    // Page 2: no hero, 5 cards = 900px -> round(900 / 70) = 13 items.
+    // Page 2: no hero, 5 cards = 1000px -> round(1000 / 98) = 10 items.
     const page2 = readFileSync('dist/2/index.html', 'utf-8');
-    expect(countItems(page2)).toBe(13);
+    expect(countItems(page2)).toBe(10);
 
-    // Page 5 (last): no hero, 1 leftover card = 180px -> round(180 / 70) = 3 items.
+    // Page 5 (last): no hero, 1 leftover card = 200px -> round(200 / 98) = 2 items.
     const page5 = readFileSync('dist/5/index.html', 'utf-8');
-    expect(countItems(page5)).toBe(3);
+    expect(countItems(page5)).toBe(2);
   });
 });
