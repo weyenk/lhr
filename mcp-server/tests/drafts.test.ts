@@ -145,6 +145,17 @@ describe('summarizeDraftPost', () => {
     expect(summary).toContain('Steps: 1');
   });
 
+  it('includes the count of pending ingredient links', () => {
+    const summary = summarizeDraftPost({
+      ...emptyRecipeDraft,
+      title: 'Jerk Chicken',
+      ingredients: [{ item: 'Chicken' }],
+      steps: ['Grill it'],
+      pendingIngredientLinks: [{ ingredient: 'jerk seasoning', affiliateLinkId: 'sauce-ab12' }],
+    });
+    expect(summary).toContain('Ingredient links to remember: 1');
+  });
+
   it('includes article-specific section count', () => {
     const summary = summarizeDraftPost({
       ...emptyRecipeDraft,

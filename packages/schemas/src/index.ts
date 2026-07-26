@@ -59,8 +59,8 @@ export const affiliateLinkSchema = z.object({
 });
 
 export const ingredientLinkSchema = z.object({
-  ingredient: z.string(),
-  affiliateLinkId: z.string(),
+  ingredient: z.string().min(1),
+  affiliateLinkId: z.string().min(1),
 });
 
 export const setSchema = z.object({

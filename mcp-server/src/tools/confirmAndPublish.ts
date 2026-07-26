@@ -30,13 +30,28 @@ async function publishPost(client: GitHubClient, draftId: string) {
   }
 
   const slug = await uniqueSlug(client, draft.title);
+
+  const existingIngredientLinks = await readCollection<{ ingredient: string; affiliateLinkId: string }>(
+    client,
+    'src/content/ingredient-links',
+  );
+  const conflictingIngredients: string[] = [];
+  const safeIngredientLinks = draft.pendingIngredientLinks.filter((link) => {
+    const existing = existingIngredientLinks.find((e) => e.data.ingredient === link.ingredient);
+    if (existing && existing.data.affiliateLinkId !== link.affiliateLinkId) {
+      conflictingIngredients.push(link.ingredient);
+      return false;
+    }
+    return true;
+  });
+
   const files: FileWrite[] = [
     { path: `src/content/posts/${slug}.mdx`, content: renderFrontmatterYaml(frontmatter) },
     ...draft.pendingAffiliateLinks.map((link) => ({
       path: `src/content/affiliate-links/${link.id}.json`,
       content: JSON.stringify({ label: link.label, url: link.url, tag: link.tag }, null, 2),
     })),
-    ...draft.pendingIngredientLinks.map((link) => ({
+    ...safeIngredientLinks.map((link) => ({
       path: `src/content/ingredient-links/${slugify(link.ingredient)}.json`,
       content: JSON.stringify({ ingredient: link.ingredient, affiliateLinkId: link.affiliateLinkId }, null, 2),
     })),
@@ -45,7 +60,12 @@ async function publishPost(client: GitHubClient, draftId: string) {
   await commitFilesToMain(client, files, `Publish post: ${draft.title}`);
   await deleteDraftBranch(client, 'post', draftId);
 
-  return { content: [{ type: 'text' as const, text: `Published "${draft.title}" at /posts/${slug}/` }] };
+  let text = `Published "${draft.title}" at /posts/${slug}/`;
+  if (conflictingIngredients.length > 0) {
+    text += ` Note: skipped ${conflictingIngredients.length} ingredient-link(s) already mapped to a different link: ${conflictingIngredients.join(', ')}.`;
+  }
+
+  return { content: [{ type: 'text' as const, text }] };
 }
 
 interface ExistingSetData {

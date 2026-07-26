@@ -31,4 +31,13 @@ describe('content collections', () => {
     const values = ingredientLinks.map((l) => l.data.ingredient);
     expect(new Set(values).size).toBe(values.length);
   });
+
+  it('every ingredient-link points at an affiliate-link that actually exists', async () => {
+    const ingredientLinks = await getCollection('ingredientLinks');
+    const affiliateLinks = await getCollection('affiliateLinks');
+    const affiliateLinkIds = new Set(affiliateLinks.map((l) => l.id));
+    for (const link of ingredientLinks) {
+      expect(affiliateLinkIds.has(link.data.affiliateLinkId)).toBe(true);
+    }
+  });
 });

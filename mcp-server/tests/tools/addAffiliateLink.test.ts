@@ -259,6 +259,40 @@ describe('add_affiliate_link', () => {
     );
   });
 
+  it('warns without overwriting when the ingredient is already staged for a different affiliate link in this same draft', async () => {
+    draftsMock.readDraft.mockResolvedValue({
+      ...createBaseDraft(),
+      pendingIngredientLinks: [{ ingredient: 'jerk seasoning', affiliateLinkId: 'first-pending-ab12' }],
+    });
+    catalogMock.readCollection.mockImplementation((_client: unknown, dirPath: string) =>
+      dirPath === 'src/content/affiliate-links'
+        ? [{ id: 'jerk-seasoning', data: { label: 'The jerk seasoning we used', url: 'https://vendor.example.com/jerk-seasoning', tag: 'jerk-seasoning' } }]
+        : [],
+    );
+    const server = fakeServer();
+    registerAddAffiliateLink(server as never, 'token');
+
+    const result = (await server.call('add_affiliate_link', {
+      draftId: 'abc1',
+      label: 'Jerk seasoning',
+      url: 'https://vendor.example.com/jerk-seasoning',
+      tag: 'jerk-seasoning',
+      ingredient: 'jerk seasoning',
+    })) as { content: { text: string }[] };
+
+    expect(result.content[0].text.toLowerCase()).toContain('already staged');
+    expect(result.content[0].text.toLowerCase()).not.toContain('will remember');
+    expect(draftsMock.writeDraft).toHaveBeenCalledWith(
+      expect.anything(),
+      'post',
+      'abc1',
+      expect.objectContaining({
+        pendingIngredientLinks: [{ ingredient: 'jerk seasoning', affiliateLinkId: 'first-pending-ab12' }],
+      }),
+      expect.any(String),
+    );
+  });
+
   it('does not touch pendingIngredientLinks when the ingredient param is omitted', async () => {
     draftsMock.readDraft.mockResolvedValue(createBaseDraft());
     catalogMock.readCollection.mockImplementation((_client: unknown, dirPath: string) =>
@@ -274,6 +308,33 @@ describe('add_affiliate_link', () => {
       label: 'Jerk seasoning',
       url: 'https://vendor.example.com/jerk-seasoning',
       tag: 'jerk-seasoning',
+    });
+
+    expect(draftsMock.writeDraft).toHaveBeenCalledWith(
+      expect.anything(),
+      'post',
+      'abc1',
+      expect.objectContaining({ pendingIngredientLinks: [] }),
+      expect.any(String),
+    );
+  });
+
+  it('ignores the ingredient param for article drafts and leaves pendingIngredientLinks untouched', async () => {
+    draftsMock.readDraft.mockResolvedValue({ ...createBaseDraft(), postType: 'article' as const });
+    catalogMock.readCollection.mockImplementation((_client: unknown, dirPath: string) =>
+      dirPath === 'src/content/affiliate-links'
+        ? [{ id: 'jerk-seasoning', data: { label: 'The jerk seasoning we used', url: 'https://vendor.example.com/jerk-seasoning', tag: 'jerk-seasoning' } }]
+        : [],
+    );
+    const server = fakeServer();
+    registerAddAffiliateLink(server as never, 'token');
+
+    await server.call('add_affiliate_link', {
+      draftId: 'abc1',
+      label: 'Jerk seasoning',
+      url: 'https://vendor.example.com/jerk-seasoning',
+      tag: 'jerk-seasoning',
+      ingredient: 'jerk seasoning',
     });
 
     expect(draftsMock.writeDraft).toHaveBeenCalledWith(

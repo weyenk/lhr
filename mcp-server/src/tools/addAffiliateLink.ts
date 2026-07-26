@@ -54,7 +54,7 @@ export function registerAddAffiliateLink(server: McpServer, accessToken: string)
       }
 
       let ingredientMessage = '';
-      if (ingredient) {
+      if (ingredient && draft.postType === 'recipe') {
         const normalized = normalizeIngredient(ingredient);
         const existingLinks = await readCollection<IngredientLinkData>(client, 'src/content/ingredient-links');
         const existingEntry = existingLinks.find((e) => e.data.ingredient === normalized);
@@ -62,14 +62,18 @@ export function registerAddAffiliateLink(server: McpServer, accessToken: string)
         if (existingEntry && existingEntry.data.affiliateLinkId !== resolvedAffiliateLinkId) {
           ingredientMessage = ` Note: "${normalized}" is already linked to a different affiliate link (${existingEntry.data.affiliateLinkId}); not overwriting.`;
         } else if (!existingEntry) {
-          const alreadyPending = draft.pendingIngredientLinks.some((p) => p.ingredient === normalized);
-          if (!alreadyPending) {
+          const pendingEntry = draft.pendingIngredientLinks.find((p) => p.ingredient === normalized);
+          if (!pendingEntry) {
             draft.pendingIngredientLinks = [
               ...draft.pendingIngredientLinks,
               { ingredient: normalized, affiliateLinkId: resolvedAffiliateLinkId },
             ];
+            ingredientMessage = ` Will remember "${normalized}" → this link for future recipes.`;
+          } else if (pendingEntry.affiliateLinkId === resolvedAffiliateLinkId) {
+            ingredientMessage = ` Will remember "${normalized}" → this link for future recipes.`;
+          } else {
+            ingredientMessage = ` Note: "${normalized}" is already staged for a different affiliate link in this draft; not overwriting.`;
           }
-          ingredientMessage = ` Will remember "${normalized}" → this link for future recipes.`;
         }
       }
 

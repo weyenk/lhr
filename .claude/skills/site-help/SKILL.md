@@ -30,7 +30,7 @@ picking it up days later.
 | `add_content_step` | Sets the title, or appends one ingredient+step (recipe) / one section (article). Call repeatedly. |
 | `attach_photo` | Fetches a shared photo URL (e.g. an iCloud link) and attaches it to the draft. |
 | `link_kitchenware` | Shows the current active set's products, or links given product ids to the draft. |
-| `add_affiliate_link` | Adds a label + URL + tag; reuses an existing catalog entry if the URL is already known. |
+| `add_affiliate_link` | Adds a label + URL + tag; reuses an existing catalog entry if the URL is already known. Optional `ingredient` (recipes only) remembers this link for that ingredient on future recipes. |
 | `suggest_affiliate_links` | Checks a recipe draft's ingredients against previously-approved affiliate links and reports matches/unmatches for you to confirm before adding any new ones. |
 | `preview_post` | Shows a summary of the draft (counts of ingredients/steps/sections/photos/links) before publishing. |
 | `confirm_and_publish` | Validates and publishes a draft (post or set) to the live site. |
@@ -45,12 +45,13 @@ picking it up days later.
 3. **`suggest_affiliate_links`** (recipes only) — once ingredients are entered,
    the assistant checks them against the ingredient-link library and tells you
    which ones already have a known affiliate link. Confirm the ones you want,
-   skip the rest, or supply a link for anything unmatched — accepting a
-   suggestion or adding a new link here also remembers it for future recipes.
+   skip the rest, or supply a link for anything unmatched.
 4. **`attach_photo`** at least once — required to publish.
 5. **`link_kitchenware`** (optional) — call with no `productIds` first to see
    the active set's lineup, then again with ids to link them.
-6. **`add_affiliate_link`** (optional) — label + URL + tag per link.
+6. **`add_affiliate_link`** (optional) — label + URL + tag per link. Pass
+   `ingredient` (recipes only) to remember this link for that ingredient on
+   future recipes.
 7. **`preview_post`** — sanity-check the counts before going live.
 8. **`confirm_and_publish`** — commits the post and clears the draft branch.
 

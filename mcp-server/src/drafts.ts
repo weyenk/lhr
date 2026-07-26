@@ -139,5 +139,6 @@ export function summarizeDraftPost(draft: DraftPost): string {
   lines.push(`Photos: ${draft.photos.length}`);
   lines.push(`Kitchenware linked: ${draft.kitchenwareIds.length}`);
   lines.push(`Affiliate links: ${draft.affiliateLinkIds.length + draft.pendingAffiliateLinks.length}`);
+  lines.push(`Ingredient links to remember: ${draft.pendingIngredientLinks.length}`);
   return lines.join('\n');
 }

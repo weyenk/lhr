@@ -1,5 +1,5 @@
 import { createGitHubClient, listFiles, getFile, commitFilesToMain } from '../src/github.js';
-import { readCollection } from '../src/catalog.js';
+import { readCollection, slugify } from '../src/catalog.js';
 import { postSchema } from '@lhr/schemas';
 import { parsePostFrontmatter, computeBackfillEntries, type BackfillPost } from '../src/backfillIngredientLinks.js';
 
@@ -43,7 +43,7 @@ async function main() {
   }
 
   const files = seeded.map((s) => ({
-    path: `src/content/ingredient-links/${s.ingredient.replace(/\s+/g, '-')}.json`,
+    path: `src/content/ingredient-links/${slugify(s.ingredient)}.json`,
     content: JSON.stringify({ ingredient: s.ingredient, affiliateLinkId: s.affiliateLinkId }, null, 2),
   }));
   await commitFilesToMain(client, files, 'Backfill ingredient-links from existing posts');

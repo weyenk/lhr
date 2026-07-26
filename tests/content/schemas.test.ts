@@ -143,4 +143,12 @@ describe('ingredientLinkSchema', () => {
     });
     expect(result.success).toBe(false);
   });
+
+  it('rejects an empty-string ingredient', () => {
+    const result = ingredientLinkSchema.safeParse({
+      ingredient: '',
+      affiliateLinkId: 'jerk-seasoning',
+    });
+    expect(result.success).toBe(false);
+  });
 });
