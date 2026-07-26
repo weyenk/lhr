@@ -39,6 +39,7 @@ const emptyRecipeDraft = {
   kitchenwareIds: [],
   affiliateLinkIds: [],
   pendingAffiliateLinks: [],
+  pendingIngredientLinks: [],
 };
 
 beforeEach(() => {

@@ -53,7 +53,7 @@ describe('start_post', () => {
     expect(drafts.createDraft).toHaveBeenCalledWith(
       expect.anything(),
       'post',
-      expect.objectContaining({ kind: 'post', postType: 'article' }),
+      expect.objectContaining({ kind: 'post', postType: 'article', pendingAffiliateLinks: [], pendingIngredientLinks: [] }),
     );
     expect(result.content[0].text).toContain('new1');
   });

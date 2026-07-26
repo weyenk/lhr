@@ -15,6 +15,7 @@ export const draftPostSchema = z.object({
   pendingAffiliateLinks: z
     .array(z.object({ id: z.string(), label: z.string(), url: z.string().url(), tag: z.string() }))
     .default([]),
+  pendingIngredientLinks: z.array(z.object({ ingredient: z.string(), affiliateLinkId: z.string() })).default([]),
 });
 
 export const draftSetSchema = z.object({

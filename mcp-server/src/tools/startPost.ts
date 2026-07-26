@@ -40,6 +40,7 @@ export function registerStartPost(server: McpServer, accessToken: string): void 
         kitchenwareIds: [],
         affiliateLinkIds: [],
         pendingAffiliateLinks: [],
+        pendingIngredientLinks: [],
       };
       const { id } = await createDraft(client, 'post', initial);
       return {
