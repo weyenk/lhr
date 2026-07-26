@@ -1,6 +1,24 @@
-import { put } from '@vercel/blob';
+import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 
 const MAX_PHOTO_BYTES = 25 * 1024 * 1024;
+
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) throw new Error(`${name} is not set`);
+  return value;
+}
+
+function getR2Client(): S3Client {
+  const accountId = requireEnv('R2_ACCOUNT_ID');
+  return new S3Client({
+    region: 'auto',
+    endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+    credentials: {
+      accessKeyId: requireEnv('R2_ACCESS_KEY_ID'),
+      secretAccessKey: requireEnv('R2_SECRET_ACCESS_KEY'),
+    },
+  });
+}
 
 export async function fetchAndStorePhoto(photoUrl: string): Promise<string> {
   const response = await fetch(photoUrl);
@@ -20,7 +38,16 @@ export async function fetchAndStorePhoto(photoUrl: string): Promise<string> {
 
   const buffer = Buffer.from(arrayBuffer);
   const extension = contentType.split('/')[1]?.split(';')[0] ?? 'jpg';
-  const filename = `posts/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${extension}`;
-  const blob = await put(filename, buffer, { access: 'public', contentType });
-  return blob.url;
+  const key = `posts/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${extension}`;
+
+  await getR2Client().send(
+    new PutObjectCommand({
+      Bucket: requireEnv('R2_BUCKET_NAME'),
+      Key: key,
+      Body: buffer,
+      ContentType: contentType,
+    }),
+  );
+
+  return `${requireEnv('R2_PUBLIC_URL').replace(/\/$/, '')}/${key}`;
 }
