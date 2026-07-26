@@ -63,7 +63,7 @@ In `tests/pages/home.test.ts`, replace the existing `'sizes the sidebar to rough
 Add this test directly after the one from Step 1, in the same `describe` block:
 
 ```typescript
-  it('renders sidebar items as borderless, spaced image cards with a subheadline', () => {
+  it('renders sidebar items as borderless image cards with a subheadline', () => {
     const html = readFileSync('dist/index.html', 'utf-8');
     const sidebarMatch = html.match(/<ul class="home__recent-list[^>]*>[\s\S]*?<\/ul>/);
     expect(sidebarMatch).not.toBeNull();
@@ -74,9 +74,9 @@ Add this test directly after the one from Step 1, in the same `describe` block:
     expect(sidebarHtml).not.toContain('bg-white');
     expect(sidebarHtml).not.toContain('shadow-md');
 
-    const openingTag = sidebarHtml.match(/<ul class="([^"]*)"/)![1];
-    expect(openingTag).toMatch(/\bspace-y-\d+\b/);
-    expect(openingTag).not.toMatch(/(^|\s)flex(\s|$)/);
+    const listOpenTag = sidebarHtml.match(/<ul class="home__recent-list[^>]*>/)![0];
+    expect(listOpenTag).toMatch(/\bspace-y-/);
+    expect(listOpenTag).not.toMatch(/(^|\s)flex(\s|")/);
   });
 ```
 
