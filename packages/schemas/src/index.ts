@@ -58,6 +58,11 @@ export const affiliateLinkSchema = z.object({
   tag: z.string(),
 });
 
+export const ingredientLinkSchema = z.object({
+  ingredient: z.string(),
+  affiliateLinkId: z.string(),
+});
+
 export const setSchema = z.object({
   name: z.string(),
   startDate: z.coerce.date(),
@@ -67,4 +72,5 @@ export const setSchema = z.object({
 export type PostData = z.infer<typeof postSchema>;
 export type ProductData = z.infer<typeof productSchema>;
 export type AffiliateLinkData = z.infer<typeof affiliateLinkSchema>;
+export type IngredientLinkData = z.infer<typeof ingredientLinkSchema>;
 export type SetData = z.infer<typeof setSchema>;

@@ -4,6 +4,7 @@ import {
   articlePostSchema,
   productSchema,
   affiliateLinkSchema,
+  ingredientLinkSchema,
   setSchema,
 } from '../../src/content/schemas';
 
@@ -117,5 +118,29 @@ describe('setSchema', () => {
       endDate: '2026-12-31',
     });
     expect(result.success).toBe(true);
+  });
+});
+
+describe('ingredientLinkSchema', () => {
+  it('accepts a valid ingredient link', () => {
+    const result = ingredientLinkSchema.safeParse({
+      ingredient: 'jerk seasoning',
+      affiliateLinkId: 'jerk-seasoning',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects a missing affiliateLinkId', () => {
+    const result = ingredientLinkSchema.safeParse({
+      ingredient: 'jerk seasoning',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects a missing ingredient', () => {
+    const result = ingredientLinkSchema.safeParse({
+      affiliateLinkId: 'jerk-seasoning',
+    });
+    expect(result.success).toBe(false);
   });
 });
