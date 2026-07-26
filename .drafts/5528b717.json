@@ -10,11 +10,16 @@
     {
       "item": "St-Germain elderflower liqueur",
       "amount": "1.5 oz"
+    },
+    {
+      "item": "San Pellegrino sparkling water",
+      "amount": "1 oz"
     }
   ],
   "steps": [
     "Fill a large wine glass or stemless glass with ice.",
-    "Muddle the mint leaves together with a squeeze of lime in the glass."
+    "Muddle the mint leaves together with a squeeze of lime in the glass.",
+    "Pour in the St-Germain, then the Prosecco."
   ],
   "sections": [],
   "photos": [],
