@@ -36,6 +36,10 @@ async function publishPost(client: GitHubClient, draftId: string) {
       path: `src/content/affiliate-links/${link.id}.json`,
       content: JSON.stringify({ label: link.label, url: link.url, tag: link.tag }, null, 2),
     })),
+    ...draft.pendingIngredientLinks.map((link) => ({
+      path: `src/content/ingredient-links/${slugify(link.ingredient)}.json`,
+      content: JSON.stringify({ ingredient: link.ingredient, affiliateLinkId: link.affiliateLinkId }, null, 2),
+    })),
   ];
 
   await commitFilesToMain(client, files, `Publish post: ${draft.title}`);

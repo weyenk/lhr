@@ -55,6 +55,7 @@ const validRecipeDraft = {
   kitchenwareIds: [],
   affiliateLinkIds: [],
   pendingAffiliateLinks: [{ id: 'sauce-ab12', label: 'Sauce', url: 'https://vendor.example.com/sauce', tag: 'sauce' }],
+  pendingIngredientLinks: [{ ingredient: 'jerk seasoning', affiliateLinkId: 'sauce-ab12' }],
 };
 
 beforeEach(() => {
@@ -79,11 +80,30 @@ describe('confirm_and_publish (post)', () => {
       expect.arrayContaining([
         expect.objectContaining({ path: 'src/content/posts/jerk-chicken.mdx' }),
         expect.objectContaining({ path: 'src/content/affiliate-links/sauce-ab12.json' }),
+        expect.objectContaining({
+          path: 'src/content/ingredient-links/jerk-seasoning.json',
+          content: JSON.stringify({ ingredient: 'jerk seasoning', affiliateLinkId: 'sauce-ab12' }, null, 2),
+        }),
       ]),
       expect.stringContaining('Jerk Chicken'),
     );
     expect(draftsMock.deleteDraftBranch).toHaveBeenCalledWith(expect.anything(), 'post', 'abc1');
     expect(result.content[0].text).toContain('jerk-chicken');
+  });
+
+  it('commits no ingredient-links files when none are pending', async () => {
+    draftsMock.findDraftKind.mockResolvedValue('post');
+    draftsMock.readDraft.mockResolvedValue({ ...validRecipeDraft, pendingIngredientLinks: [] });
+    catalogMock.uniqueSlug.mockResolvedValue('jerk-chicken');
+    githubMock.commitFilesToMain.mockResolvedValue('commit-sha');
+
+    const server = fakeServer();
+    registerConfirmAndPublish(server as never, 'token');
+
+    await server.call('confirm_and_publish', { draftId: 'abc1' });
+
+    const [, files] = githubMock.commitFilesToMain.mock.calls[0] as [unknown, { path: string }[]];
+    expect(files.some((f) => f.path.startsWith('src/content/ingredient-links/'))).toBe(false);
   });
 
   it('rejects a recipe draft with no ingredients without committing anything', async () => {
