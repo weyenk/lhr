@@ -24,6 +24,33 @@ describe('Umami analytics script', () => {
   }, 60000);
 });
 
+describe('Umami replays/heatmaps recorder script', () => {
+  it('is included in the build when the recorder env var is set alongside the website id', () => {
+    execSync('npm run build', {
+      stdio: 'inherit',
+      env: {
+        ...process.env,
+        PUBLIC_UMAMI_RECORDER_URL: 'https://umami.loveheatrelationship.com/recorder.js',
+        PUBLIC_UMAMI_WEBSITE_ID: 'test-website-id',
+      },
+    });
+    const html = readFileSync('dist/index.html', 'utf-8');
+    expect(html).toContain('src="https://umami.loveheatrelationship.com/recorder.js"');
+  }, 60000);
+
+  it('is omitted from the build when the recorder env var is unset', () => {
+    execSync('npm run build', {
+      stdio: 'inherit',
+      env: {
+        ...process.env,
+        PUBLIC_UMAMI_WEBSITE_ID: 'test-website-id',
+      },
+    });
+    const html = readFileSync('dist/index.html', 'utf-8');
+    expect(html).not.toContain('recorder.js');
+  }, 60000);
+});
+
 describe('site header', () => {
   beforeAll(() => {
     execSync('npm run build', { stdio: 'inherit' });
