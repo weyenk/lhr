@@ -2,7 +2,7 @@ import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 
 const MAX_PHOTO_BYTES = 25 * 1024 * 1024;
 
-function requireEnv(name: string): string {
+export function requireEnv(name: string): string {
   const value = process.env[name];
   if (!value) throw new Error(`${name} is not set`);
   return value;
@@ -20,23 +20,14 @@ function getR2Client(): S3Client {
   });
 }
 
-export async function fetchAndStorePhoto(photoUrl: string): Promise<string> {
-  const response = await fetch(photoUrl);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch photo from ${photoUrl}: ${response.status}`);
-  }
-
-  const contentType = response.headers.get('content-type') ?? '';
+export async function storeImageBuffer(buffer: Buffer, contentType: string): Promise<string> {
   if (!contentType.startsWith('image/')) {
-    throw new Error(`URL did not return an image (content-type: ${contentType || 'unknown'})`);
+    throw new Error(`Unsupported content type (expected an image, got ${contentType || 'unknown'})`);
+  }
+  if (buffer.byteLength > MAX_PHOTO_BYTES) {
+    throw new Error(`Photo is too large (${buffer.byteLength} bytes, max ${MAX_PHOTO_BYTES})`);
   }
 
-  const arrayBuffer = await response.arrayBuffer();
-  if (arrayBuffer.byteLength > MAX_PHOTO_BYTES) {
-    throw new Error(`Photo is too large (${arrayBuffer.byteLength} bytes, max ${MAX_PHOTO_BYTES})`);
-  }
-
-  const buffer = Buffer.from(arrayBuffer);
   const extension = contentType.split('/')[1]?.split(';')[0] ?? 'jpg';
   const key = `posts/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${extension}`;
 
@@ -50,4 +41,15 @@ export async function fetchAndStorePhoto(photoUrl: string): Promise<string> {
   );
 
   return `${requireEnv('R2_PUBLIC_URL').replace(/\/$/, '')}/${key}`;
+}
+
+export async function fetchAndStorePhoto(photoUrl: string): Promise<string> {
+  const response = await fetch(photoUrl);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch photo from ${photoUrl}: ${response.status}`);
+  }
+
+  const contentType = response.headers.get('content-type') ?? '';
+  const arrayBuffer = await response.arrayBuffer();
+  return storeImageBuffer(Buffer.from(arrayBuffer), contentType);
 }
