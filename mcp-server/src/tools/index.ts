@@ -2,6 +2,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { registerStartPost } from './startPost.js';
 import { registerAddContentStep } from './addContentStep.js';
 import { registerAttachPhoto } from './attachPhoto.js';
+import { registerGetPhotoUploadLink } from './getPhotoUploadLink.js';
 import { registerLinkKitchenware } from './linkKitchenware.js';
 import { registerAddAffiliateLink } from './addAffiliateLink.js';
 import { registerSuggestAffiliateLinks } from './suggestAffiliateLinks.js';
@@ -13,6 +14,7 @@ export function registerTools(server: McpServer, accessToken: string): void {
   registerStartPost(server, accessToken);
   registerAddContentStep(server, accessToken);
   registerAttachPhoto(server, accessToken);
+  registerGetPhotoUploadLink(server, accessToken);
   registerLinkKitchenware(server, accessToken);
   registerAddAffiliateLink(server, accessToken);
   registerSuggestAffiliateLinks(server, accessToken);
