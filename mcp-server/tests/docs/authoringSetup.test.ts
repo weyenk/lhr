@@ -9,5 +9,7 @@ describe('authoring setup docs', () => {
     expect(text).toContain('Vercel Blob');
     expect(text).toContain('custom MCP connector');
     expect(text).toContain('Claude.ai Project');
+    expect(text).toContain('UPLOAD_LINK_SECRET');
+    expect(text).toContain('AUTHOR_GITHUB_TOKEN');
   });
 });
