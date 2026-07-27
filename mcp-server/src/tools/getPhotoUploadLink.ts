@@ -23,7 +23,7 @@ export function registerGetPhotoUploadLink(server: McpServer, accessToken: strin
 
       const { token, expiresAt } = signUploadLink(draftId);
       const baseUrl = requireEnv('MCP_SERVER_URL').replace(/\/$/, '');
-      const url = `${baseUrl}/upload/${draftId}?exp=${expiresAt}&token=${token}`;
+      const url = `${baseUrl}/upload/${encodeURIComponent(draftId)}?exp=${expiresAt}&token=${token}`;
 
       return {
         content: [

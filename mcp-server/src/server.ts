@@ -49,17 +49,22 @@ function renderUploadPage(draftId: string, exp: string, token: string): string {
           item.textContent = 'Uploading ' + file.name + '...';
           statusList.appendChild(item);
           try {
-            const res = await fetch('/upload/' + draftId + '/photo?exp=' + exp + '&token=' + token, {
-              method: 'POST',
-              headers: { 'Content-Type': file.type },
-              body: file,
-            });
-            const data = await res.json();
-            if (res.ok && data.ok) {
+            const res = await fetch(
+              '/upload/' + encodeURIComponent(draftId) + '/photo?exp=' + exp + '&token=' + token,
+              {
+                method: 'POST',
+                headers: { 'Content-Type': file.type },
+                body: file,
+              },
+            );
+            const contentType = res.headers.get('content-type') || '';
+            const data = contentType.indexOf('json') !== -1 ? await res.json() : null;
+            if (res.ok && data && data.ok) {
               item.textContent = 'Uploaded ' + file.name;
               item.className = 'done';
             } else {
-              item.textContent = 'Failed: ' + file.name + ' (' + (data.error || res.status) + ')';
+              const reason = data && data.error ? data.error : res.status === 413 ? 'photo too large' : 'HTTP ' + res.status;
+              item.textContent = 'Failed: ' + file.name + ' (' + reason + ')';
               item.className = 'failed';
             }
           } catch (err) {
@@ -119,30 +124,33 @@ app.get('/upload/:draftId', (req, res) => {
   const exp = Number(req.query.exp);
   const token = queryString(req.query.token);
 
-  if (!verifyUploadLink(draftId, exp, token)) {
-    res.status(403).send('This link has expired or is invalid — ask Claude for a new one.');
-    return;
-  }
+  try {
+    if (!verifyUploadLink(draftId, exp, token)) {
+      res.status(403).send('This link has expired or is invalid — ask Claude for a new one.');
+      return;
+    }
 
-  res.type('html').send(renderUploadPage(draftId, String(exp), token));
+    res.set('Cache-Control', 'no-store').type('html').send(renderUploadPage(draftId, String(exp), token));
+  } catch (err) {
+    res.status(500).send(err instanceof Error ? err.message : 'Upload link verification failed');
+  }
 });
 
 app.post('/upload/:draftId/photo', express.raw({ type: () => true, limit: '26mb' }), async (req, res) => {
   const { draftId } = req.params;
   const exp = Number(req.query.exp);
   const token = queryString(req.query.token);
-
-  if (!verifyUploadLink(draftId, exp, token)) {
-    res.status(403).json({ ok: false, error: 'Link expired or invalid' });
-    return;
-  }
-
   const contentType = req.headers['content-type'] ?? '';
 
   try {
-    const url = await storeImageBuffer(req.body as Buffer, contentType);
+    if (!verifyUploadLink(draftId, exp, token)) {
+      res.status(403).json({ ok: false, error: 'Link expired or invalid' });
+      return;
+    }
 
     const client = createGitHubClient(requireEnv('AUTHOR_GITHUB_TOKEN'));
+    const url = await storeImageBuffer(req.body as Buffer, contentType);
+
     const draft = await readDraft(client, 'post', draftId);
     if (draft.kind !== 'post') throw new Error(`Draft ${draftId} is not a post draft`);
     draft.photos = [...draft.photos, { url }];
