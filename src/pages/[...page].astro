@@ -80,13 +80,16 @@ const nextPage = page.currentPage < page.lastPage ? page.currentPage + 1 : null;
           )}
         </nav>
       </div>
-      <ul class="home__recent-list hidden md:block md:col-span-4 space-y-6">
-        {sidebarPosts.map((post) => (
-          <li class="home__recent-item">
-            <SidebarPostCard post={post} />
-          </li>
-        ))}
-      </ul>
+      <div class="home__sidebar hidden md:block md:col-span-4">
+        <h2 class="mb-4 font-heading text-sm font-bold uppercase tracking-wide text-accent-secondary">Latest</h2>
+        <ul class="home__recent-list space-y-6">
+          {sidebarPosts.map((post) => (
+            <li class="home__recent-item">
+              <SidebarPostCard post={post} />
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   </div>
 </BaseLayout>

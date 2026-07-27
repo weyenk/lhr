@@ -55,8 +55,8 @@ image on top, text below, directly on the page background:
 
 - Sidebar markup changes from `<li class="home__recent-item mb-3 rounded-lg
   bg-white p-3 shadow-md">` + inline tag/title, to `<li class="home__recent-item">`
-  wrapping `<SidebarPostCard post={post} />`. The `<ul>` gets `flex flex-col
-  gap-6` (larger gap than the old `mb-3`, since there's no card border to
+  wrapping `<SidebarPostCard post={post} />`. The `<ul>` gets `space-y-6`
+  (larger gap than the old `mb-3`, since there's no card border to
   separate items anymore). The `home__recent-item` class name is kept as-is
   purely so the existing sizing test's item-counting helper keeps working
   unchanged.
@@ -116,8 +116,15 @@ same three pages.
 - `'sizes the sidebar to roughly match the main column on each page'`:
   update expected counts to 4 / 3 / 0 per the retuned constant and offset
   above (page 1 / page 2 / last page).
-- `'hides the sidebar below the md breakpoint'`: unchanged, still asserts
-  `home__recent-list hidden md:block`.
+- `'hides the sidebar below the md breakpoint'`: updated to assert
+  `home__sidebar hidden md:block` — the sidebar gained a "Latest" heading
+  (see below), so `hidden md:block md:col-span-4` moved from the `<ul
+  class="home__recent-list">` itself to a new wrapping `<div
+  class="home__sidebar">` that contains both the heading and the list.
+- New assertion: a page's main-column `ArticleCard` hrefs never appear
+  among that same page's sidebar hrefs, directly pinning the no-duplicate-
+  posts behavior described above (previously only verified incidentally,
+  via the last page's count happening to be 0).
 - New assertion: sidebar items render an `<img>` and the post's excerpt
   text (mirroring the existing "renders a truncated excerpt" pattern for
   `ArticleCard`), confirming the sidebar now shows images/subheadlines
@@ -140,6 +147,28 @@ same three pages.
   works regardless of which display utility wins — the same pattern
   already used for the sidebar in `src/layouts/ArticleLayout.astro`
   (`article-post__sidebar space-y-4 md:col-span-4`).
+
+### Sidebar heading (added after final review, per author decision)
+
+The sidebar originally had no heading — an unlabeled `<ul>` of image cards
+next to the main column. The final whole-branch review flagged this as an
+orphan-reading column with no accessible name, and noted the Food52
+reference this whole redesign is modeled on has a "The Latest" header. The
+author approved adding one. `hidden md:block md:col-span-4` moves from the
+`<ul class="home__recent-list">` to a new wrapping `<div
+class="home__sidebar">` that holds both the heading and the list:
+
+```
+<div class="home__sidebar hidden md:block md:col-span-4">
+  <h2 class="mb-4 font-heading text-sm font-bold uppercase tracking-wide text-accent-secondary">Latest</h2>
+  <ul class="home__recent-list space-y-6">
+    ...
+  </ul>
+</div>
+```
+
+The heading style matches the existing sidebar-section headings in
+`src/layouts/ArticleLayout.astro` (e.g. "Shop this set").
 
 ## Out of scope
 

@@ -25,10 +25,9 @@ describe('home page', () => {
   it('shows exactly 5 article cards on page 1, excluding the hero post', () => {
     const html = readFileSync('dist/index.html', 'utf-8');
     // Count occurrences of the card's own class rather than checking
-    // individual post hrefs are absent: the sidebar is allowed to (and,
-    // before Task 2's sizing, does) list every post regardless of which
-    // page's cards are showing, so a post's href can legitimately appear
-    // via the sidebar without being one of this page's cards.
+    // individual post hrefs are absent — a post's href could otherwise
+    // appear elsewhere on the page (e.g. via a future feature), and this
+    // assertion is only about how many article-cards render on page 1.
     expect((html.match(/article-card/g) ?? []).length).toBe(5);
     expect(html).toContain('href="/posts/date-night-chicken-crust-pizza-with-whiskey-caramelized-onions-amp-bacon/"');
     expect(html).toContain('href="/posts/oaxacan-velvet-the-grounding-ritual-of-chicken-mole-negro/"');
@@ -73,7 +72,7 @@ describe('home page', () => {
 
   it('hides the sidebar below the md breakpoint', () => {
     const html = readFileSync('dist/index.html', 'utf-8');
-    expect(html).toContain('home__recent-list hidden md:block');
+    expect(html).toContain('home__sidebar hidden md:block');
   });
 
   it('sizes the sidebar to roughly match the main column on each page', () => {
@@ -110,5 +109,15 @@ describe('home page', () => {
     const listOpenTag = sidebarHtml.match(/<ul class="home__recent-list[^>]*>/)![0];
     expect(listOpenTag).toMatch(/\bspace-y-/);
     expect(listOpenTag).not.toMatch(/(^|\s)flex(\s|")/);
+  });
+
+  it('never repeats a page\'s own cards in its sidebar', () => {
+    for (const path of ['dist/index.html', 'dist/2/index.html', 'dist/3/index.html']) {
+      const html = readFileSync(path, 'utf-8');
+      const sidebar = html.match(/<ul class="home__recent-list[^>]*>[\s\S]*?<\/ul>/)![0];
+      const sidebarHrefs = new Set([...sidebar.matchAll(/href="\/posts\/([^"]+)\//g)].map((m) => m[1]));
+      const cardHrefs = [...html.matchAll(/<a href="\/posts\/([^"]+)\/" class="article-card/g)].map((m) => m[1]);
+      expect(cardHrefs.filter((h) => sidebarHrefs.has(h))).toEqual([]);
+    }
   });
 });

@@ -239,3 +239,15 @@ main-column cards on the same page. Steps 1, 2, and 5 above reflect both
 fixes directly rather than being left as the original, now-superseded
 text; the design spec (`docs/superpowers/specs/2026-07-26-sidebar-latest-post-cards-design.md`)
 carries the same revisions.
+
+The final whole-branch review found no Critical issues, but flagged the
+sidebar as an unlabeled column with no accessible name — the author
+approved adding a "Latest" heading (`home__recent-list`'s `hidden
+md:block md:col-span-4` classes moved to a new wrapping `<div
+class="home__sidebar">` that holds the heading and the list). It also
+found the design spec still documented the pre-fix `flex flex-col gap-6`
+construct, that the no-duplicate-posts guarantee had no direct test, a
+stale test comment referencing a superseded plan's "Task 2", and that
+`docs/BRAND.md` still described the old compact text-list sidebar. All
+were fixed directly in the same fix wave; see the design spec's own
+"Sidebar heading" section for the heading's final shape.

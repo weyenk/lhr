@@ -42,8 +42,8 @@
 ## Page Layouts
 
 ### Home / Listing
-- Components: large featured-post card, compact stacked list of recent posts alongside it
-- Arrangement: split layout — featured card on the left (wider column), a vertical stack of recent-post list items on the right (like a "latest" sidebar); replaces the current unstyled `<ul>` of post links in `src/pages/index.astro`
+- Components: large featured-post card, a "Latest" sidebar of large image+headline+subheadline cards alongside it
+- Arrangement: split layout — featured card on the left (wider column), a vertical stack of borderless, Food52-style image cards on the right under a "Latest" heading (each with cover photo, tag, headline, and excerpt subheadline), in `src/pages/[...page].astro`
 - Notes: efficient use of the 12-column grid on wide screens; collapses to a single stacked column on mobile per the Grid, Spacing & Mobile Layout system
 - *Depends on: Palette, Typography, Grid, Spacing & Mobile Layout*
 
