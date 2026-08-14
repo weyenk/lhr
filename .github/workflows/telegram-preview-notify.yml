@@ -3,20 +3,52 @@ name: Notify Telegram on preview deploy
 on:
   deployment_status:
 
+permissions:
+  pull-requests: read
+
 jobs:
   notify:
     if: >
       github.event.deployment_status.state == 'success' &&
-      contains(github.event.deployment_status.environment, 'Preview')
+      contains(github.event.deployment_status.environment, 'Preview') &&
+      !contains(github.event.deployment_status.target_url, 'lhr-mcp-server')
     runs-on: ubuntu-latest
     steps:
+      - name: Look up PR title
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SHA: ${{ github.event.deployment.sha }}
+        run: |
+          PR_JSON=$(gh api "repos/${{ github.repository }}/commits/$SHA/pulls" --jq '.[0] // empty')
+          TITLE=$(echo "$PR_JSON" | jq -r '.title // empty')
+          BRANCH=$(echo "$PR_JSON" | jq -r '.head.ref // empty')
+          echo "title=$TITLE" >> "$GITHUB_OUTPUT"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+
       - name: Send Telegram message
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           PREVIEW_URL: ${{ github.event.deployment_status.target_url }}
-          REF: ${{ github.event.deployment.ref }}
+          SHA: ${{ github.event.deployment.sha }}
+          PR_TITLE: ${{ steps.pr.outputs.title }}
+          BRANCH: ${{ steps.pr.outputs.branch }}
         run: |
+          html_escape() {
+            local s="$1"
+            s="${s//&/&amp;}"
+            s="${s//</&lt;}"
+            s="${s//>/&gt;}"
+            printf '%s' "$s"
+          }
+
+          REF="${BRANCH:-${SHA:0:7}}"
+          DESCRIPTION=$(html_escape "${PR_TITLE:-$REF}")
+          URL=$(html_escape "$PREVIEW_URL")
+          TEXT=$(printf '<b>🍞 New Preview Build Fresh Out of the Oven 👩🏻‍🍳</b>\n<b>Address</b>: %s\n<b>Description</b>: %s' "$URL" "$DESCRIPTION")
+
           curl -sf -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
             --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
-            --data-urlencode "text=Preview build ready for ${REF}: ${PREVIEW_URL}"
+            --data-urlencode "parse_mode=HTML" \
+            --data-urlencode "text=${TEXT}"
