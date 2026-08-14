@@ -35,12 +35,20 @@ jobs:
           PR_TITLE: ${{ steps.pr.outputs.title }}
           BRANCH: ${{ steps.pr.outputs.branch }}
         run: |
+          html_escape() {
+            local s="$1"
+            s="${s//&/&amp;}"
+            s="${s//</&lt;}"
+            s="${s//>/&gt;}"
+            printf '%s' "$s"
+          }
+
           REF="${BRANCH:-${SHA:0:7}}"
-          if [ -n "$PR_TITLE" ]; then
-            TEXT="Preview ready: ${PR_TITLE} (${REF}) - ${PREVIEW_URL}"
-          else
-            TEXT="Preview build ready for ${REF}: ${PREVIEW_URL}"
-          fi
+          DESCRIPTION=$(html_escape "${PR_TITLE:-$REF}")
+          URL=$(html_escape "$PREVIEW_URL")
+          TEXT=$(printf '<b>🍞 New Preview Build Fresh Out of the Oven 👩🏻‍🍳</b>\n<b>Address</b>: %s\n<b>Description</b>: %s' "$URL" "$DESCRIPTION")
+
           curl -sf -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
             --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+            --data-urlencode "parse_mode=HTML" \
             --data-urlencode "text=${TEXT}"
