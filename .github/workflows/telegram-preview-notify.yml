@@ -7,16 +7,32 @@ jobs:
   notify:
     if: >
       github.event.deployment_status.state == 'success' &&
-      contains(github.event.deployment_status.environment, 'Preview')
+      contains(github.event.deployment_status.environment, 'Preview') &&
+      !contains(github.event.deployment_status.target_url, 'lhr-mcp-server')
     runs-on: ubuntu-latest
     steps:
+      - name: Look up PR title
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REF: ${{ github.event.deployment.ref }}
+        run: |
+          TITLE=$(gh pr list --repo "${{ github.repository }}" --head "$REF" --json title --jq '.[0].title // empty')
+          echo "title=$TITLE" >> "$GITHUB_OUTPUT"
+
       - name: Send Telegram message
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           PREVIEW_URL: ${{ github.event.deployment_status.target_url }}
           REF: ${{ github.event.deployment.ref }}
+          PR_TITLE: ${{ steps.pr.outputs.title }}
         run: |
+          if [ -n "$PR_TITLE" ]; then
+            TEXT="Preview ready: ${PR_TITLE} (${REF}) - ${PREVIEW_URL}"
+          else
+            TEXT="Preview build ready for ${REF}: ${PREVIEW_URL}"
+          fi
           curl -sf -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
             --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
-            --data-urlencode "text=Preview build ready for ${REF}: ${PREVIEW_URL}"
+            --data-urlencode "text=${TEXT}"
