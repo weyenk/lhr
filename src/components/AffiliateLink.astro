@@ -9,13 +9,16 @@ interface Props {
 const { id, data } = Astro.props;
 ---
 <a
-  class="affiliate-link block rounded-lg bg-white p-3 shadow-md text-sm font-medium text-text hover:text-accent"
+  class="affiliate-link block rounded-lg bg-white p-3 shadow-md transition-shadow hover:shadow-lg"
   href={data.url}
   target="_blank"
   rel="noopener sponsored"
   data-umami-event="affiliate-click"
   data-umami-event-link={id}
 >
-  {data.label}
-  <small class="affiliate-link__disclosure block text-[10px] font-normal text-accent-secondary">(affiliate link)</small>
+  {data.image && (
+    <img src={data.image} alt={data.imageAlt} class="mb-2 aspect-[4/3] w-full rounded-md object-cover" />
+  )}
+  <span class="affiliate-link__label block font-heading text-sm font-medium text-text">{data.label}</span>
+  <span class="affiliate-link__cue block text-xs font-bold text-accent">Shop now →</span>
 </a>

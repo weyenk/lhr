@@ -1,5 +1,7 @@
 {
   "label": "The jerk seasoning we used",
   "url": "https://vendor.example.com/jerk-seasoning",
-  "tag": "jerk-seasoning"
+  "tag": "jerk-seasoning",
+  "image": "https://placehold.co/800x600?text=Jerk+Seasoning",
+  "imageAlt": "A jar of the jerk seasoning blend"
 }
