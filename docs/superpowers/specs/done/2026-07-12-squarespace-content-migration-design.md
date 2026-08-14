@@ -1,7 +1,7 @@
 # Squarespace Content Migration — Design
 
 **Date:** 2026-07-12
-**Status:** Approved for planning
+**Status:** Done — merged PR #10 (902438c, 2026-07-19); all 22 posts exist as `.mdx` under `src/content/posts/`
 
 ## 1. Overview & Goals
 

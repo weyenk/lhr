@@ -1,5 +1,7 @@
 # Homepage Paginated Feed Implementation Plan
 
+**Status:** Done — merged PR #22 (e161d2c, 2026-07-26)
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Replace the homepage's single-hero-plus-text-sidebar layout with a hero followed by a paginated feed of full article/recipe cards, while keeping a sidebar whose length tracks the main column's height on each page.

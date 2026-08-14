@@ -1,5 +1,7 @@
 # Site UX/UI Design
 
+**Status:** Done — merged PR #9 (f5951c9, 2026-07-19); `BaseLayout.astro`, `about.astro`, and restyled `RecipeLayout`/`ArticleLayout` exist on `main`
+
 ## Purpose
 
 `docs/BRAND.md` established the site's palette, typography, spacing/grid system, and directional intent for each page. The site itself is currently unstyled — no CSS, no header/nav/footer, no design tokens wired up anywhere. `src/pages/index.astro` renders a bare `<ul>` of post links, and `RecipeLayout.astro` / `ArticleLayout.astro` render raw, unstyled HTML.

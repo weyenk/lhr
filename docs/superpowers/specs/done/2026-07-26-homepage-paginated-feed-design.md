@@ -1,5 +1,7 @@
 # Homepage: paginated article/recipe feed below the hero
 
+**Status:** Done — merged PR #22 (e161d2c, 2026-07-26); `src/pages/[...page].astro` exists on `main`
+
 ## Problem
 
 The homepage (`src/pages/index.astro`) currently shows exactly one featured

@@ -1,5 +1,7 @@
 # Mobile photo upload: signed link + upload page
 
+**Status:** Done — merged PR #27 (dff50fd, 2026-07-27); `mcp-server/src/uploadLink.ts` and `getPhotoUploadLink.ts` exist on `main`
+
 ## Problem
 
 `attach_photo` (`mcp-server/src/tools/attachPhoto.ts`) only accepts a
