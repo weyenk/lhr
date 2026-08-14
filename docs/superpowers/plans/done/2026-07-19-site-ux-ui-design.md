@@ -1,5 +1,7 @@
 # Site UX/UI Design Implementation Plan
 
+**Status:** Done — merged PR #9 (f5951c9, 2026-07-19)
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Turn the currently-unstyled site into a styled site matching `docs/BRAND.md` and `docs/superpowers/specs/2026-07-19-site-ux-ui-design.md` — a Tailwind-based design system, a global header/nav/footer, and restyled Home, Recipe Post, and Article Post pages, plus a new About page.

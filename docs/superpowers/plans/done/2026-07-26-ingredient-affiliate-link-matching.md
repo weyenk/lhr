@@ -1,5 +1,7 @@
 # Ingredient → Affiliate Link Matching Implementation Plan
 
+**Status:** Done — merged PR #23 (a1219cd, 2026-07-26)
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** While drafting a recipe through the existing `site-help`/MCP authoring flow, automatically cross-reference the recipe's ingredients against a reusable ingredient→affiliate-link library and let the author accept/reject matches conversationally, growing the library as she goes.

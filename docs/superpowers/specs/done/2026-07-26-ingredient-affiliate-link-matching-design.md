@@ -1,7 +1,7 @@
 # Ingredient → Affiliate Link Matching — Design
 
 **Date:** 2026-07-26
-**Status:** Active — not started. No implementation plan written yet.
+**Status:** Done — merged PR #23 (a1219cd, 2026-07-26); `ingredient-links` content collection and `normalizeIngredient` exist on `main`
 
 ## 1. Overview & Goals
 

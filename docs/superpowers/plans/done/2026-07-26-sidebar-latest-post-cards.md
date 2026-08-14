@@ -1,5 +1,7 @@
 # Sidebar Latest Post Cards Implementation Plan
 
+**Status:** Done — merged PR #26 (2796800, 2026-07-27)
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Replace the homepage sidebar's plain-text post list with bigger, borderless, Food52-style cards (image, tag, headline, subheadline), retuning the existing height-matching sidebar sizing for the new taller item height.

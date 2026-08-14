@@ -1,5 +1,7 @@
 # Homepage sidebar: Food52-style image cards instead of a plain text list
 
+**Status:** Done — merged PR #26 (2796800, 2026-07-27); `src/components/SidebarPostCard.astro` exists on `main`
+
 ## Problem
 
 The homepage sidebar (`src/pages/[...page].astro`, the `home__recent-list`
