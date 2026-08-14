@@ -100,6 +100,21 @@ describe('affiliateLinkSchema', () => {
     expect(result.success).toBe(true);
   });
 
+  it('accepts an affiliate link with optional image data for the card display', () => {
+    const result = affiliateLinkSchema.safeParse({
+      label: 'The jerk seasoning we used',
+      url: 'https://vendor.example.com/jerk-seasoning',
+      tag: 'jerk-seasoning',
+      image: 'https://placehold.co/800x600?text=Jerk+Seasoning',
+      imageAlt: 'A jar of the jerk seasoning blend',
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.image).toBe('https://placehold.co/800x600?text=Jerk+Seasoning');
+      expect(result.data.imageAlt).toBe('A jar of the jerk seasoning blend');
+    }
+  });
+
   it('rejects a malformed URL', () => {
     const result = affiliateLinkSchema.safeParse({
       label: 'The jerk seasoning we used',

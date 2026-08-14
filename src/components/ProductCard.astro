@@ -10,7 +10,7 @@ interface Props {
 const { id, data } = Astro.props;
 ---
 <a
-  class="product-card block rounded-lg bg-white p-3 shadow-md"
+  class="product-card block rounded-lg bg-white p-3 shadow-md transition-shadow hover:shadow-lg"
   href={data.vendorUrl}
   target="_blank"
   rel="noopener sponsored"
@@ -20,5 +20,4 @@ const { id, data } = Astro.props;
   <img src={data.image} alt={data.imageAlt} class="mb-2 aspect-[4/3] w-full rounded-md object-cover" />
   <span class="product-card__name block font-heading text-sm font-medium text-text">{data.name}</span>
   <span class="product-card__price block text-sm font-bold text-accent">{formatPrice(data.priceCents)}</span>
-  <small class="product-card__disclosure block text-[10px] text-accent-secondary">Shop this piece (affiliate link)</small>
 </a>

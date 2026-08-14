@@ -3,6 +3,7 @@ import BaseLayout from './BaseLayout.astro';
 import PostTag from '../components/PostTag.astro';
 import ProductCard from '../components/ProductCard.astro';
 import AffiliateLink from '../components/AffiliateLink.astro';
+import AffiliateDisclosureBanner from '../components/AffiliateDisclosureBanner.astro';
 import type { CollectionEntry } from 'astro:content';
 import { getEntriesByIds } from '../lib/content';
 
@@ -31,6 +32,7 @@ const linkedAffiliateLinks = getEntriesByIds(data.affiliateLinkIds, affiliateLin
     />
     <PostTag type="article" />
     <h1 class="mt-1 mb-4 font-heading text-2xl font-bold text-text">{data.title}</h1>
+    {(linkedProducts.length > 0 || linkedAffiliateLinks.length > 0) && <AffiliateDisclosureBanner />}
     <div class="article-post__layout grid grid-cols-1 gap-6 md:grid-cols-12">
       <div class="article-post__prose max-w-[60ch] md:col-span-8">
         {data.sections.map((section) => (

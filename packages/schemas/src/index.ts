@@ -56,6 +56,8 @@ export const affiliateLinkSchema = z.object({
   label: z.string(),
   url: z.string().url(),
   tag: z.string(),
+  image: z.string().url().optional(),
+  imageAlt: z.string().optional(),
 });
 
 export const ingredientLinkSchema = z.object({
