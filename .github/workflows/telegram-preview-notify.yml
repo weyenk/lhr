@@ -3,6 +3,9 @@ name: Notify Telegram on preview deploy
 on:
   deployment_status:
 
+permissions:
+  pull-requests: read
+
 jobs:
   notify:
     if: >
