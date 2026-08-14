@@ -18,19 +18,24 @@ jobs:
         id: pr
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REF: ${{ github.event.deployment.ref }}
+          SHA: ${{ github.event.deployment.sha }}
         run: |
-          TITLE=$(gh pr list --repo "${{ github.repository }}" --head "$REF" --json title --jq '.[0].title // empty')
+          PR_JSON=$(gh api "repos/${{ github.repository }}/commits/$SHA/pulls" --jq '.[0] // empty')
+          TITLE=$(echo "$PR_JSON" | jq -r '.title // empty')
+          BRANCH=$(echo "$PR_JSON" | jq -r '.head.ref // empty')
           echo "title=$TITLE" >> "$GITHUB_OUTPUT"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
 
       - name: Send Telegram message
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           PREVIEW_URL: ${{ github.event.deployment_status.target_url }}
-          REF: ${{ github.event.deployment.ref }}
+          SHA: ${{ github.event.deployment.sha }}
           PR_TITLE: ${{ steps.pr.outputs.title }}
+          BRANCH: ${{ steps.pr.outputs.branch }}
         run: |
+          REF="${BRANCH:-${SHA:0:7}}"
           if [ -n "$PR_TITLE" ]; then
             TEXT="Preview ready: ${PR_TITLE} (${REF}) - ${PREVIEW_URL}"
           else
