@@ -1,0 +1,22 @@
+name: Notify Telegram on preview deploy
+
+on:
+  deployment_status:
+
+jobs:
+  notify:
+    if: >
+      github.event.deployment_status.state == 'success' &&
+      contains(github.event.deployment_status.environment, 'Preview')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Telegram message
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          PREVIEW_URL: ${{ github.event.deployment_status.target_url }}
+          REF: ${{ github.event.deployment.ref }}
+        run: |
+          curl -sf -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+            --data-urlencode "text=Preview build ready for ${REF}: ${PREVIEW_URL}"
