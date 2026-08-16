@@ -28,7 +28,7 @@ const linkedAffiliateLinks = getEntriesByIds(data.affiliateLinkIds, affiliateLin
     <img
       src={data.coverPhoto}
       alt={data.coverPhotoAlt}
-      class="mb-4 aspect-[3/2] w-full rounded-lg object-cover md:aspect-[16/6]"
+      class="mb-4 aspect-[3/2] w-full object-cover md:aspect-[16/6]"
     />
     <PostTag type="article" />
     <h1 class="mt-1 mb-4 font-heading text-2xl font-bold text-text">{data.title}</h1>
@@ -46,7 +46,7 @@ const linkedAffiliateLinks = getEntriesByIds(data.affiliateLinkIds, affiliateLin
         <div class="article-post__sidebar space-y-4 md:col-span-4">
           {linkedProducts.length > 0 && (
             <section class="article-post__kitchenware">
-              <h2 class="mb-2 font-heading text-sm font-bold uppercase tracking-wide text-accent-secondary">Shop this set</h2>
+              <h2 class="mb-2 text-sm font-bold uppercase tracking-wide text-accent-secondary">Shop this set</h2>
               <div class="space-y-3">
                 {linkedProducts.map((product) => <ProductCard id={product.id} data={product.data} />)}
               </div>
@@ -54,7 +54,7 @@ const linkedAffiliateLinks = getEntriesByIds(data.affiliateLinkIds, affiliateLin
           )}
           {linkedAffiliateLinks.length > 0 && (
             <section class="article-post__affiliate-links">
-              <h2 class="mb-2 font-heading text-sm font-bold uppercase tracking-wide text-accent-secondary">Also mentioned</h2>
+              <h2 class="mb-2 text-sm font-bold uppercase tracking-wide text-accent-secondary">Also mentioned</h2>
               <div class="space-y-3">
                 {linkedAffiliateLinks.map((link) => <AffiliateLink id={link.id} data={link.data} />)}
               </div>

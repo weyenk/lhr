@@ -1,15 +1,35 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: #F5F1EA;
-  --color-text: #2B2521;
-  --color-accent: #A83E2C;
-  --color-accent-secondary: #6B6560;
-  --color-error: #C62828;
-  --color-sold-out: #6B6560;
-  --color-sale: #256B39;
+  /* Structural ground: black polished stone / timber, and its ivory text */
+  --color-background: #1C1A17;
+  --color-text: #ECE2D2;
 
-  --font-heading: "Poppins", sans-serif;
+  /* Content surface: travertine tabletop, and its ink text */
+  --color-surface: #C7BCA9;
+  --color-ink: #2A241E;
+
+  /* Neutral secondary text, per ground */
+  --color-muted: #9C9081;
+  --color-muted-surface: #4A4033;
+
+  /* Copper glaze accent: fills/borders/outline use --color-accent;
+     --color-accent-deep is for accent-colored text sitting on --color-surface,
+     where the base accent doesn't have enough contrast. */
+  --color-accent: #C15F44;
+  --color-accent-deep: #7A3A28;
+
+  /* Brass/gold — section eyebrows and labels on the dark ground */
+  --color-accent-secondary: #B8863A;
+
+  --color-hairline: #423C34;
+  --color-hairline-surface: #AFA28A;
+
+  --color-error: #D9534F;
+  --color-sold-out: #9C9081;
+  --color-sale: #6E7440;
+
+  --font-heading: "Fraunces", Georgia, "Iowan Old Style", serif;
   --font-body: "Karla", sans-serif;
 }
 
