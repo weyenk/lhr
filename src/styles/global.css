@@ -9,6 +9,10 @@
   --color-surface: #C7BCA9;
   --color-ink: #2A241E;
 
+  /* Raised dark surface: a card sitting on the dark ground (e.g. shop tiles,
+     homepage feed rows) — reads as an object on the table, not the table itself. */
+  --color-surface-dark: #242019;
+
   /* Neutral secondary text, per ground */
   --color-muted: #9C9081;
   --color-muted-surface: #4A4033;

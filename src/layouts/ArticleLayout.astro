@@ -25,13 +25,17 @@ const linkedAffiliateLinks = getEntriesByIds(data.affiliateLinkIds, affiliateLin
 ---
 <BaseLayout title={data.title}>
   <article class="article-post mx-auto max-w-[1200px] px-4 py-8">
-    <img
-      src={data.coverPhoto}
-      alt={data.coverPhotoAlt}
-      class="mb-4 aspect-[3/2] w-full object-cover md:aspect-[16/6]"
-    />
-    <PostTag type="article" />
-    <h1 class="mt-1 mb-4 font-heading text-2xl font-bold text-text">{data.title}</h1>
+    <div class="article-post__hero mb-6 border border-hairline-surface bg-surface">
+      <img
+        src={data.coverPhoto}
+        alt={data.coverPhotoAlt}
+        class="aspect-[3/2] w-full object-cover md:aspect-[21/9]"
+      />
+      <div class="p-6">
+        <PostTag type="article" />
+        <h1 class="mt-2 font-heading text-3xl font-bold text-ink">{data.title}</h1>
+      </div>
+    </div>
     {(linkedProducts.length > 0 || linkedAffiliateLinks.length > 0) && <AffiliateDisclosureBanner />}
     <div class="article-post__layout grid grid-cols-1 gap-6 md:grid-cols-12">
       <div class="article-post__prose max-w-[60ch] md:col-span-8">
