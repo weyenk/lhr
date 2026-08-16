@@ -46,6 +46,13 @@
   ],
   "kitchenwareIds": [],
   "affiliateLinkIds": [],
-  "pendingAffiliateLinks": [],
+  "pendingAffiliateLinks": [
+    {
+      "id": "stemless-wine-glasses-a1f3",
+      "label": "The stemless wine glasses we used",
+      "url": "https://amzn.to/4wt5N3d",
+      "tag": "stemless-wine-glasses"
+    }
+  ],
   "pendingIngredientLinks": []
 }
