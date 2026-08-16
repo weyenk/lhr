@@ -42,17 +42,27 @@ const recipeMeta = [
 ---
 <BaseLayout title={data.title}>
   <article class="recipe-post mx-auto max-w-[1200px] px-4 py-8">
-    <div class="recipe-post__hero mb-6 border border-hairline-surface bg-surface">
-      <img
-        src={data.coverPhoto}
-        alt={data.coverPhotoAlt}
-        class="aspect-[3/2] w-full object-cover md:aspect-[21/9]"
-      />
-      <div class="p-6">
-        <PostTag type="recipe" />
-        <h1 class="mt-2 font-heading text-3xl font-bold text-ink">{data.title}</h1>
-        {recipeMeta && <p class="recipe-post__meta mt-2 text-sm text-muted-surface">{recipeMeta}</p>}
+    <div class="recipe-post__hero mb-6 grid grid-cols-1 gap-4 md:grid-cols-12">
+      <div class="recipe-post__hero-main md:col-span-7 border border-hairline-surface bg-surface">
+        <img
+          src={data.coverPhoto}
+          alt={data.coverPhotoAlt}
+          class="aspect-[3/2] w-full object-cover"
+        />
+        <div class="p-6">
+          <PostTag type="recipe" />
+          <h1 class="mt-2 font-heading text-3xl font-bold text-ink md:text-4xl">{data.title}</h1>
+          {recipeMeta && <p class="recipe-post__meta mt-2 text-sm text-muted-surface">{recipeMeta}</p>}
+        </div>
       </div>
+      {data.excerpt && data.excerpt !== data.title && (
+        <div
+          class="recipe-post__hero-blurb md:col-span-5 flex flex-col justify-center gap-2 border border-hairline-surface bg-surface p-8"
+          style="clip-path: polygon(0% 4%, 8% 0%, 40% 2%, 55% 0%, 78% 3%, 100% 0%, 100% 92%, 88% 100%, 60% 97%, 35% 100%, 12% 96%, 0% 100%);"
+        >
+          <p class="font-heading text-xl leading-snug text-ink italic">&ldquo;{data.excerpt}&rdquo;</p>
+        </div>
+      )}
     </div>
     {(linkedProducts.length > 0 || linkedAffiliateLinks.length > 0) && <AffiliateDisclosureBanner />}
     <div class="recipe-post__content space-y-3 text-sm leading-relaxed">
