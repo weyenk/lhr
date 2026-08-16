@@ -12,11 +12,11 @@ const { post } = Astro.props;
   <img
     src={post.data.coverPhoto}
     alt={post.data.coverPhotoAlt}
-    class="mb-2 aspect-[3/2] w-full rounded-md object-cover"
+    class="mb-2 aspect-[3/2] w-full object-cover"
   />
   <PostTag type={post.data.type} />
   <h3 class="mt-1 font-heading text-base font-bold text-text">{post.data.title}</h3>
   {post.data.excerpt && (
-    <p class="mt-1 line-clamp-2 text-sm text-accent-secondary">{post.data.excerpt}</p>
+    <p class="mt-1 line-clamp-2 text-sm text-muted">{post.data.excerpt}</p>
   )}
 </a>

@@ -25,13 +25,27 @@ const linkedAffiliateLinks = getEntriesByIds(data.affiliateLinkIds, affiliateLin
 ---
 <BaseLayout title={data.title}>
   <article class="article-post mx-auto max-w-[1200px] px-4 py-8">
-    <img
-      src={data.coverPhoto}
-      alt={data.coverPhotoAlt}
-      class="mb-4 aspect-[3/2] w-full rounded-lg object-cover md:aspect-[16/6]"
-    />
-    <PostTag type="article" />
-    <h1 class="mt-1 mb-4 font-heading text-2xl font-bold text-text">{data.title}</h1>
+    <div class="article-post__hero mb-6 grid grid-cols-1 gap-4 md:grid-cols-12">
+      <div class="article-post__hero-main md:col-span-7 border border-hairline-surface bg-surface">
+        <img
+          src={data.coverPhoto}
+          alt={data.coverPhotoAlt}
+          class="aspect-[3/2] w-full object-cover"
+        />
+        <div class="p-6">
+          <PostTag type="article" />
+          <h1 class="mt-2 font-heading text-3xl font-bold text-ink md:text-4xl">{data.title}</h1>
+        </div>
+      </div>
+      {data.excerpt && data.excerpt !== data.title && (
+        <div
+          class="article-post__hero-blurb md:col-span-5 flex flex-col justify-center gap-2 border border-hairline-surface bg-surface p-8"
+          style="clip-path: polygon(0% 4%, 8% 0%, 40% 2%, 55% 0%, 78% 3%, 100% 0%, 100% 92%, 88% 100%, 60% 97%, 35% 100%, 12% 96%, 0% 100%);"
+        >
+          <p class="font-heading text-xl leading-snug text-ink italic">&ldquo;{data.excerpt}&rdquo;</p>
+        </div>
+      )}
+    </div>
     {(linkedProducts.length > 0 || linkedAffiliateLinks.length > 0) && <AffiliateDisclosureBanner />}
     <div class="article-post__layout grid grid-cols-1 gap-6 md:grid-cols-12">
       <div class="article-post__prose max-w-[60ch] md:col-span-8">
@@ -46,7 +60,7 @@ const linkedAffiliateLinks = getEntriesByIds(data.affiliateLinkIds, affiliateLin
         <div class="article-post__sidebar space-y-4 md:col-span-4">
           {linkedProducts.length > 0 && (
             <section class="article-post__kitchenware">
-              <h2 class="mb-2 font-heading text-sm font-bold uppercase tracking-wide text-accent-secondary">Shop this set</h2>
+              <h2 class="mb-2 text-sm font-bold uppercase tracking-wide text-accent-secondary">Shop this set</h2>
               <div class="space-y-3">
                 {linkedProducts.map((product) => <ProductCard id={product.id} data={product.data} />)}
               </div>
@@ -54,7 +68,7 @@ const linkedAffiliateLinks = getEntriesByIds(data.affiliateLinkIds, affiliateLin
           )}
           {linkedAffiliateLinks.length > 0 && (
             <section class="article-post__affiliate-links">
-              <h2 class="mb-2 font-heading text-sm font-bold uppercase tracking-wide text-accent-secondary">Also mentioned</h2>
+              <h2 class="mb-2 text-sm font-bold uppercase tracking-wide text-accent-secondary">Also mentioned</h2>
               <div class="space-y-3">
                 {linkedAffiliateLinks.map((link) => <AffiliateLink id={link.id} data={link.data} />)}
               </div>
