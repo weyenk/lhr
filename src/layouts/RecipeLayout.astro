@@ -53,22 +53,6 @@ const recipeMeta = [
     <div class="recipe-post__content space-y-3 text-sm leading-relaxed">
       <Content />
     </div>
-    <h2 class={`mt-8 font-heading text-sm font-bold uppercase tracking-wide text-accent-secondary ${recipeMeta ? 'mb-1' : 'mb-4'}`}>Recipe</h2>
-    {recipeMeta && <p class="recipe-post__meta mb-4 text-sm italic text-text">{recipeMeta}</p>}
-    <div class="recipe-post__layout grid grid-cols-1 gap-6 md:grid-cols-12">
-      <div class="order-2 md:order-none md:col-span-8">
-        <ol class="recipe-post__steps list-decimal space-y-2 pl-5 text-sm">
-          {data.steps.map((step) => <li>{step}</li>)}
-        </ol>
-      </div>
-      <div class="order-1 md:order-none md:col-span-4">
-        <ul class="recipe-post__ingredients rounded-lg bg-white p-4 text-sm shadow-md">
-          {data.ingredients.map((ingredient) => (
-            <li class="mb-1">{ingredient.amount ? `${ingredient.amount} ` : ''}{ingredient.item}</li>
-          ))}
-        </ul>
-      </div>
-    </div>
     {(linkedProducts.length > 0 || linkedAffiliateLinks.length > 0) && (
       <div class="recipe-post__strip mt-8 grid grid-cols-1 gap-4 md:grid-cols-2">
         {linkedProducts.length > 0 && (
@@ -89,5 +73,21 @@ const recipeMeta = [
         )}
       </div>
     )}
+    <h2 class={`mt-8 font-heading text-sm font-bold uppercase tracking-wide text-accent-secondary ${recipeMeta ? 'mb-1' : 'mb-4'}`}>Recipe</h2>
+    {recipeMeta && <p class="recipe-post__meta mb-4 text-sm italic text-text">{recipeMeta}</p>}
+    <div class="recipe-post__layout grid grid-cols-1 gap-6 md:grid-cols-12">
+      <div class="order-2 md:order-none md:col-span-8">
+        <ol class="recipe-post__steps list-decimal space-y-2 pl-5 text-sm">
+          {data.steps.map((step) => <li>{step}</li>)}
+        </ol>
+      </div>
+      <div class="order-1 md:order-none md:col-span-4">
+        <ul class="recipe-post__ingredients rounded-lg bg-white p-4 text-sm shadow-md">
+          {data.ingredients.map((ingredient) => (
+            <li class="mb-1">{ingredient.amount ? `${ingredient.amount} ` : ''}{ingredient.item}</li>
+          ))}
+        </ul>
+      </div>
+    </div>
   </article>
 </BaseLayout>
