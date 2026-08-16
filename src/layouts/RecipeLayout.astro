@@ -65,7 +65,7 @@ const recipeMeta = [
         )}
         {linkedAffiliateLinks.length > 0 && (
           <section class="recipe-post__affiliate-links">
-            <h2 class="mb-2 font-heading text-sm font-bold uppercase tracking-wide text-accent-secondary">Also mentioned</h2>
+            <h2 class="mb-2 font-heading text-sm font-bold uppercase tracking-wide text-accent-secondary">Used in this Recipe</h2>
             <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {linkedAffiliateLinks.map((link) => <AffiliateLink id={link.id} data={link.data} />)}
             </div>
@@ -73,18 +73,20 @@ const recipeMeta = [
         )}
       </div>
     )}
-    <h2 class={`mt-8 font-heading text-sm font-bold uppercase tracking-wide text-accent-secondary ${recipeMeta ? 'mb-1' : 'mb-4'}`}>Recipe</h2>
-    {recipeMeta && <p class="recipe-post__meta mb-4 text-sm italic text-text">{recipeMeta}</p>}
+    </br>
     <div class="recipe-post__layout grid grid-cols-1 gap-6 md:grid-cols-12">
       <div class="order-2 md:order-none md:col-span-8">
+        <h2 class={`font-heading text-sm font-bold uppercase tracking-wide text-accent-secondary ${recipeMeta ? 'mb-1' : 'mb-4'}`}>Recipe</h2>
+        {recipeMeta && <p class="recipe-post__meta mb-4 text-sm italic text-text">{recipeMeta}</p>}
         <ol class="recipe-post__steps list-decimal space-y-2 pl-5 text-sm">
           {data.steps.map((step) => <li>{step}</li>)}
         </ol>
       </div>
       <div class="order-1 md:order-none md:col-span-4">
+        <h2 class="mb-1 font-heading text-sm font-bold uppercase tracking-wide text-accent-secondary">Ingredients</h2>
         <ul class="recipe-post__ingredients rounded-lg bg-white p-4 text-sm shadow-md">
           {data.ingredients.map((ingredient) => (
-            <li class="mb-1">{ingredient.amount ? `${ingredient.amount} ` : ''}{ingredient.item}</li>
+            <li class="mb-1">• {ingredient.amount ? `${ingredient.amount} ` : ''} {ingredient.item}</li>
           ))}
         </ul>
       </div>
