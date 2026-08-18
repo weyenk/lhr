@@ -62,3 +62,9 @@ status; the rest are polish or growth.
    agent exists for the legal-risk side, but nothing is built yet.
 7. **Content scale-up plan** — once ecommerce and design exist, filling out the
    ~26-posts/6-months cadence for real; `content-strategist` is ready for this.
+8. **Instacart "buy the meal" button** — one-click add every recipe ingredient to an
+   Instacart cart. Spec drafted:
+   `docs/superpowers/specs/active/2026-08-18-instacart-buy-the-meal-design.md`. Blocked
+   on confirming Instacart Developer Platform partner API access (reported ~30-40 day
+   approval, unconfirmed whether new applications are currently accepted) before an
+   implementation plan can be written.
