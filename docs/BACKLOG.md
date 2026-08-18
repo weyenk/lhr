@@ -62,3 +62,11 @@ status; the rest are polish or growth.
    agent exists for the legal-risk side, but nothing is built yet.
 7. **Content scale-up plan** — once ecommerce and design exist, filling out the
    ~26-posts/6-months cadence for real; `content-strategist` is ready for this.
+8. **Instacart "buy the meal" button** — one-click add every recipe ingredient to an
+   Instacart cart. Spec drafted:
+   `docs/superpowers/specs/active/2026-08-18-instacart-buy-the-meal-design.md`.
+   **Blocked** — confirmed 2026-08-18 that Instacart is not currently accepting new
+   Developer Platform (IDP) partner applications; no known timeline to reopen.
+   Revisit periodically. An Amazon multi-ASIN cart-URL trick is a possible lesser
+   interim fallback (see spec's Out of Scope) if a "buy the meal" feature is wanted
+   sooner.
