@@ -1,7 +1,7 @@
 # Instacart "Buy the Meal" Button — Design
 
 **Date:** 2026-08-18
-**Status:** Active — not started. No implementation plan written yet; no Instacart code exists in `src/` or `mcp-server/`.
+**Status:** Blocked. Confirmed 2026-08-18 by the author: Instacart is not currently accepting new Developer Platform (IDP) partner applications. No implementation plan written yet; no Instacart code exists in `src/` or `mcp-server/`. Revisit this spec once IDP applications reopen — see Prerequisite below and Out of Scope for the interim fallback.
 
 ## 1. Overview & Goals
 
@@ -15,7 +15,7 @@ Instacart was chosen over Amazon's unofficial multi-ASIN cart-URL trick, and ove
 - The Instacart partner API key is never exposed to the browser.
 - A recipe with no Instacart link (API failure, feature not yet built, or access not yet granted) degrades to today's behavior — no broken button, no blocked publish.
 
-**Prerequisite — the actual go/no-go gate:** Access to Instacart's IDP recipe-page endpoint requires applying as a developer partner (business info, use case, integration review); reported turnaround is roughly 30–40 days, and it's unconfirmed whether Instacart is currently accepting new applications at all. **This must be confirmed directly with Instacart before any implementation work starts.** Everything below assumes partner access has been granted; in the meantime, repo-side work (schema, layout, tests) can be built and verified against a mocked client per §6.
+**Prerequisite — the actual go/no-go gate:** Access to Instacart's IDP recipe-page endpoint requires applying as a developer partner (business info, use case, integration review). **Confirmed 2026-08-18: Instacart is not currently accepting new IDP applications**, so this path is blocked with no known timeline to reopen. Nothing in this spec is implementable until that changes. Everything below stays as-designed for when applications reopen; in the meantime, only the fully repo-side pieces (schema, layout, tests against a mocked client, per §6) could be built ahead of time if desired, though there's little value in doing so before real access exists. See Out of Scope for the interim fallback (Amazon's multi-ASIN cart-URL trick) if a "buy the meal" feature is wanted sooner.
 
 ## 2. Where the integration lives: `mcp-server`, not the Astro site
 
@@ -107,7 +107,8 @@ Matches the existing test structure:
 
 ## Out of Scope
 
-- Actually applying for/obtaining Instacart IDP partner access — an external business step, not repo work (see Prerequisite in §1).
+- Actually applying for/obtaining Instacart IDP partner access — an external business step, not repo work, and currently blocked entirely (see Prerequisite in §1). Periodically re-checking whether Instacart has reopened applications is also an external step, not something this repo can automate.
+- **Interim fallback while Instacart access is closed:** the Amazon multi-ASIN cart-URL trick (`amazon.com/gp/aws/cart/add.html?ASIN.1=...&ASIN.2=...&AssociateTag=...`) discussed earlier is not designed here, but remains the only other way to offer a multi-item "buy the meal"-style link today. It's a meaningfully different (and lesser) design — an unofficial URL convention rather than a documented API, requires storing real ASINs per ingredient rather than arbitrary `amzn.to` links, and hands the reader to Amazon's cart rather than a curated single retailer flow. If the author wants this sooner rather than waiting on Instacart, it warrants its own short spec rather than folding it into this one.
 - Confirming the exact Instacart affiliate/commission attribution wiring — needs verification against live IDP docs once partner access exists.
 - Regenerating a recipe's Instacart link when its ingredients change after publish — no tool for editing a published post exists in `mcp-server` today, so this stays out of scope until that capability exists.
 - Any on-site cart/checkout UI — all cart/checkout happens on Instacart's own site, matching the Shopify spec's principle of never writing payment code in this repo.
