@@ -44,20 +44,25 @@ describe('selectCycle bucketed weighting', () => {
 });
 
 describe('selectCycle wildcard reservation', () => {
-  it('reserves ~20% of slots as unweighted wildcards not selected by score', () => {
-    const history: DecisionRecord[] = Array(20).fill({ category: 'Kitchen', priceCents: 2000, commissionRate: 0.03, decision: 'denied' });
-    const candidates: ScoringCandidate[] = [
-      // One clearly popular-but-denied-bucket candidate that would never win on score alone.
-      candidate({ asin: 'POPULAR-BUT-LOW-SCORE', category: 'Kitchen', estimatedMonthlySales: 5000, rating: 5 }),
-      // 19 filler candidates in a neutral (no history) bucket, all with zero popularity.
-      ...Array.from({ length: 19 }, (_, i) => candidate({ asin: `FILLER-${i}`, category: 'Grocery', estimatedMonthlySales: 0, rating: null })),
+  it('selects wildcards as the highest-popularity members of the score-ranked remainder, not merely "whatever is left"', () => {
+    const history: DecisionRecord[] = Array(20).fill({ category: 'Kitchen', priceCents: 2000, commissionRate: 0.03, decision: 'approved' });
+    const winners: ScoringCandidate[] = Array.from({ length: 8 }, (_, i) => candidate({ asin: `WINNER-${i}` }));
+    // Insertion order deliberately does NOT match popularity order (HIGH > MID > LOW > LOWEST) —
+    // a wildcard selection that used insertion/arbitrary order instead of sorting by popularity
+    // would pick REM-LOW/REM-LOWEST here instead of the correct REM-HIGH/REM-MID.
+    const remainder: ScoringCandidate[] = [
+      candidate({ asin: 'REM-LOW', category: 'Grocery', commissionRate: 0.01, estimatedMonthlySales: 50, rating: 2.5 }),
+      candidate({ asin: 'REM-LOWEST', category: 'Grocery', commissionRate: 0.01, estimatedMonthlySales: 5, rating: 1.0 }),
+      candidate({ asin: 'REM-HIGH', category: 'Grocery', commissionRate: 0.01, estimatedMonthlySales: 1000, rating: 4.5 }),
+      candidate({ asin: 'REM-MID', category: 'Grocery', commissionRate: 0.01, estimatedMonthlySales: 300, rating: 4.0 }),
     ];
-    const selected = selectCycle(candidates, history, 20, 0.2);
-    expect(selected).toHaveLength(20);
-    const wildcards = selected.filter((c) => c.isWildcard);
-    expect(wildcards).toHaveLength(4);
-    // The popular candidate lost on score (denied-bucket) but should still surface as a wildcard.
-    expect(selected.some((c) => c.asin === 'POPULAR-BUT-LOW-SCORE' && c.isWildcard)).toBe(true);
+    const selected = selectCycle([...winners, ...remainder], history, 10, 0.2);
+    expect(selected).toHaveLength(10);
+    const ranked = selected.filter((c) => !c.isWildcard).map((c) => c.asin).sort();
+    expect(ranked).toEqual(winners.map((c) => c.asin).sort());
+    const wildcards = selected.filter((c) => c.isWildcard).map((c) => c.asin);
+    expect(wildcards).toHaveLength(2);
+    expect(wildcards).toEqual(['REM-HIGH', 'REM-MID']);
   });
 });
 
