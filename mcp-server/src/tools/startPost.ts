@@ -42,6 +42,7 @@ export function registerStartPost(server: McpServer, accessToken: string): void 
         ingredients: [],
         steps: [],
         sections: [],
+        variants: [],
         photos: [],
         kitchenwareIds: [],
         affiliateLinkIds: [],
