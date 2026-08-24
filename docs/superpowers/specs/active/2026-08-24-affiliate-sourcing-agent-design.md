@@ -7,11 +7,19 @@ placement, and a local orchestrator are separate, later specs)
 
 **Amendment (2026-08-24, during sub-project 3 brainstorming):** §3 below originally called for a
 standalone `lhr-affiliate-review` Vercel project. The author has since decided all internal tools
-(this one, the trends report, and future ones) should live under one shared, password-protected
-hub at `office.loveheatrelationship.com` instead of a separate deployed project per sub-project.
+(this one, the trends report, and future ones) should live under one shared hub at
+`office.loveheatrelationship.com` instead of a separate deployed project per sub-project.
 **§3 is superseded** — build the approval UI as a route inside the shared internal app (see the
-trends-watcher spec, `2026-08-24-trends-watcher-design.md`, for where that shared app is
-established) rather than its own Vercel project. Everything else in this spec (Postgres schema,
+trends-watcher spec, `2026-08-24-trends-watcher-design.md`, for where that shared app and its
+auth are established) rather than its own Vercel project.
+
+**Second amendment (same day):** the shared hub's access control also changed mid-brainstorming,
+from Vercel Deployment Protection to real username/password admin accounts (the author is giving
+access to non-technical people unfamiliar with GitHub, and a single shared platform password
+doesn't give individually-managed accounts anyway). Every route in the shared app — including this
+sub-project's approval UI — gates through a `requireAdminSession()` check against an
+`office_admins`/`office_sessions` schema (defined in the trends-watcher spec), not Vercel
+Deployment Protection. Everything else in this spec (Postgres schema for candidates/decisions,
 Keepa sourcing, scoring model, approve-writes-to-affiliate-links flow) is unaffected.
 
 ## 1. Overview & Goals
