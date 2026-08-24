@@ -133,6 +133,8 @@ export async function findDraftKind(client: GitHubClient, id: string): Promise<'
   return null;
 }
 
+const MANUAL_PASS_SENTINEL = "couldn't generate — needs manual pass";
+
 export function summarizeDraftPost(draft: DraftPost): string {
   const lines = [`Type: ${draft.postType}`, `Title: ${draft.title || '(untitled)'}`];
   if (draft.postType === 'recipe') {
@@ -144,5 +146,18 @@ export function summarizeDraftPost(draft: DraftPost): string {
   lines.push(`Kitchenware linked: ${draft.kitchenwareIds.length}`);
   lines.push(`Affiliate links: ${draft.affiliateLinkIds.length + draft.pendingAffiliateLinks.length}`);
   lines.push(`Ingredient links to remember: ${draft.pendingIngredientLinks.length}`);
+  const variants = draft.variants ?? [];
+  if (draft.postType === 'recipe' && variants.length > 0) {
+    lines.push(`Variants: ${variants.map((v) => v.diet).join(', ')}`);
+    const manualPassCount = variants.filter((v) => v.notes === MANUAL_PASS_SENTINEL).length;
+    if (manualPassCount > 0) {
+      lines.push(`Diets needing a manual pass: ${manualPassCount}`);
+    }
+  }
+  if (draft.narrativeBody) {
+    const truncated =
+      draft.narrativeBody.length > 80 ? `${draft.narrativeBody.slice(0, 80)}...` : draft.narrativeBody;
+    lines.push(`Narrative: ${truncated}`);
+  }
   return lines.join('\n');
 }
