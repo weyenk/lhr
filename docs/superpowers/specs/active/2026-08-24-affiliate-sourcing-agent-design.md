@@ -5,6 +5,15 @@
 generator is spec'd/in progress separately; trends watcher, competitor analysis, product-in-photo
 placement, and a local orchestrator are separate, later specs)
 
+**Amendment (2026-08-24, during sub-project 3 brainstorming):** §3 below originally called for a
+standalone `lhr-affiliate-review` Vercel project. The author has since decided all internal tools
+(this one, the trends report, and future ones) should live under one shared, password-protected
+hub at `office.loveheatrelationship.com` instead of a separate deployed project per sub-project.
+**§3 is superseded** — build the approval UI as a route inside the shared internal app (see the
+trends-watcher spec, `2026-08-24-trends-watcher-design.md`, for where that shared app is
+established) rather than its own Vercel project. Everything else in this spec (Postgres schema,
+Keepa sourcing, scoring model, approve-writes-to-affiliate-links flow) is unaffected.
+
 ## 1. Overview & Goals
 
 Today every affiliate link is added by hand, one at a time, during post authoring (`site-help` /
