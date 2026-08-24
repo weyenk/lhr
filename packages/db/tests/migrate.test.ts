@@ -1,0 +1,18 @@
+import { describe, expect, it, vi } from 'vitest';
+import { runMigrations } from '../src/migrate';
+
+describe('runMigrations', () => {
+  it('creates the candidates table', async () => {
+    const pool = { query: vi.fn().mockResolvedValue(undefined) };
+    await runMigrations(pool as never);
+    const calls = pool.query.mock.calls.map((c) => c[0] as string);
+    expect(calls.some((sql) => sql.includes('CREATE TABLE IF NOT EXISTS candidates'))).toBe(true);
+  });
+
+  it('creates the decision_history table', async () => {
+    const pool = { query: vi.fn().mockResolvedValue(undefined) };
+    await runMigrations(pool as never);
+    const calls = pool.query.mock.calls.map((c) => c[0] as string);
+    expect(calls.some((sql) => sql.includes('CREATE TABLE IF NOT EXISTS decision_history'))).toBe(true);
+  });
+});

@@ -5,10 +5,11 @@
   "workspaces": [
     "mcp-server",
     "packages/schemas",
-    "packages/github"
+    "packages/github",
+    "packages/db"
   ],
   "scripts": {
-    "postinstall": "npm run build --workspace=@lhr/schemas && npm run build --workspace=@lhr/github",
+    "postinstall": "npm run build --workspace=@lhr/schemas && npm run build --workspace=@lhr/github && npm run build --workspace=@lhr/db",
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
