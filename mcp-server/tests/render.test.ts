@@ -15,6 +15,8 @@ describe('renderPostMdx', () => {
       kitchenwareIds: ['coastal-blue-platter'],
       affiliateLinkIds: ['jerk-seasoning'],
       pendingAffiliateLinks: [],
+      pendingIngredientLinks: [],
+      variants: [],
     };
 
     const mdx = renderPostMdx(draft);
@@ -40,6 +42,8 @@ describe('renderPostMdx', () => {
       kitchenwareIds: [],
       affiliateLinkIds: [],
       pendingAffiliateLinks: [{ id: 'new-sauce-ab12', label: 'New sauce', url: 'https://vendor.example.com/new-sauce', tag: 'new-sauce' }],
+      pendingIngredientLinks: [],
+      variants: [],
     };
 
     const mdx = renderPostMdx(draft);
@@ -48,5 +52,75 @@ describe('renderPostMdx', () => {
     expect(mdx).toContain('heading: Why blue');
     expect(mdx).toContain('- new-sauce-ab12');
     expect(mdx).not.toContain('ingredients:');
+  });
+
+  it('appends narrativeBody as MDX body prose below the frontmatter fence when present', () => {
+    const draft: DraftPost = {
+      kind: 'post',
+      postType: 'recipe',
+      title: 'Teriyaki Chicken Casserole',
+      ingredients: [{ item: 'Chicken thighs', amount: '2 lbs' }],
+      steps: ['Preheat oven to 350F.'],
+      sections: [],
+      photos: [{ url: 'https://www.themealdb.com/images/media/meals/wvpsxx1468256321.jpg' }],
+      kitchenwareIds: [],
+      affiliateLinkIds: [],
+      pendingAffiliateLinks: [],
+      pendingIngredientLinks: [],
+      variants: [],
+      narrativeBody: 'Once upon a weeknight, dinner needed to be easy.',
+    };
+
+    const mdx = renderPostMdx(draft);
+
+    expect(mdx).toMatch(/---\n\nOnce upon a weeknight, dinner needed to be easy\.\n$/);
+  });
+
+  it('writes variants and sourceMealDbId into recipe frontmatter when present', () => {
+    const draft: DraftPost = {
+      kind: 'post',
+      postType: 'recipe',
+      title: 'Teriyaki Chicken Casserole',
+      ingredients: [{ item: 'Chicken thighs', amount: '2 lbs' }],
+      steps: ['Preheat oven to 350F.'],
+      sections: [],
+      photos: [{ url: 'https://www.themealdb.com/images/media/meals/wvpsxx1468256321.jpg' }],
+      kitchenwareIds: [],
+      affiliateLinkIds: [],
+      pendingAffiliateLinks: [],
+      pendingIngredientLinks: [],
+      variants: [
+        { diet: 'original', ingredients: [{ item: 'Chicken thighs', amount: '2 lbs' }], steps: ['Preheat oven to 350F.'] },
+      ],
+      sourceMealDbId: '52772',
+    };
+
+    const mdx = renderPostMdx(draft);
+
+    expect(mdx).toContain('sourceMealDbId: \'52772\'');
+    expect(mdx).toContain('diet: original');
+  });
+
+  it('omits variants/sourceMealDbId/narrativeBody from output when absent (unchanged behavior)', () => {
+    const draft: DraftPost = {
+      kind: 'post',
+      postType: 'recipe',
+      title: 'Jerk Chicken for a Crowd',
+      ingredients: [{ item: 'Chicken thighs', amount: '2 lbs' }],
+      steps: ['Marinate overnight.'],
+      sections: [],
+      photos: [{ url: 'https://blob.vercel-storage.com/posts/a.jpg', caption: 'Jerk chicken' }],
+      kitchenwareIds: ['coastal-blue-platter'],
+      affiliateLinkIds: ['jerk-seasoning'],
+      pendingAffiliateLinks: [],
+      pendingIngredientLinks: [],
+      variants: [],
+    };
+
+    const mdx = renderPostMdx(draft);
+
+    expect(mdx).not.toContain('variants:');
+    expect(mdx).not.toContain('sourceMealDbId:');
+    expect(mdx.endsWith('---\n')).toBe(true);
   });
 });

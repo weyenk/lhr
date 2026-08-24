@@ -1,5 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { z } from 'zod';
+import { recipeVariantSchema } from '@lhr/schemas';
 import { createBranch, deleteBranch, getFile, listBranches, putFile, type GitHubClient } from './github.js';
 
 export const draftPostSchema = z.object({
@@ -16,6 +17,9 @@ export const draftPostSchema = z.object({
     .array(z.object({ id: z.string(), label: z.string(), url: z.string().url(), tag: z.string() }))
     .default([]),
   pendingIngredientLinks: z.array(z.object({ ingredient: z.string(), affiliateLinkId: z.string() })).default([]),
+  variants: z.array(recipeVariantSchema).default([]),
+  sourceMealDbId: z.string().optional(),
+  narrativeBody: z.string().optional(),
 });
 
 export const draftSetSchema = z.object({

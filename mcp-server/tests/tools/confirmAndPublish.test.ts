@@ -56,6 +56,7 @@ const validRecipeDraft = {
   affiliateLinkIds: [],
   pendingAffiliateLinks: [{ id: 'sauce-ab12', label: 'Sauce', url: 'https://vendor.example.com/sauce', tag: 'sauce' }],
   pendingIngredientLinks: [{ ingredient: 'jerk seasoning', affiliateLinkId: 'sauce-ab12' }],
+  variants: [],
 };
 
 beforeEach(() => {
