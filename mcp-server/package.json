@@ -5,7 +5,8 @@
   "scripts": {
     "build": "npm run build --workspace=@lhr/schemas && tsc --noEmit -p tsconfig.json && node scripts/bundle.mjs",
     "test": "vitest run",
-    "backfill:ingredient-links": "tsx scripts/backfill-ingredient-links.ts"
+    "backfill:ingredient-links": "tsx scripts/backfill-ingredient-links.ts",
+    "source:affiliate-candidates": "tsx scripts/source-affiliate-candidates.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1095.0",
