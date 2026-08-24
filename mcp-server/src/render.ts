@@ -15,6 +15,8 @@ export function buildPostFrontmatter(draft: DraftPost): Record<string, unknown> 
   if (draft.postType === 'recipe') {
     frontmatter.ingredients = draft.ingredients;
     frontmatter.steps = draft.steps;
+    if (draft.variants.length > 0) frontmatter.variants = draft.variants;
+    if (draft.sourceMealDbId) frontmatter.sourceMealDbId = draft.sourceMealDbId;
   } else {
     frontmatter.sections = draft.sections;
   }
@@ -27,5 +29,6 @@ export function renderFrontmatterYaml(frontmatter: Record<string, unknown>): str
 }
 
 export function renderPostMdx(draft: DraftPost): string {
-  return renderFrontmatterYaml(buildPostFrontmatter(draft));
+  const frontmatterBlock = renderFrontmatterYaml(buildPostFrontmatter(draft));
+  return draft.narrativeBody ? `${frontmatterBlock}\n${draft.narrativeBody}\n` : frontmatterBlock;
 }

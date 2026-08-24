@@ -24,6 +24,7 @@ const {
   deleteDraftBranch,
   findDraftKind,
   summarizeDraftPost,
+  draftSchema,
 } = await import('../src/drafts');
 
 const client = {} as import('../src/github').GitHubClient;
@@ -40,6 +41,7 @@ const emptyRecipeDraft = {
   affiliateLinkIds: [],
   pendingAffiliateLinks: [],
   pendingIngredientLinks: [],
+  variants: [],
 };
 
 beforeEach(() => {
@@ -166,5 +168,32 @@ describe('summarizeDraftPost', () => {
     expect(summary).toContain('Title: Why We Chose Coastal Blue');
     expect(summary).toContain('Sections: 1');
     expect(summary).not.toContain('Ingredients:');
+  });
+});
+
+describe('draftPostSchema variants/sourceMealDbId/narrativeBody', () => {
+  it('defaults variants to an empty array and leaves sourceMealDbId/narrativeBody undefined', () => {
+    const parsed = draftSchema.parse(emptyRecipeDraft);
+    if (parsed.kind !== 'post') throw new Error('expected a post draft');
+    expect(parsed.variants).toEqual([]);
+    expect(parsed.sourceMealDbId).toBeUndefined();
+    expect(parsed.narrativeBody).toBeUndefined();
+  });
+
+  it('accepts a draft with variants, a sourceMealDbId, and a narrativeBody', () => {
+    const draft = {
+      ...emptyRecipeDraft,
+      variants: [
+        { diet: 'original' as const, ingredients: [{ item: 'Chicken' }], steps: ['Cook it.'] },
+        { diet: 'vegan' as const, ingredients: [{ item: 'Plant-based chicken' }], steps: ['Cook it.'] },
+      ],
+      sourceMealDbId: '52772',
+      narrativeBody: 'A short story about a weeknight dinner.',
+    };
+    const parsed = draftSchema.parse(draft);
+    if (parsed.kind !== 'post') throw new Error('expected a post draft');
+    expect(parsed.variants).toHaveLength(2);
+    expect(parsed.sourceMealDbId).toBe('52772');
+    expect(parsed.narrativeBody).toBe('A short story about a weeknight dinner.');
   });
 });
