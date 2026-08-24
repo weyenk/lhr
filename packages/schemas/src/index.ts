@@ -10,6 +10,16 @@ const basePostFields = {
   affiliateLinkIds: z.array(z.string()).default([]),
 };
 
+export const recipeVariantSchema = z.object({
+  diet: z.enum([
+    'original', 'gluten-free', 'vegan', 'vegetarian',
+    'pescatarian', 'low-carb', 'low-salt', 'low-fat',
+  ]),
+  ingredients: z.array(z.object({ item: z.string(), amount: z.string().optional() })).min(1),
+  steps: z.array(z.string()).min(1),
+  notes: z.string().optional(),
+});
+
 export const recipePostSchema = z.object({
   type: z.literal('recipe'),
   ...basePostFields,
@@ -26,6 +36,8 @@ export const recipePostSchema = z.object({
     )
     .min(1),
   steps: z.array(z.string()).min(1),
+  variants: z.array(recipeVariantSchema).optional(),
+  sourceMealDbId: z.string().optional(),
 });
 
 export const articlePostSchema = z.object({
@@ -76,3 +88,4 @@ export type ProductData = z.infer<typeof productSchema>;
 export type AffiliateLinkData = z.infer<typeof affiliateLinkSchema>;
 export type IngredientLinkData = z.infer<typeof ingredientLinkSchema>;
 export type SetData = z.infer<typeof setSchema>;
+export type RecipeVariantData = z.infer<typeof recipeVariantSchema>;
