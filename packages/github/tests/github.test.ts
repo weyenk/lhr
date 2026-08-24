@@ -24,7 +24,7 @@ vi.mock('@octokit/rest', () => ({
 }));
 
 const { createGitHubClient, getFile, listFiles, createBranch, listBranches, deleteBranch, putFile, commitFilesToMain } =
-  await import('../src/github');
+  await import('../src/index');
 
 beforeEach(() => {
   vi.clearAllMocks();
