@@ -1,6 +1,6 @@
 import { listFiles, getFile, type GitHubClient } from './github.js';
 import { parsePostFrontmatter } from './backfillIngredientLinks.js';
-import { createDraft, type DraftPost } from './drafts.js';
+import { createDraft, listDrafts, readDraft, type DraftPost } from './drafts.js';
 import { pickUnusedSourceRecipe } from './themealdb.js';
 import { generateAllVariants } from './dietSubstitutions.js';
 import { generateNarrative } from './narrative.js';
@@ -26,6 +26,15 @@ export async function loadExistingSourceMealDbIds(client: GitHubClient): Promise
       ids.add(parsed.data.sourceMealDbId);
     }
   }
+
+  const draftSummaries = await listDrafts(client, 'post');
+  for (const summary of draftSummaries) {
+    const draft = await readDraft(client, 'post', summary.id);
+    if (draft.kind === 'post' && draft.sourceMealDbId) {
+      ids.add(draft.sourceMealDbId);
+    }
+  }
+
   return ids;
 }
 

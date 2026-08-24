@@ -31,7 +31,9 @@ vi.mock('../../src/github', () => ({
       .filter((p) => p.startsWith(`${dirPath}/`))
       .map((p) => p.slice(dirPath.length + 1)),
   ),
-  listBranches: vi.fn(async () => []),
+  listBranches: vi.fn(async (_client: unknown, prefix: string) =>
+    Array.from(state.branches.keys()).filter((b) => b.startsWith(prefix)),
+  ),
   deleteBranch: vi.fn(async () => {}),
 }));
 
@@ -134,6 +136,39 @@ describe('runWeeklyVariantRecipeGeneration', () => {
 
     expect(result.skipped).toBe(false);
     expect(result.flaggedDiets).toEqual(['low-fat']);
+  });
+
+  it('excludes a sourceMealDbId present only in an open (unpublished) draft branch from the used-id pool', async () => {
+    const draftId = 'existing1';
+    const draftBranch = `draft/post-${draftId}`;
+    state.branches.set(draftBranch, 'base');
+    state.files.set(
+      draftBranch,
+      new Map([
+        [
+          `.drafts/${draftId}.json`,
+          JSON.stringify({
+            kind: 'post',
+            postType: 'recipe',
+            title: 'A Draft Recipe Awaiting Review',
+            ingredients: [{ item: 'Chicken' }],
+            steps: ['Cook it.'],
+            sections: [],
+            photos: [],
+            kitchenwareIds: [],
+            affiliateLinkIds: [],
+            pendingAffiliateLinks: [],
+            pendingIngredientLinks: [],
+            variants: [],
+            sourceMealDbId: '99999',
+          }),
+        ],
+      ]),
+    );
+
+    await runWeeklyVariantRecipeGeneration(client);
+
+    expect(pickUnusedSourceRecipe).toHaveBeenCalledWith(new Set(['99999']));
   });
 
   it('skips the run without creating a draft when no unused recipe can be found', async () => {

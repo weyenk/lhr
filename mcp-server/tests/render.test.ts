@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { renderPostMdx } from '../src/render';
+import { renderPostMdx, escapeMdxBody } from '../src/render';
 import type { DraftPost } from '../src/drafts';
 
 describe('renderPostMdx', () => {
@@ -122,5 +122,51 @@ describe('renderPostMdx', () => {
     expect(mdx).not.toContain('variants:');
     expect(mdx).not.toContain('sourceMealDbId:');
     expect(mdx.endsWith('---\n')).toBe(true);
+  });
+
+  it('escapes braces and angle brackets in narrativeBody before writing it into the MDX body', () => {
+    const draft: DraftPost = {
+      kind: 'post',
+      postType: 'recipe',
+      title: 'Teriyaki Chicken Casserole',
+      ingredients: [{ item: 'Chicken thighs', amount: '2 lbs' }],
+      steps: ['Preheat oven to 350F.'],
+      sections: [],
+      photos: [{ url: 'https://www.themealdb.com/images/media/meals/wvpsxx1468256321.jpg' }],
+      kitchenwareIds: [],
+      affiliateLinkIds: [],
+      pendingAffiliateLinks: [],
+      pendingIngredientLinks: [],
+      variants: [],
+      narrativeBody: 'Ready in <10 minutes, add sugar {optional} to taste.',
+    };
+
+    const mdx = renderPostMdx(draft);
+
+    expect(mdx).toContain('Ready in &lt;10 minutes, add sugar \\{optional\\} to taste.');
+    expect(mdx).not.toContain('<10 minutes');
+    expect(mdx).not.toContain('{optional}');
+  });
+});
+
+describe('escapeMdxBody', () => {
+  it('escapes { and } with a leading backslash', () => {
+    expect(escapeMdxBody('add sugar {optional}')).toBe('add sugar \\{optional\\}');
+  });
+
+  it('escapes < as &lt;', () => {
+    expect(escapeMdxBody('ready in <10 minutes')).toBe('ready in &lt;10 minutes');
+  });
+
+  it('leaves plain prose untouched', () => {
+    expect(escapeMdxBody('A short story about a weeknight dinner.')).toBe(
+      'A short story about a weeknight dinner.',
+    );
+  });
+
+  it('escapes braces and angle brackets together in one pass', () => {
+    expect(escapeMdxBody('Ready in <10 minutes, add sugar {optional} to taste.')).toBe(
+      'Ready in &lt;10 minutes, add sugar \\{optional\\} to taste.',
+    );
   });
 });

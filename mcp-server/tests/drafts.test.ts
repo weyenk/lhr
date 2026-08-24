@@ -169,6 +169,65 @@ describe('summarizeDraftPost', () => {
     expect(summary).toContain('Sections: 1');
     expect(summary).not.toContain('Ingredients:');
   });
+
+  it('lists variant diets in array order when the draft has variants', () => {
+    const summary = summarizeDraftPost({
+      ...emptyRecipeDraft,
+      title: 'Jerk Chicken',
+      variants: [
+        { diet: 'original', ingredients: [{ item: 'Chicken' }], steps: ['Grill it'] },
+        { diet: 'gluten-free', ingredients: [{ item: 'Chicken' }], steps: ['Grill it'] },
+        { diet: 'vegan', ingredients: [{ item: 'Plant-based chicken' }], steps: ['Grill it'] },
+      ],
+    });
+    expect(summary).toContain('Variants: original, gluten-free, vegan');
+  });
+
+  it('reports the count of variants needing a manual pass', () => {
+    const summary = summarizeDraftPost({
+      ...emptyRecipeDraft,
+      title: 'Jerk Chicken',
+      variants: [
+        { diet: 'original', ingredients: [{ item: 'Chicken' }], steps: ['Grill it'] },
+        {
+          diet: 'low-fat',
+          ingredients: [{ item: 'Chicken' }],
+          steps: ['Grill it'],
+          notes: "couldn't generate — needs manual pass",
+        },
+        {
+          diet: 'vegan',
+          ingredients: [{ item: 'Plant-based chicken' }],
+          steps: ['Grill it'],
+          notes: "couldn't generate — needs manual pass",
+        },
+      ],
+    });
+    expect(summary).toContain('Diets needing a manual pass: 2');
+  });
+
+  it('shows a truncated narrative line when the draft has a narrative body', () => {
+    const longNarrative =
+      'This jerk chicken recipe has been in the family for generations, passed down through countless Sunday dinners.';
+    const summary = summarizeDraftPost({
+      ...emptyRecipeDraft,
+      title: 'Jerk Chicken',
+      narrativeBody: longNarrative,
+    });
+    expect(summary).toContain(`Narrative: ${longNarrative.slice(0, 80)}...`);
+  });
+
+  it('omits variant, manual-pass, and narrative lines for a hand-authored post with none of those fields', () => {
+    const summary = summarizeDraftPost({
+      ...emptyRecipeDraft,
+      title: 'Jerk Chicken',
+      ingredients: [{ item: 'Chicken' }],
+      steps: ['Grill it'],
+    });
+    expect(summary).not.toContain('Variants:');
+    expect(summary).not.toContain('Diets needing a manual pass:');
+    expect(summary).not.toContain('Narrative:');
+  });
 });
 
 describe('draftPostSchema variants/sourceMealDbId/narrativeBody', () => {

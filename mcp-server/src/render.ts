@@ -28,7 +28,15 @@ export function renderFrontmatterYaml(frontmatter: Record<string, unknown>): str
   return `---\n${yaml.dump(frontmatter)}---\n`;
 }
 
+// MDX parses the body as JSX-flavored markdown, so raw `{`, `}`, and `<` characters in
+// LLM-generated prose (e.g. "ready in <10 minutes", "add sugar {optional}") would break the
+// build. Escape them before they're interpolated into the .mdx file.
+export function escapeMdxBody(text: string): string {
+  const withEscapedBraces = text.replace(/\{/g, '\\{').replace(/\}/g, '\\}');
+  return withEscapedBraces.replace(/</g, '&lt;');
+}
+
 export function renderPostMdx(draft: DraftPost): string {
   const frontmatterBlock = renderFrontmatterYaml(buildPostFrontmatter(draft));
-  return draft.narrativeBody ? `${frontmatterBlock}\n${draft.narrativeBody}\n` : frontmatterBlock;
+  return draft.narrativeBody ? `${frontmatterBlock}\n${escapeMdxBody(draft.narrativeBody)}\n` : frontmatterBlock;
 }
