@@ -70,3 +70,15 @@ CREATE TABLE IF NOT EXISTS trend_seed_topics (
   UNIQUE (category, topic)
 );
 `;
+
+export const TRENDS_REPORTS_TABLE_SQL = `
+CREATE TABLE IF NOT EXISTS trends_reports (
+  id SERIAL PRIMARY KEY,
+  cycle_id TEXT NOT NULL,
+  category TEXT NOT NULL,
+  generated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  topics_used JSONB NOT NULL,
+  raw_findings JSONB NOT NULL,
+  summary TEXT NOT NULL
+);
+`;
