@@ -6,6 +6,7 @@ import {
   OFFICE_SESSIONS_TABLE_SQL,
   TREND_SEED_TOPICS_TABLE_SQL,
   TRENDS_REPORTS_TABLE_SQL,
+  COMPETITORS_TABLE_SQL,
 } from './schema.js';
 
 export async function runMigrations(pool: Pool): Promise<void> {
@@ -15,4 +16,5 @@ export async function runMigrations(pool: Pool): Promise<void> {
   await pool.query(OFFICE_SESSIONS_TABLE_SQL);
   await pool.query(TREND_SEED_TOPICS_TABLE_SQL);
   await pool.query(TRENDS_REPORTS_TABLE_SQL);
+  await pool.query(COMPETITORS_TABLE_SQL);
 }

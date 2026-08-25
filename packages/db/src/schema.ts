@@ -82,3 +82,14 @@ CREATE TABLE IF NOT EXISTS trends_reports (
   summary TEXT NOT NULL
 );
 `;
+
+export const COMPETITORS_TABLE_SQL = `
+CREATE TABLE IF NOT EXISTS competitors (
+  id SERIAL PRIMARY KEY,
+  domain TEXT NOT NULL UNIQUE,
+  name TEXT,
+  status TEXT NOT NULL DEFAULT 'candidate',
+  discovered_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  approved_at TIMESTAMPTZ
+);
+`;

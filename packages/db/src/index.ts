@@ -8,3 +8,4 @@ export * from './officeAdmins.js';
 export * from './officeSessions.js';
 export * from './trendSeedTopics.js';
 export * from './trendsReports.js';
+export * from './competitors.js';

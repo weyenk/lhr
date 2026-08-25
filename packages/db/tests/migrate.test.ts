@@ -43,4 +43,11 @@ describe('runMigrations', () => {
     const calls = pool.query.mock.calls.map((c) => c[0] as string);
     expect(calls.some((sql) => sql.includes('CREATE TABLE IF NOT EXISTS trends_reports'))).toBe(true);
   });
+
+  it('creates the competitors table', async () => {
+    const pool = { query: vi.fn().mockResolvedValue(undefined) };
+    await runMigrations(pool as never);
+    const calls = pool.query.mock.calls.map((c) => c[0] as string);
+    expect(calls.some((sql) => sql.includes('CREATE TABLE IF NOT EXISTS competitors'))).toBe(true);
+  });
 });
