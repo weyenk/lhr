@@ -13,14 +13,14 @@ export async function POST({ request, cookies, redirect }: APIContext): Promise<
   const pool = getPool();
   const admin = await getAdminByUsername(pool, username);
   if (!admin) {
-    return new Response('Invalid username or password', { status: 401 });
+    return redirect('/login?error=' + encodeURIComponent('Invalid username or password'));
   }
   if (isLocked(admin)) {
-    return new Response('Account locked. Try again in 15 minutes.', { status: 423 });
+    return redirect('/login?error=' + encodeURIComponent('Account locked. Try again in 15 minutes.'));
   }
   if (!verifyPassword(password, admin.passwordHash)) {
     await recordFailedAttempt(pool, admin.id);
-    return new Response('Invalid username or password', { status: 401 });
+    return redirect('/login?error=' + encodeURIComponent('Invalid username or password'));
   }
 
   await resetFailedAttempts(pool, admin.id);

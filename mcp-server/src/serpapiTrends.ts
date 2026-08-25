@@ -36,7 +36,7 @@ interface GoogleTrendsInterestResponse {
 
 interface RelatedQueryItem {
   query?: string;
-  value?: string;
+  value?: string | number;
 }
 
 interface GoogleTrendsRelatedResponse {
@@ -53,7 +53,14 @@ function computeDirection(points: TimelinePoint[]): 'rising' | 'falling' | 'flat
   const values = points
     .map((p) => p.values?.[0]?.extracted_value)
     .filter((v): v is number => typeof v === 'number');
-  if (values.length < 2) return 'flat';
+  if (values.length < 2) {
+    if (points.length > 0) {
+      console.warn(
+        `computeDirection: expected >=2 numeric extracted_value points but found ${values.length} in ${points.length} point(s); raw first point: ${JSON.stringify(points[0])}`,
+      );
+    }
+    return 'flat';
+  }
   const delta = values[values.length - 1] - values[0];
   if (delta > DIRECTION_THRESHOLD) return 'rising';
   if (delta < -DIRECTION_THRESHOLD) return 'falling';
@@ -61,9 +68,21 @@ function computeDirection(points: TimelinePoint[]): 'rising' | 'falling' | 'flat
 }
 
 function toRelated(items: RelatedQueryItem[] | undefined): RelatedQuery[] {
-  return (items ?? [])
-    .filter((item): item is Required<RelatedQueryItem> => typeof item.query === 'string' && typeof item.value === 'string')
-    .map((item) => ({ query: item.query, value: item.value }));
+  const list = items ?? [];
+  const result = list
+    .filter(
+      (item): item is { query: string; value: string | number } =>
+        typeof item.query === 'string' && item.query.length > 0 && (typeof item.value === 'string' || typeof item.value === 'number'),
+    )
+    .map((item) => ({ query: item.query, value: String(item.value) }));
+
+  if (list.length > 0 && result.length === 0) {
+    console.warn(
+      `toRelated: expected items with string "query" and string|number "value" but got none usable out of ${list.length} item(s); raw first item: ${JSON.stringify(list[0])}`,
+    );
+  }
+
+  return result;
 }
 
 export async function fetchInterestAndRelatedQueries(

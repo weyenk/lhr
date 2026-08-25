@@ -46,6 +46,13 @@ describe('POST /api/admin/topics/[id]/status', () => {
     expect(dbMock.setTopicStatus).not.toHaveBeenCalled();
   });
 
+  it('rejects a non-numeric topic id', async () => {
+    const context = makeContext('not-a-number', 'curated');
+    const res = await POST(context as never);
+    expect(res.status).toBe(400);
+    expect(dbMock.setTopicStatus).not.toHaveBeenCalled();
+  });
+
   it('redirects to /login instead of updating when not authenticated', async () => {
     const loginRedirect = new Response(null, { status: 302 });
     authMock.requireAdminSession.mockResolvedValue({ response: loginRedirect });

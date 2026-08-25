@@ -1,5 +1,5 @@
 import { getPool } from './db.js';
-import { getSession, renewSession, getAdminById, type OfficeAdmin } from '@lhr/db';
+import { getSession, renewSession, getAdminById, type OfficeAdminSummary } from '@lhr/db';
 
 const SESSION_COOKIE = 'office_session';
 
@@ -8,7 +8,7 @@ export interface AuthContext {
   redirect(path: string): Response;
 }
 
-export type AuthResult = { admin: OfficeAdmin } | { response: Response };
+export type AuthResult = { admin: OfficeAdminSummary } | { response: Response };
 
 export async function requireAdminSession(context: AuthContext): Promise<AuthResult> {
   const sessionId = context.cookies.get(SESSION_COOKIE)?.value;
@@ -24,7 +24,8 @@ export async function requireAdminSession(context: AuthContext): Promise<AuthRes
   if (!admin) return { response: context.redirect('/login') };
 
   await renewSession(pool, sessionId);
-  return { admin };
+  const { passwordHash: _passwordHash, ...adminSummary } = admin;
+  return { admin: adminSummary };
 }
 
 export const SESSION_COOKIE_NAME = SESSION_COOKIE;

@@ -56,7 +56,9 @@ describe('requireAdminSession', () => {
     dbMock.getAdminById.mockResolvedValue(admin);
     const context = makeContext('sess-1');
     const result = await requireAdminSession(context as never);
-    expect('admin' in result && result.admin).toEqual(admin);
+    const { passwordHash: _passwordHash, ...adminSummary } = admin;
+    expect('admin' in result && result.admin).toEqual(adminSummary);
+    expect('admin' in result && result.admin).not.toHaveProperty('passwordHash');
     expect(dbMock.renewSession).toHaveBeenCalledWith(mockPool, 'sess-1');
     expect(context.redirect).not.toHaveBeenCalled();
   });

@@ -52,4 +52,22 @@ describe('POST /api/admin/create-admin', () => {
     expect(res).toBe(loginRedirect);
     expect(dbMock.createAdmin).not.toHaveBeenCalled();
   });
+
+  it('redirects with an error and never calls createAdmin when the password is too short', async () => {
+    const context = makeContext('newperson', 'short');
+
+    await POST(context as never);
+
+    expect(dbMock.createAdmin).not.toHaveBeenCalled();
+    expect(context.redirect).toHaveBeenCalledWith(expect.stringMatching(/^\/admin\/\?error=/));
+  });
+
+  it('redirects to /admin/?error=... instead of throwing when createAdmin rejects with a unique-violation', async () => {
+    dbMock.createAdmin.mockRejectedValue({ code: '23505' });
+    const context = makeContext('newperson', 'a-strong-password');
+
+    await POST(context as never);
+
+    expect(context.redirect).toHaveBeenCalledWith(expect.stringMatching(/^\/admin\/\?error=/));
+  });
 });

@@ -49,31 +49,31 @@ describe('POST /api/login', () => {
     expect(res.status).toBe(302);
   });
 
-  it('returns 401 and records a failed attempt on wrong password', async () => {
+  it('redirects to the login page with an error and records a failed attempt on wrong password', async () => {
     dbMock.getAdminByUsername.mockResolvedValue(admin);
     dbMock.verifyPassword.mockReturnValue(false);
 
     const context = makeContext('ash', 'wrong-password');
-    const res = await POST(context as never);
+    await POST(context as never);
 
-    expect(res.status).toBe(401);
+    expect(context.redirect).toHaveBeenCalledWith('/login?error=' + encodeURIComponent('Invalid username or password'));
     expect(dbMock.recordFailedAttempt).toHaveBeenCalledWith(mockPool, 1);
     expect(dbMock.createSession).not.toHaveBeenCalled();
   });
 
-  it('returns 401 for an unknown username without leaking which part was wrong', async () => {
+  it('redirects to the login page with an error for an unknown username without leaking which part was wrong', async () => {
     dbMock.getAdminByUsername.mockResolvedValue(null);
     const context = makeContext('nobody', 'anything');
-    const res = await POST(context as never);
-    expect(res.status).toBe(401);
+    await POST(context as never);
+    expect(context.redirect).toHaveBeenCalledWith('/login?error=' + encodeURIComponent('Invalid username or password'));
   });
 
-  it('returns 423 when the account is locked', async () => {
+  it('redirects to the login page with an error when the account is locked', async () => {
     dbMock.getAdminByUsername.mockResolvedValue(admin);
     dbMock.isLocked.mockReturnValue(true);
     const context = makeContext('ash', 'correct-password');
-    const res = await POST(context as never);
-    expect(res.status).toBe(423);
+    await POST(context as never);
+    expect(context.redirect).toHaveBeenCalledWith('/login?error=' + encodeURIComponent('Account locked. Try again in 15 minutes.'));
     expect(dbMock.verifyPassword).not.toHaveBeenCalled();
   });
 });

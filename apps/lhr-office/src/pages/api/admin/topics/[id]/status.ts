@@ -14,6 +14,7 @@ export async function POST(context: APIContext): Promise<Response> {
   }
 
   const id = Number(context.params.id);
+  if (!Number.isInteger(id)) return new Response('Invalid topic id', { status: 400 });
   await setTopicStatus(getPool(), id, status);
 
   return context.redirect('/admin/');

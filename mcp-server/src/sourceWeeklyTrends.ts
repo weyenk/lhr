@@ -8,6 +8,7 @@ import {
   upsertSuggestedTopic,
   promoteEligibleCandidates,
   insertTrendsReport,
+  normalizeTopic,
   type TopicUsed,
 } from '@lhr/db';
 import { fetchInterestAndRelatedQueries, fetchTrendingNow, type InterestAndRelatedQueries, type TrendingNowItem } from './serpapiTrends.js';
@@ -125,7 +126,17 @@ export async function runWeeklyTrendsCycle(pool: Pool, repoRoot: string): Promis
 
     const curated = await getCuratedTopics(pool, category);
     const curatedTopics = curated.map((t) => t.topic);
-    const suggested = await suggestAdjacentTopics(category, curatedTopics);
+    const curatedNormalized = new Set(curatedTopics.map(normalizeTopic));
+    const suggestedRaw = await suggestAdjacentTopics(category, curatedTopics);
+
+    const seenNormalized = new Set<string>();
+    const suggested: string[] = [];
+    for (const topic of suggestedRaw) {
+      const normalized = normalizeTopic(topic);
+      if (curatedNormalized.has(normalized) || seenNormalized.has(normalized)) continue;
+      seenNormalized.add(normalized);
+      suggested.push(topic);
+    }
 
     const candidateTopics: TopicUsed[] = [
       ...curatedTopics.map((topic) => ({ topic, source: 'curated' as const })),

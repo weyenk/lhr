@@ -11,6 +11,7 @@ const dbMock = {
   upsertSuggestedTopic: vi.fn(),
   promoteEligibleCandidates: vi.fn().mockResolvedValue([]),
   insertTrendsReport: vi.fn(),
+  normalizeTopic: (topic: string) => topic.toLowerCase().trim(),
 };
 vi.mock('@lhr/db', () => dbMock);
 
@@ -87,5 +88,29 @@ describe('runWeeklyTrendsCycle', () => {
     await runWeeklyTrendsCycle(pool, fixtureRepoRoot);
     expect(dbMock.upsertSuggestedTopic).toHaveBeenCalledWith(pool, expect.any(String), 'sourdough starter');
     expect(dbMock.promoteEligibleCandidates).toHaveBeenCalledTimes(3);
+  });
+
+  it('does not treat an already-curated topic as a new suggestion', async () => {
+    dbMock.getCuratedTopics.mockImplementation(async (_pool, category) =>
+      category === 'cooking'
+        ? [{ id: 1, category, topic: 'Sourdough Starter', status: 'curated', timesSeen: 3, firstSeenAt: new Date(), lastSeenAt: new Date(), promotedAt: new Date() }]
+        : [],
+    );
+    // The LLM "suggests" the same topic (different case/whitespace) that is already curated,
+    // but only for the "cooking" category so the other categories don't add noise.
+    openrouterMock.callOpenRouter.mockImplementation(async (messages: { content: string }[]) => {
+      const isSuggestionCall = messages.some((m) => m.content.includes('Suggest up to'));
+      if (!isSuggestionCall) return 'This week: sourdough interest is rising.';
+      const isCooking = messages.some((m) => m.content.includes('Category: cooking'));
+      return isCooking ? '["  sourdough starter  "]' : '[]';
+    });
+
+    await runWeeklyTrendsCycle(pool, fixtureRepoRoot);
+
+    // Only fetched once for the curated topic, not a second time for the "suggested" duplicate.
+    expect(serpapiMock.fetchInterestAndRelatedQueries).toHaveBeenCalledTimes(1);
+    expect(serpapiMock.fetchInterestAndRelatedQueries).toHaveBeenCalledWith('Sourdough Starter');
+    // Since it's already curated, it should never be recorded as a new suggested topic.
+    expect(dbMock.upsertSuggestedTopic).not.toHaveBeenCalled();
   });
 });

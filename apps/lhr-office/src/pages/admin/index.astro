@@ -1,7 +1,7 @@
 ---
 import { requireAdminSession } from '../../lib/auth.js';
 import { getPool } from '../../lib/db.js';
-import { listAdmins, getAllTopics, TREND_CATEGORIES } from '@lhr/db';
+import { listAdmins, getAllTopics, TREND_CATEGORIES, isLocked } from '@lhr/db';
 
 const authResult = await requireAdminSession(Astro);
 if ('response' in authResult) {
@@ -11,6 +11,7 @@ if ('response' in authResult) {
 const pool = getPool();
 const admins = await listAdmins(pool);
 const topics = await getAllTopics(pool);
+const error = Astro.url.searchParams.get('error');
 ---
 <html lang="en">
   <head>
@@ -25,10 +26,12 @@ const topics = await getAllTopics(pool);
       form.inline { display: flex; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap; }
       input { padding: 0.4rem; }
       button { padding: 0.4rem 0.8rem; cursor: pointer; }
+      .error { color: #dc2626; font-size: 0.9rem; margin-top: 1rem; }
     </style>
   </head>
   <body>
     <p><a href="/">&larr; Office home</a></p>
+    <form method="POST" action="/api/logout"><button type="submit">Log out</button></form>
     <h1>Admin</h1>
 
     <h2>Admin accounts</h2>
@@ -39,7 +42,7 @@ const topics = await getAllTopics(pool);
           <tr>
             <td>{a.username}</td>
             <td>{a.createdAt.toISOString().slice(0, 10)}</td>
-            <td>{a.lockedUntil && a.lockedUntil.getTime() > Date.now() ? 'Yes' : 'No'}</td>
+            <td>{isLocked(a) ? 'Yes' : 'No'}</td>
           </tr>
         ))}
       </tbody>
@@ -49,6 +52,7 @@ const topics = await getAllTopics(pool);
       <input type="password" name="password" placeholder="Password" required />
       <button type="submit">Add admin</button>
     </form>
+    {error && <p class="error">{error}</p>}
 
     <h2>Seed topics</h2>
     <table>

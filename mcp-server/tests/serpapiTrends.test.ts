@@ -70,6 +70,51 @@ describe('fetchInterestAndRelatedQueries', () => {
     global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 429 }) as unknown as typeof fetch;
     await expect(fetchInterestAndRelatedQueries('rate limited topic')).rejects.toThrow(/rate limited topic/);
   });
+
+  it('coerces a numeric related-query value to a string instead of dropping it', async () => {
+    global.fetch = vi.fn().mockImplementation(async (url: string | URL) => {
+      const u = new URL(url as string);
+      if (u.searchParams.get('data_type') === 'TIMESERIES') {
+        return { ok: true, json: async () => ({ interest_over_time: { timeline_data: [] } }) };
+      }
+      return {
+        ok: true,
+        json: async () => ({
+          related_queries: {
+            top: [{ query: 'numeric value topic', value: 87 }],
+            rising: [],
+          },
+        }),
+      };
+    }) as unknown as typeof fetch;
+
+    const result = await fetchInterestAndRelatedQueries('numeric value topic');
+    expect(result.topQueries).toEqual([{ query: 'numeric value topic', value: '87' }]);
+  });
+
+  it('warns when related-query items exist but none have a usable query+value pair', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    global.fetch = vi.fn().mockImplementation(async (url: string | URL) => {
+      const u = new URL(url as string);
+      if (u.searchParams.get('data_type') === 'TIMESERIES') {
+        return { ok: true, json: async () => ({ interest_over_time: { timeline_data: [] } }) };
+      }
+      return {
+        ok: true,
+        json: async () => ({
+          related_queries: {
+            top: [{ value: 'no query field' }],
+            rising: [],
+          },
+        }),
+      };
+    }) as unknown as typeof fetch;
+
+    const result = await fetchInterestAndRelatedQueries('malformed shape topic');
+    expect(result.topQueries).toEqual([]);
+    expect(warnSpy).toHaveBeenCalled();
+    warnSpy.mockRestore();
+  });
 });
 
 describe('fetchTrendingNow', () => {

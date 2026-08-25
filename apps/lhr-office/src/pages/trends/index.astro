@@ -35,6 +35,7 @@ function categoryLabel(category: TrendCategory): string {
   </head>
   <body>
     <p><a href="/">&larr; Office home</a></p>
+    <form method="POST" action="/api/logout"><button type="submit">Log out</button></form>
     <h1>Trends</h1>
     {TREND_CATEGORIES.map((category) => (
       <section>
