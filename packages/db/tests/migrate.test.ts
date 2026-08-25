@@ -15,4 +15,11 @@ describe('runMigrations', () => {
     const calls = pool.query.mock.calls.map((c) => c[0] as string);
     expect(calls.some((sql) => sql.includes('CREATE TABLE IF NOT EXISTS decision_history'))).toBe(true);
   });
+
+  it('creates the office_admins table', async () => {
+    const pool = { query: vi.fn().mockResolvedValue(undefined) };
+    await runMigrations(pool as never);
+    const calls = pool.query.mock.calls.map((c) => c[0] as string);
+    expect(calls.some((sql) => sql.includes('CREATE TABLE IF NOT EXISTS office_admins'))).toBe(true);
+  });
 });

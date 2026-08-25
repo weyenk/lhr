@@ -35,3 +35,15 @@ CREATE TABLE IF NOT EXISTS decision_history (
   decided_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 `;
+
+export const OFFICE_ADMINS_TABLE_SQL = `
+CREATE TABLE IF NOT EXISTS office_admins (
+  id SERIAL PRIMARY KEY,
+  username TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  failed_attempts INTEGER NOT NULL DEFAULT 0,
+  locked_until TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  created_by INTEGER REFERENCES office_admins(id)
+);
+`;
