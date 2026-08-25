@@ -1,0 +1,26 @@
+---
+const error = Astro.url.searchParams.get('error');
+---
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Log in — LHR Office</title>
+    <style>
+      body { font-family: sans-serif; max-width: 360px; margin: 4rem auto; padding: 0 1rem; }
+      label { display: block; margin-top: 1rem; font-size: 0.9rem; }
+      input { width: 100%; padding: 0.5rem; font-size: 1rem; margin-top: 0.25rem; box-sizing: border-box; }
+      button { margin-top: 1.5rem; width: 100%; padding: 0.6rem; font-size: 1rem; cursor: pointer; }
+      .error { color: #dc2626; font-size: 0.9rem; margin-top: 1rem; }
+    </style>
+  </head>
+  <body>
+    <h1>LHR Office</h1>
+    <form method="POST" action="/api/login">
+      <label>Username<input type="text" name="username" required autofocus /></label>
+      <label>Password<input type="password" name="password" required /></label>
+      <button type="submit">Log in</button>
+    </form>
+    {error && <p class="error">{error}</p>}
+  </body>
+</html>
