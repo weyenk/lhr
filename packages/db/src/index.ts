@@ -5,3 +5,4 @@ export * from './affiliateLinkFile.js';
 export * from './migrate.js';
 export * from './schema.js';
 export * from './officeAdmins.js';
+export * from './officeSessions.js';

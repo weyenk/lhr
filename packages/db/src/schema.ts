@@ -47,3 +47,12 @@ CREATE TABLE IF NOT EXISTS office_admins (
   created_by INTEGER REFERENCES office_admins(id)
 );
 `;
+
+export const OFFICE_SESSIONS_TABLE_SQL = `
+CREATE TABLE IF NOT EXISTS office_sessions (
+  id TEXT PRIMARY KEY,
+  admin_id INTEGER NOT NULL REFERENCES office_admins(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  expires_at TIMESTAMPTZ NOT NULL
+);
+`;
