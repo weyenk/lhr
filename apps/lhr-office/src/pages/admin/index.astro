@@ -1,7 +1,7 @@
 ---
 import { requireAdminSession } from '../../lib/auth.js';
 import { getPool } from '../../lib/db.js';
-import { listAdmins } from '@lhr/db';
+import { listAdmins, getAllTopics, TREND_CATEGORIES } from '@lhr/db';
 
 const authResult = await requireAdminSession(Astro);
 if ('response' in authResult) {
@@ -10,6 +10,7 @@ if ('response' in authResult) {
 
 const pool = getPool();
 const admins = await listAdmins(pool);
+const topics = await getAllTopics(pool);
 ---
 <html lang="en">
   <head>
@@ -47,6 +48,34 @@ const admins = await listAdmins(pool);
       <input type="text" name="username" placeholder="Username" required />
       <input type="password" name="password" placeholder="Password" required />
       <button type="submit">Add admin</button>
+    </form>
+
+    <h2>Seed topics</h2>
+    <table>
+      <thead><tr><th>Category</th><th>Topic</th><th>Status</th><th>Times seen</th><th></th></tr></thead>
+      <tbody>
+        {topics.map((t) => (
+          <tr>
+            <td>{t.category}</td>
+            <td>{t.topic}</td>
+            <td>{t.status}</td>
+            <td>{t.timesSeen}</td>
+            <td>
+              <form method="POST" action={`/api/admin/topics/${t.id}/status`}>
+                <input type="hidden" name="status" value={t.status === 'curated' ? 'candidate' : 'curated'} />
+                <button type="submit">{t.status === 'curated' ? 'Demote' : 'Promote'}</button>
+              </form>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+    <form class="inline" method="POST" action="/api/admin/topics/add">
+      <select name="category" required>
+        {TREND_CATEGORIES.map((c) => <option value={c}>{c}</option>)}
+      </select>
+      <input type="text" name="topic" placeholder="New curated topic" required />
+      <button type="submit">Add curated topic</button>
     </form>
   </body>
 </html>
