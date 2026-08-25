@@ -93,3 +93,11 @@ CREATE TABLE IF NOT EXISTS competitors (
   approved_at TIMESTAMPTZ
 );
 `;
+
+export const COMPETITOR_SEO_KEYWORDS_TABLE_SQL = `
+CREATE TABLE IF NOT EXISTS competitor_seo_keywords (
+  id SERIAL PRIMARY KEY,
+  keyword TEXT NOT NULL UNIQUE,
+  added_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+`;
