@@ -564,7 +564,9 @@ git commit -m "Add competitor_seo_keywords table with idempotent add/remove"
 - Modify: `packages/db/tests/migrate.test.ts`
 
 **Interfaces:**
-- Produces: `CompetitorPostSummary` (`{title, url, publishedAt}`), `SeoPositionEntry` (`{keyword, position}`), `NewCompetitorReport`, `CompetitorReport`, `insertCompetitorReport(pool, report): Promise<CompetitorReport>`, `getLatestReport(pool, competitorId): Promise<CompetitorReport | null>`, `listRecentReports(pool, competitorId, limit?): Promise<CompetitorReport[]>`. Consumed by Tasks 9, 10, 13.
+- Produces: `CompetitorPostSummary` (`{title, url, publishedAt}`), `SeoPositionEntry` (`{keyword, position}`), `NewCompetitorReport`, `CompetitorReport`, `insertCompetitorReport(pool, report): Promise<CompetitorReport>`, `getLatestReport(pool, competitorId): Promise<CompetitorReport | null>`, `listRecentCompetitorReports(pool, competitorId, limit?): Promise<CompetitorReport[]>`. Consumed by Tasks 9, 10, 13.
+
+**Naming note (added during Task 6):** the last function is named `listRecentCompetitorReports`, not the more generic `listRecentReports` a first draft of this task used — `packages/db/src/trendsReports.ts` (pulled in Task 1 from a sibling sub-project) already exports its own `listRecentReports`, and both are barrel re-exported (`export *`) from `packages/db/src/index.ts`, so the generic name collides. Renaming the competitor-analysis side (rather than touching the sibling sub-project's already-reviewed code) was the least invasive fix.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -572,7 +574,7 @@ git commit -m "Add competitor_seo_keywords table with idempotent add/remove"
 
 ```ts
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { insertCompetitorReport, getLatestReport, listRecentReports, type NewCompetitorReport } from '../src/competitorReports';
+import { insertCompetitorReport, getLatestReport, listRecentCompetitorReports, type NewCompetitorReport } from '../src/competitorReports';
 
 function mockPool(rows: unknown[] = []) {
   return { query: vi.fn().mockResolvedValue({ rows }) };
@@ -639,17 +641,17 @@ describe('getLatestReport', () => {
   });
 });
 
-describe('listRecentReports', () => {
+describe('listRecentCompetitorReports', () => {
   it('queries by competitor, most recent first, respecting the limit', async () => {
     const pool = mockPool([reportRow]);
-    const result = await listRecentReports(pool as never, 1, 5);
+    const result = await listRecentCompetitorReports(pool as never, 1, 5);
     expect(pool.query).toHaveBeenCalledWith(expect.stringContaining('ORDER BY generated_at DESC'), [1, 5]);
     expect(result).toHaveLength(1);
   });
 
   it('defaults the limit to 10', async () => {
     const pool = mockPool([]);
-    await listRecentReports(pool as never, 1);
+    await listRecentCompetitorReports(pool as never, 1);
     expect(pool.query).toHaveBeenCalledWith(expect.any(String), [1, 10]);
   });
 });
@@ -769,7 +771,7 @@ export async function getLatestReport(pool: Pool, competitorId: number): Promise
   return res.rows[0] ? rowToReport(res.rows[0]) : null;
 }
 
-export async function listRecentReports(pool: Pool, competitorId: number, limit = 10): Promise<CompetitorReport[]> {
+export async function listRecentCompetitorReports(pool: Pool, competitorId: number, limit = 10): Promise<CompetitorReport[]> {
   const res = (await pool.query(
     `SELECT * FROM competitor_reports WHERE competitor_id = $1 ORDER BY generated_at DESC LIMIT $2`,
     [competitorId, limit],
