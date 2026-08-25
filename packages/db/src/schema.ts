@@ -56,3 +56,17 @@ CREATE TABLE IF NOT EXISTS office_sessions (
   expires_at TIMESTAMPTZ NOT NULL
 );
 `;
+
+export const TREND_SEED_TOPICS_TABLE_SQL = `
+CREATE TABLE IF NOT EXISTS trend_seed_topics (
+  id SERIAL PRIMARY KEY,
+  category TEXT NOT NULL,
+  topic TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'candidate',
+  times_seen INTEGER NOT NULL DEFAULT 1,
+  first_seen_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  last_seen_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  promoted_at TIMESTAMPTZ,
+  UNIQUE (category, topic)
+);
+`;

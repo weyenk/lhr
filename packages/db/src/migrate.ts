@@ -4,6 +4,7 @@ import {
   DECISION_HISTORY_TABLE_SQL,
   OFFICE_ADMINS_TABLE_SQL,
   OFFICE_SESSIONS_TABLE_SQL,
+  TREND_SEED_TOPICS_TABLE_SQL,
 } from './schema.js';
 
 export async function runMigrations(pool: Pool): Promise<void> {
@@ -11,4 +12,5 @@ export async function runMigrations(pool: Pool): Promise<void> {
   await pool.query(DECISION_HISTORY_TABLE_SQL);
   await pool.query(OFFICE_ADMINS_TABLE_SQL);
   await pool.query(OFFICE_SESSIONS_TABLE_SQL);
+  await pool.query(TREND_SEED_TOPICS_TABLE_SQL);
 }
