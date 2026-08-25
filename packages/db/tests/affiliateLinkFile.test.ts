@@ -26,4 +26,16 @@ describe('buildAffiliateLinkFile', () => {
     expect(data.label).toBe('Ceramic Mixing Bowl Set (3-Pack)');
     expect(data.image).toBe('https://example.com/bowl.jpg');
   });
+
+  it('omits image/imageAlt (rather than emitting an invalid URL) when the candidate has no image', () => {
+    const file = buildAffiliateLinkFile({ ...candidate, imageUrl: '' }, 'lhr-20');
+    const data = JSON.parse(file.content);
+    expect(affiliateLinkSchema.safeParse(data).success).toBe(true);
+    expect(data.image).toBeUndefined();
+    expect(data.imageAlt).toBeUndefined();
+  });
+
+  it('throws rather than returning a schema-invalid file when imageUrl is a non-empty, malformed URL', () => {
+    expect(() => buildAffiliateLinkFile({ ...candidate, imageUrl: 'not-a-url' }, 'lhr-20')).toThrow(/schema validation/);
+  });
 });

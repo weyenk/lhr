@@ -37,16 +37,30 @@ beforeEach(() => {
 });
 
 describe('insertCandidates', () => {
-  it('issues one insert query per candidate', async () => {
+  it('issues a single multi-row insert with ON CONFLICT DO NOTHING on (cycle_id, asin)', async () => {
     const pool = mockPool();
-    await insertCandidates(pool as never, [baseCandidate, { ...baseCandidate, asin: 'B0EXAMPLE2' }]);
-    expect(pool.query).toHaveBeenCalledTimes(2);
-    expect(pool.query.mock.calls[0][0]).toContain('INSERT INTO candidates');
-    expect(pool.query.mock.calls[0][1]).toEqual([
+    const second = { ...baseCandidate, asin: 'B0EXAMPLE2' };
+    await insertCandidates(pool as never, [baseCandidate, second]);
+    expect(pool.query).toHaveBeenCalledTimes(1);
+    const [sql, params] = pool.query.mock.calls[0];
+    expect(sql).toContain('INSERT INTO candidates');
+    expect(sql).toContain('ON CONFLICT (cycle_id, asin) DO NOTHING');
+    expect(sql).toContain('($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)');
+    expect(sql).toContain('($17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32)');
+    expect(params).toEqual([
       '2026-W35', 'B0EXAMPLE1', 'Ceramic Mixing Bowl Set', 'Kitchen', 2999,
       'https://example.com/bowl.jpg', 'https://www.amazon.com/dp/B0EXAMPLE1',
       0.03, false, 450, 1200, 'Kitchen', 4.6, 812, 0.71, false,
+      '2026-W35', 'B0EXAMPLE2', 'Ceramic Mixing Bowl Set', 'Kitchen', 2999,
+      'https://example.com/bowl.jpg', 'https://www.amazon.com/dp/B0EXAMPLE1',
+      0.03, false, 450, 1200, 'Kitchen', 4.6, 812, 0.71, false,
     ]);
+  });
+
+  it('does nothing (no query) when given an empty array', async () => {
+    const pool = mockPool();
+    await insertCandidates(pool as never, []);
+    expect(pool.query).not.toHaveBeenCalled();
   });
 });
 

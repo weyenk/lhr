@@ -35,3 +35,7 @@ CREATE TABLE IF NOT EXISTS decision_history (
   decided_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 `;
+
+export const CANDIDATES_CYCLE_ASIN_UNIQUE_INDEX_SQL = `
+CREATE UNIQUE INDEX IF NOT EXISTS candidates_cycle_id_asin_key ON candidates (cycle_id, asin);
+`;

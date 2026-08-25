@@ -90,21 +90,32 @@ function rowToCandidate(row: CandidateRow): Candidate {
   };
 }
 
+const INSERT_COLUMNS = [
+  'cycle_id', 'asin', 'title', 'category', 'price_cents', 'image_url', 'product_url',
+  'commission_rate', 'commission_rate_is_fallback', 'estimated_monthly_sales',
+  'bsr', 'bsr_category', 'rating', 'review_count', 'score', 'is_wildcard',
+] as const;
+
 export async function insertCandidates(pool: Pool, candidates: NewCandidate[]): Promise<void> {
-  for (const c of candidates) {
-    await pool.query(
-      `INSERT INTO candidates
-        (cycle_id, asin, title, category, price_cents, image_url, product_url,
-         commission_rate, commission_rate_is_fallback, estimated_monthly_sales,
-         bsr, bsr_category, rating, review_count, score, is_wildcard)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)`,
-      [
-        c.cycleId, c.asin, c.title, c.category, c.priceCents, c.imageUrl, c.productUrl,
-        c.commissionRate, c.commissionRateIsFallback, c.estimatedMonthlySales,
-        c.bsr, c.bsrCategory, c.rating, c.reviewCount, c.score, c.isWildcard,
-      ],
+  if (candidates.length === 0) return;
+
+  const values: unknown[] = [];
+  const rowPlaceholders = candidates.map((c, i) => {
+    values.push(
+      c.cycleId, c.asin, c.title, c.category, c.priceCents, c.imageUrl, c.productUrl,
+      c.commissionRate, c.commissionRateIsFallback, c.estimatedMonthlySales,
+      c.bsr, c.bsrCategory, c.rating, c.reviewCount, c.score, c.isWildcard,
     );
-  }
+    const base = i * INSERT_COLUMNS.length;
+    return `(${INSERT_COLUMNS.map((_, j) => `$${base + j + 1}`).join(', ')})`;
+  });
+
+  await pool.query(
+    `INSERT INTO candidates (${INSERT_COLUMNS.join(', ')})
+     VALUES ${rowPlaceholders.join(', ')}
+     ON CONFLICT (cycle_id, asin) DO NOTHING`,
+    values,
+  );
 }
 
 export async function getPendingCandidates(pool: Pool, cycleId: string): Promise<Candidate[]> {
