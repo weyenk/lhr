@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { insertCompetitorReport, getLatestReport, listRecentReports, type NewCompetitorReport } from '../src/competitorReports';
+import { insertCompetitorReport, getLatestReport, listRecentCompetitorReports, type NewCompetitorReport } from '../src/competitorReports';
 
 function mockPool(rows: unknown[] = []) {
   return { query: vi.fn().mockResolvedValue({ rows }) };
@@ -66,17 +66,17 @@ describe('getLatestReport', () => {
   });
 });
 
-describe('listRecentReports', () => {
+describe('listRecentCompetitorReports', () => {
   it('queries by competitor, most recent first, respecting the limit', async () => {
     const pool = mockPool([reportRow]);
-    const result = await listRecentReports(pool as never, 1, 5);
+    const result = await listRecentCompetitorReports(pool as never, 1, 5);
     expect(pool.query).toHaveBeenCalledWith(expect.stringContaining('ORDER BY generated_at DESC'), [1, 5]);
     expect(result).toHaveLength(1);
   });
 
   it('defaults the limit to 10', async () => {
     const pool = mockPool([]);
-    await listRecentReports(pool as never, 1);
+    await listRecentCompetitorReports(pool as never, 1);
     expect(pool.query).toHaveBeenCalledWith(expect.any(String), [1, 10]);
   });
 });
