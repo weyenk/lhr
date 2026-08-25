@@ -79,7 +79,7 @@ export async function getLatestReport(pool: Pool, competitorId: number): Promise
   return res.rows[0] ? rowToReport(res.rows[0]) : null;
 }
 
-export async function listRecentReports(pool: Pool, competitorId: number, limit = 10): Promise<CompetitorReport[]> {
+export async function listRecentCompetitorReports(pool: Pool, competitorId: number, limit = 10): Promise<CompetitorReport[]> {
   const res = (await pool.query(
     `SELECT * FROM competitor_reports WHERE competitor_id = $1 ORDER BY generated_at DESC LIMIT $2`,
     [competitorId, limit],
