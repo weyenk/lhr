@@ -4,14 +4,15 @@
 
 **Goal:** Build a weekly, always-current view of named competitors — other recipe/kitchenware content creators — covering new content, SEO keyword-ranking signals, monetization/product strategy, and design/UX changes, viewable at `/competitors` in the shared `apps/lhr-office` app behind the existing admin login, with periodic discovery of new candidate competitors surfaced for explicit approval.
 
-**Architecture:** A local weekly cron script (`mcp-server/scripts/analyze-competitors.ts`, a thin wrapper around testable orchestration logic in `mcp-server/src/analyzeCompetitors.ts`) runs three phases: discovery (a small curated list of SerpApi Google Search queries surfaces new candidate domains), SEO tracking (one SerpApi Google Search call per admin-managed keyword, scanned for every tracked competitor's domain — once per keyword, not per keyword-per-competitor), and per-competitor analysis (content diffing via RSS/HTML, and LLM-synthesized monetization and design snapshots diffed against the prior cycle). One further LLM call per tracked competitor synthesizes all four dimensions into a "what changed this week" summary, written as one `competitor_reports` row per tracked competitor per cycle. The deployed side adds three page groups to the already-scaffolded `apps/lhr-office` Astro app — `/competitors` (tracked list + latest reports), `/competitors/candidates` (approve/reject discovered domains), `/competitors/keywords` (manage the SEO keyword list) — all gated by the `requireAdminSession()` helper the trends-watcher sub-project establishes for the whole app. No new auth work in this plan.
+**Architecture:** Testable orchestration logic in `mcp-server/src/analyzeCompetitors.ts` runs three phases: discovery (a small curated list of SerpApi Google Search queries surfaces new candidate domains), SEO tracking (one SerpApi Google Search call per admin-managed keyword, scanned for every tracked competitor's domain — once per keyword, not per keyword-per-competitor), and per-competitor analysis (content diffing via RSS/HTML, and LLM-synthesized monetization and design snapshots diffed against the prior cycle). One further LLM call per tracked competitor synthesizes all four dimensions into a "what changed this week" summary, written as one `competitor_reports` row per tracked competitor per cycle. Per the 2026-08-25 execution-model amendment (see Global Constraints), this pipeline is exposed as a zero-argument, Job-contract-shaped `analyzeCompetitors(): Promise<JobResult>` entry point — no standalone CLI script — that a separate, not-yet-built orchestrator sub-project will import and invoke from a Vercel Cron-triggered endpoint; this plan's job stops at exposing that function correctly. The deployed side adds three page groups to the already-scaffolded `apps/lhr-office` Astro app — `/competitors` (tracked list + latest reports), `/competitors/candidates` (approve/reject discovered domains), `/competitors/keywords` (manage the SEO keyword list) — all gated by the `requireAdminSession()` helper the trends-watcher sub-project establishes for the whole app. No new auth work in this plan.
 
-**Tech Stack:** TypeScript (strict), `pg` (node-postgres, Neon Postgres via `DATABASE_URL`), native `fetch` (SerpApi + OpenRouter + competitor site fetches — no new HTTP client dependency), no new RSS/HTML parsing dependency (regex-based extraction, consistent with this codebase's preference for zero new dependencies where native tools suffice), Astro with `output: 'server'` + `@astrojs/vercel` adapter, Vitest, `tsx` (script runner, matching the existing `create-office-admin`/`generate:weekly-recipe` convention).
+**Tech Stack:** TypeScript (strict), `pg` (node-postgres, Neon Postgres via `DATABASE_URL`), native `fetch` (SerpApi + OpenRouter + competitor site fetches — no new HTTP client dependency), no new RSS/HTML parsing dependency (regex-based extraction, consistent with this codebase's preference for zero new dependencies where native tools suffice), Astro with `output: 'server'` + `@astrojs/vercel` adapter, Vitest.
 
-**Spec:** [docs/superpowers/specs/active/2026-08-24-competitor-analysis-design.md](../specs/active/2026-08-24-competitor-analysis-design.md) — every section this plan implements is quoted or paraphrased below so no separate lookup is required to execute this plan.
+**Spec:** [docs/superpowers/specs/active/2026-08-24-competitor-analysis-design.md](../specs/active/2026-08-24-competitor-analysis-design.md) — every section this plan implements is quoted or paraphrased below so no separate lookup is required to execute this plan. **Read alongside its 2026-08-25 amendment** (added mid-execution of this plan — see Global Constraints) and [2026-08-25-local-orchestrator-design.md](../specs/active/2026-08-25-local-orchestrator-design.md) §2, which defines the `Job`/`JobResult` contract Task 11 conforms to.
 
 ## Global Constraints
 
+- **Execution-model amendment (2026-08-25, landed mid-execution of this plan).** The spec's original §2 ("Local weekly cron — `mcp-server/scripts/analyze-competitors.ts`") is superseded on execution model only — everything about discovery, the four analysis dimensions, and SEO tracking is unaffected. Scheduling moves to Vercel Cron Jobs via a separate, not-yet-planned "shared orchestrator" sub-project (spec: `docs/superpowers/specs/active/2026-08-25-local-orchestrator-design.md`). That spec's §2 defines a `Job = () => Promise<JobResult>` contract (`JobResult = {status: 'success'|'partial'|'failure', summary: string, details?: Record<string, unknown>}`) and a registry (in a future `packages/jobs` / `@lhr/jobs`, not built yet) that will import a zero-argument `analyzeCompetitors` function from this sub-project and call it directly, in-process. This plan's Task 11 (originally "cron script wrapper") is replaced with exposing that conforming entry point — no CLI script, no `tsx` script-runner dependency, and no registration with `@lhr/jobs` (which doesn't exist in this worktree yet and is that other sub-project's own job to wire up once it lands). Because `@lhr/jobs` isn't available yet, `JobResult` is defined locally in `mcp-server/src/analyzeCompetitors.ts`, structurally matching the contract — the same reasoning already applied to `CompetitorPost`/`CompetitorPostSummary` elsewhere in this plan — rather than gated on a fourth cross-branch pull.
 - **Cross-branch prerequisite (read before Task 1).** This worktree/branch (`claude/recipe-affiliate-agent-system-bd11aa`) currently has none of the shared `apps/lhr-office` / `@lhr/db` infrastructure this spec builds on — that work is being developed on sibling branch `claude/trends-watcher-design-cb1688` (worktree `add-flour-affiliate-link-ecff6b`), per its own plan `docs/superpowers/plans/2026-08-24-trends-watcher.md`. This spec's own header says it plainly: *"Builds on shared infrastructure: ... this feature lands in the already-scaffolded `apps/lhr-office` ... every route it adds goes through the `requireAdminSession()` check established by the trends-watcher spec. No new auth work here."* Task 1 pulls the finished result of that plan in verbatim via `git checkout claude/trends-watcher-design-cb1688 -- <path>` (a local branch in this same repository — no fetch needed), with an explicit check-and-stop if that branch hasn't executed its plan yet, rather than silently reimplementing auth or the shared `@lhr/db` package and diverging into a competing copy.
 - **`requireAdminSession()` gates every route** — page or API — this plan adds to `apps/lhr-office`, redirecting to `/login` on any missing/invalid/expired session rather than ever rendering protected content or performing a mutation on a failed check (spec header; trends-watcher spec §3, §8).
 - **SEO tracking is one SerpApi call per keyword, not per keyword-per-competitor.** Call volume is proportional to the keyword list size, not the competitor count (spec §4).
@@ -1001,9 +1002,10 @@ git commit -m "Add SerpApi Google Search client for competitor discovery and SEO
 **Files:**
 - Create: `mcp-server/src/competitorDiscovery.ts`
 - Create: `mcp-server/tests/competitorDiscovery.test.ts`
+- Modify: `mcp-server/package.json` (add `@lhr/db` and `pg` — this is the first task in `mcp-server` that imports from either; every later task in this plan that touches `mcp-server/src/` relies on both being wired here)
 
 **Interfaces:**
-- Consumes: `fetchSearchResults` (`./serpapiSearch.js`); `insertCandidateCompetitor` (`@lhr/db`).
+- Consumes: `fetchSearchResults` (`./serpapiSearch.js`); `insertCandidateCompetitor` (`@lhr/db`); `type Pool` (`pg`).
 - Produces: `DISCOVERY_QUERIES: readonly string[]`, `DiscoveryResult` (`{newCandidateDomains: string[]; failedQueries: string[]}`), `runDiscovery(pool): Promise<DiscoveryResult>`. Consumed by Task 10.
 
 - [ ] **Step 1: Write the failing tests**
@@ -1146,7 +1148,22 @@ export async function runDiscovery(pool: Pool): Promise<DiscoveryResult> {
 }
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [ ] **Step 4: Wire `@lhr/db` and `pg` into `mcp-server`**
+
+In `mcp-server/package.json`, add to `dependencies` (alphabetized among the existing entries):
+
+```json
+    "@lhr/db": "*",
+    "pg": "^8.13.0",
+```
+
+Then:
+
+```bash
+npm install
+```
+
+- [ ] **Step 5: Run tests to verify they pass**
 
 ```bash
 cd mcp-server && npx vitest run tests/competitorDiscovery.test.ts
@@ -1154,10 +1171,10 @@ cd mcp-server && npx vitest run tests/competitorDiscovery.test.ts
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
-git add mcp-server/src/competitorDiscovery.ts mcp-server/tests/competitorDiscovery.test.ts
+git add mcp-server/src/competitorDiscovery.ts mcp-server/tests/competitorDiscovery.test.ts mcp-server/package.json package-lock.json
 git commit -m "Add competitor discovery from curated SerpApi search queries"
 ```
 
@@ -2061,79 +2078,150 @@ git commit -m "Add weekly competitor analysis orchestration with per-dimension p
 
 ---
 
-### Task 11: Cron script wrapper (`analyze-competitors.ts`)
+### Task 11: Job-contract entry point (`analyzeCompetitors()`)
+
+**Amendment context:** per the 2026-08-25 execution-model amendment (Global Constraints), scheduling is no longer a local CLI script. This task instead adds a zero-argument, `Job`-contract-shaped entry point to the *same* file Task 10 created, so a future orchestrator sub-project can import and call it directly, in-process. `JobResult` mirrors `packages/jobs/src/types.ts`'s contract from `2026-08-25-local-orchestrator-design.md` §2 exactly (`{status: 'success'|'partial'|'failure', summary: string, details?: Record<string, unknown>}`), defined locally here rather than imported, since `@lhr/jobs` isn't built yet in this worktree — the same reasoning already applied to `CompetitorPost`/`CompetitorPostSummary` in Task 10.
 
 **Files:**
-- Create: `mcp-server/scripts/analyze-competitors.ts`
-- Modify: `mcp-server/package.json` (add `analyze-competitors` script)
+- Modify: `mcp-server/src/analyzeCompetitors.ts` (add `JobResult`, `summaryToJobResult`, `analyzeCompetitors`)
+- Create: `mcp-server/tests/analyzeCompetitorsJob.test.ts`
 
 **Interfaces:**
-- Consumes: `runWeeklyCompetitorAnalysis` (`../src/analyzeCompetitors.js`).
+- Consumes: `runWeeklyCompetitorAnalysis`, `type WeeklyCompetitorRunSummary` (same file, from Task 10).
+- Produces: `JobResult`, `summaryToJobResult(summary): JobResult`, `analyzeCompetitors(): Promise<JobResult>`. `analyzeCompetitors` is the function name a future orchestrator's registry will import — do not rename it.
 
-- [ ] **Step 1: Implement the script**
+- [ ] **Step 1: Write the failing tests**
 
-`mcp-server/scripts/analyze-competitors.ts`:
+`mcp-server/tests/analyzeCompetitorsJob.test.ts`:
 
 ```ts
-import { Pool } from 'pg';
-import { runWeeklyCompetitorAnalysis } from '../src/analyzeCompetitors.js';
+import { describe, expect, it } from 'vitest';
+import { summaryToJobResult } from '../src/analyzeCompetitors';
+import type { WeeklyCompetitorRunSummary } from '../src/analyzeCompetitors';
 
-async function main() {
-  const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl) {
-    console.error('DATABASE_URL env var is required.');
-    process.exit(1);
-  }
+const baseSummary: WeeklyCompetitorRunSummary = {
+  cycleId: '2026-W35',
+  discoveredCandidates: 2,
+  failedDiscoveryQueries: [],
+  failedSeoKeywords: [],
+  reportsWritten: 3,
+};
 
-  const pool = new Pool({ connectionString: databaseUrl });
-  const summary = await runWeeklyCompetitorAnalysis(pool);
-  await pool.end();
+describe('summaryToJobResult', () => {
+  it('reports success when nothing failed', () => {
+    const result = summaryToJobResult(baseSummary);
+    expect(result.status).toBe('success');
+    expect(result.summary).toContain('2026-W35');
+    expect(result.summary).toContain('3');
+  });
 
-  console.log(`Cycle ${summary.cycleId}: wrote ${summary.reportsWritten} competitor report(s).`);
-  console.log(`Discovery: ${summary.discoveredCandidates} new candidate(s) found.`);
-  if (summary.failedDiscoveryQueries.length > 0) {
-    console.log(`Failed discovery queries: ${summary.failedDiscoveryQueries.join(', ')}`);
-  }
-  if (summary.failedSeoKeywords.length > 0) {
-    console.log(`Failed SEO keyword lookups: ${summary.failedSeoKeywords.join(', ')}`);
-  }
-}
+  it('reports partial when a discovery query failed', () => {
+    const result = summaryToJobResult({ ...baseSummary, failedDiscoveryQueries: ['gluten free recipe blog'] });
+    expect(result.status).toBe('partial');
+  });
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
+  it('reports partial when an SEO keyword lookup failed', () => {
+    const result = summaryToJobResult({ ...baseSummary, failedSeoKeywords: ['gluten free dinner recipes'] });
+    expect(result.status).toBe('partial');
+  });
+
+  it('includes the run counts in details', () => {
+    const result = summaryToJobResult(baseSummary);
+    expect(result.details).toEqual({
+      discoveredCandidates: 2,
+      failedDiscoveryQueries: [],
+      failedSeoKeywords: [],
+      reportsWritten: 3,
+    });
+  });
 });
 ```
 
-- [ ] **Step 2: Add the package script and dependency**
-
-In `mcp-server/package.json`, add to `dependencies` (if not already present from an earlier task in this worktree):
-
-```json
-    "@lhr/db": "*",
-    "pg": "^8.13.0",
-```
-
-and to `scripts`:
-
-```json
-    "analyze-competitors": "tsx scripts/analyze-competitors.ts"
-```
-
-- [ ] **Step 3: Install and verify it type-checks**
+- [ ] **Step 2: Run tests to verify they fail**
 
 ```bash
-npm install
-cd mcp-server && npx tsc --noEmit -p tsconfig.json
+cd mcp-server && npx vitest run tests/analyzeCompetitorsJob.test.ts
 ```
 
-Expected: no type errors.
+Expected: FAIL — `summaryToJobResult` doesn't exist yet.
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 3: Add the Job-contract entry point to `analyzeCompetitors.ts`**
+
+At the top of `mcp-server/src/analyzeCompetitors.ts`, change the `pg` import to also bring in the `Pool` value (not just the type):
+
+```ts
+import { Pool } from 'pg';
+```
+
+(This replaces the existing `import type { Pool } from 'pg';` line from Task 10 — the type-only import becomes a value + type import since this task calls `new Pool(...)`.)
+
+At the end of the file, append:
+
+```ts
+// Mirrors packages/jobs/src/types.ts's JobResult contract (spec
+// 2026-08-25-local-orchestrator-design.md §2). Defined locally — not
+// imported from @lhr/jobs — because that package doesn't exist in this
+// worktree yet; the shape matches exactly, so it satisfies the real `Job`
+// type structurally once the orchestrator sub-project wires this in.
+export interface JobResult {
+  status: 'success' | 'partial' | 'failure';
+  summary: string;
+  details?: Record<string, unknown>;
+}
+
+export function summaryToJobResult(summary: WeeklyCompetitorRunSummary): JobResult {
+  const degraded = summary.failedDiscoveryQueries.length > 0 || summary.failedSeoKeywords.length > 0;
+  return {
+    status: degraded ? 'partial' : 'success',
+    summary: `Cycle ${summary.cycleId}: wrote ${summary.reportsWritten} report(s), ${summary.discoveredCandidates} new candidate(s) discovered.`,
+    details: {
+      discoveredCandidates: summary.discoveredCandidates,
+      failedDiscoveryQueries: summary.failedDiscoveryQueries,
+      failedSeoKeywords: summary.failedSeoKeywords,
+      reportsWritten: summary.reportsWritten,
+    },
+  };
+}
+
+export async function analyzeCompetitors(): Promise<JobResult> {
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) {
+    throw new Error('DATABASE_URL env var is required.');
+  }
+
+  const pool = new Pool({ connectionString: databaseUrl });
+  try {
+    const summary = await runWeeklyCompetitorAnalysis(pool);
+    return summaryToJobResult(summary);
+  } finally {
+    await pool.end();
+  }
+}
+```
+
+Per the orchestrator spec §5, an uncaught exception here (e.g. missing `DATABASE_URL`, or a `runWeeklyCompetitorAnalysis` failure not already caught internally) is expected to propagate — the future orchestrator catches it at the call site and records `status='failure'` itself. Do not wrap this in a try/catch that swallows the error into a `JobResult` of your own; the `finally` block only ensures the pool is closed either way.
+
+- [ ] **Step 4: Run tests to verify they pass**
 
 ```bash
-git add mcp-server/scripts/analyze-competitors.ts mcp-server/package.json package-lock.json
-git commit -m "Add weekly competitor-analysis cron script wrapper"
+cd mcp-server && npx vitest run tests/analyzeCompetitorsJob.test.ts
+```
+
+Expected: PASS.
+
+- [ ] **Step 5: Run the full `mcp-server` suite once**
+
+```bash
+cd mcp-server && npx vitest run
+```
+
+Expected: PASS — confirms the `Pool` import change didn't break Task 10's existing tests (they mock `@lhr/db` and the collaborator modules, not `pg`, so this should be a no-op for them).
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add mcp-server/src/analyzeCompetitors.ts mcp-server/tests/analyzeCompetitorsJob.test.ts
+git commit -m "Add analyzeCompetitors() Job-contract entry point for the future orchestrator"
 ```
 
 ---
@@ -2144,9 +2232,9 @@ git commit -m "Add weekly competitor-analysis cron script wrapper"
 - Create: `mcp-server/tests/integration/analyzeCompetitors.test.ts`
 
 **Interfaces:**
-- Consumes: `runWeeklyCompetitorAnalysis` (`../../src/analyzeCompetitors.js`, real, unmocked) together with every real collaborator module it calls (`competitorDiscovery.ts`, `competitorSeoTracking.ts`, `competitorContent.ts`, `competitorSnapshots.ts`). Only the true I/O boundaries are mocked: `global.fetch` (SerpApi + competitor site fetches), `../../src/openrouter.js` (`callOpenRouter`), and `@lhr/db`.
+- Consumes: `runWeeklyCompetitorAnalysis`, `analyzeCompetitors` (`../../src/analyzeCompetitors.js`, real, unmocked) together with every real collaborator module they call (`competitorDiscovery.ts`, `competitorSeoTracking.ts`, `competitorContent.ts`, `competitorSnapshots.ts`). Only the true I/O boundaries are mocked: `global.fetch` (SerpApi + competitor site fetches), `../../src/openrouter.js` (`callOpenRouter`), `pg` (`Pool`, for the `analyzeCompetitors` cases only), and `@lhr/db`.
 
-This test complements Task 10's unit test (which mocks every collaborator module) by exercising the real discovery/content/snapshot/SEO-tracking logic together, mirroring the existing `tests/integration/generateWeeklyVariantRecipe.test.ts` pattern in this codebase.
+This test complements Task 10's unit test (which mocks every collaborator module) by exercising the real discovery/content/snapshot/SEO-tracking logic together, mirroring the existing `tests/integration/generateWeeklyVariantRecipe.test.ts` pattern in this codebase. It also covers Task 11's `analyzeCompetitors()` Job-contract wrapper end-to-end, since that wrapper's own unit test (Task 11) only covers the pure `summaryToJobResult` mapping and can't exercise the real pipeline without duplicating this file's mocks.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -2190,9 +2278,13 @@ vi.mock('@lhr/db', () => ({
   }),
 }));
 
-const { runWeeklyCompetitorAnalysis } = await import('../../src/analyzeCompetitors');
+const fakePool = { end: async () => {} };
+vi.mock('pg', () => ({ Pool: vi.fn().mockImplementation(() => fakePool) }));
+
+const { runWeeklyCompetitorAnalysis, analyzeCompetitors } = await import('../../src/analyzeCompetitors');
 
 const originalFetch = global.fetch;
+const originalDatabaseUrl = process.env.DATABASE_URL;
 
 beforeEach(() => {
   state = {
@@ -2210,6 +2302,26 @@ beforeEach(() => {
 
 afterEach(() => {
   global.fetch = originalFetch;
+  process.env.DATABASE_URL = originalDatabaseUrl;
+});
+
+describe('analyzeCompetitors (Job-contract entry point, integration)', () => {
+  it('constructs its own pool from DATABASE_URL, delegates to the real pipeline, and closes the pool', async () => {
+    process.env.DATABASE_URL = 'postgres://test/db';
+    state.competitors = [];
+    state.keywords = [];
+    global.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ organic_results: [] }) }) as unknown as typeof fetch;
+
+    const result = await analyzeCompetitors();
+
+    expect(result.status).toBe('success');
+    expect(result.summary).toContain('wrote 0 report(s)');
+  });
+
+  it('throws when DATABASE_URL is missing, rather than swallowing the error into a failure JobResult', async () => {
+    delete process.env.DATABASE_URL;
+    await expect(analyzeCompetitors()).rejects.toThrow(/DATABASE_URL/);
+  });
 });
 
 describe('runWeeklyCompetitorAnalysis (integration)', () => {
@@ -2251,7 +2363,7 @@ describe('runWeeklyCompetitorAnalysis (integration)', () => {
 cd mcp-server && npx vitest run tests/integration/analyzeCompetitors.test.ts
 ```
 
-Expected: FAIL initially if any of Tasks 5-10's modules aren't wired correctly — otherwise this test should already pass once those tasks are done, since it exercises only real, already-implemented modules against a fresh mocked I/O boundary. Treat any failure here as a signal to re-check the implementations from Tasks 5-10, not as license to change this test's expectations to match a bug.
+Expected: FAIL initially if any of Tasks 5-11's modules aren't wired correctly — otherwise this test should already pass once those tasks are done, since it exercises only real, already-implemented modules against a fresh mocked I/O boundary. Treat any failure here as a signal to re-check the implementations from Tasks 5-11, not as license to change this test's expectations to match a bug.
 
 - [ ] **Step 3: Run the test to verify it passes**
 
@@ -3004,10 +3116,10 @@ cd packages/db && npm run db:migrate
 cd ../../apps/lhr-office && npm run dev
 ```
 
-Log in (using an admin created via the trends-watcher plan's `create-office-admin` script), visit `/competitors/keywords/` and add a keyword, visit `/competitors/candidates/` (empty until a discovery run has happened), then run the cron script by hand once:
+Log in (using an admin created via the trends-watcher plan's `create-office-admin` script), visit `/competitors/keywords/` and add a keyword, visit `/competitors/candidates/` (empty until a discovery run has happened), then invoke the pipeline by hand once — since Task 11 replaced the CLI script with a Job-contract entry point, there is no `npm run` command for this until the orchestrator sub-project wires up its Vercel Cron endpoint; call it directly with `tsx -e`:
 
 ```bash
-cd mcp-server && DATABASE_URL="$DATABASE_URL" SERPAPI_KEY="$SERPAPI_KEY" OPENROUTER_API_KEY="$OPENROUTER_API_KEY" npm run analyze-competitors
+cd mcp-server && DATABASE_URL="$DATABASE_URL" SERPAPI_KEY="$SERPAPI_KEY" OPENROUTER_API_KEY="$OPENROUTER_API_KEY" npx tsx -e "import('./src/analyzeCompetitors.js').then(m => m.analyzeCompetitors()).then(r => console.log(JSON.stringify(r, null, 2)))"
 ```
 
-Confirm candidates appear on `/competitors/candidates/`, approve one, re-run the script, and confirm a report appears on `/competitors/`.
+Confirm candidates appear on `/competitors/candidates/`, approve one, re-run the command above, and confirm a report appears on `/competitors/`.
