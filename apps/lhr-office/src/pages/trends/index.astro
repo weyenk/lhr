@@ -1,0 +1,56 @@
+---
+import { requireAdminSession } from '../../lib/auth.js';
+import { getPool } from '../../lib/db.js';
+import { TREND_CATEGORIES, listRecentReports, type TrendCategory, type TrendsReport } from '@lhr/db';
+
+const authResult = await requireAdminSession(Astro);
+if ('response' in authResult) {
+  return authResult.response;
+}
+
+const pool = getPool();
+const reportsByCategory = new Map<TrendCategory, TrendsReport[]>();
+for (const category of TREND_CATEGORIES) {
+  reportsByCategory.set(category, await listRecentReports(pool, category));
+}
+
+function categoryLabel(category: TrendCategory): string {
+  return { 'web-design': 'Web Design', cooking: 'Cooking', nutrition: 'Nutrition' }[category];
+}
+---
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Trends — LHR Office</title>
+    <style>
+      body { font-family: sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem; }
+      h2 { border-bottom: 1px solid #ddd; padding-bottom: 0.25rem; margin-top: 2.5rem; }
+      .report { border: 1px solid #ddd; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; }
+      .report .date { font-size: 0.85rem; color: #666; }
+      .summary { margin: 0.75rem 0; }
+      details { margin-top: 0.5rem; }
+      pre { white-space: pre-wrap; word-break: break-word; background: #f7f7f7; padding: 0.75rem; border-radius: 4px; font-size: 0.8rem; }
+    </style>
+  </head>
+  <body>
+    <p><a href="/">&larr; Office home</a></p>
+    <h1>Trends</h1>
+    {TREND_CATEGORIES.map((category) => (
+      <section>
+        <h2>{categoryLabel(category)}</h2>
+        {(reportsByCategory.get(category) ?? []).length === 0 && <p>No reports yet.</p>}
+        {(reportsByCategory.get(category) ?? []).map((report) => (
+          <article class="report">
+            <p class="date">{report.generatedAt.toISOString().slice(0, 10)} &middot; cycle {report.cycleId}</p>
+            <p class="summary">{report.summary}</p>
+            <details>
+              <summary>Raw findings ({report.topicsUsed.length} topic(s) used)</summary>
+              <pre>{JSON.stringify(report.rawFindings, null, 2)}</pre>
+            </details>
+          </article>
+        ))}
+      </section>
+    ))}
+  </body>
+</html>
