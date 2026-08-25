@@ -22,6 +22,14 @@ sub-project's approval UI — gates through a `requireAdminSession()` check agai
 Deployment Protection. Everything else in this spec (Postgres schema for candidates/decisions,
 Keepa sourcing, scoring model, approve-writes-to-affiliate-links flow) is unaffected.
 
+**Third amendment (2026-08-25, from the local-orchestrator spec):** §2's "Local weekly cron —
+mcp-server/scripts/source-affiliate-candidates.ts" is superseded on execution model. Scheduling
+moved to Vercel Cron Jobs — see `2026-08-25-local-orchestrator-design.md`. The sourcing/scoring
+pipeline must be an exported async function (e.g. `sourceAffiliateCandidates()`), not a standalone
+CLI script — the orchestrator's Vercel Cron-triggered endpoint imports and calls it directly,
+in-process, rather than spawning a child process. This was also flagged directly to the agent
+implementing this spec. Everything else is unaffected.
+
 ## 1. Overview & Goals
 
 Today every affiliate link is added by hand, one at a time, during post authoring (`site-help` /

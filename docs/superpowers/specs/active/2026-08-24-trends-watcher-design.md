@@ -14,6 +14,13 @@ the shared app's **admin auth** (§3, used by every route in the app, not just t
 **trends** feature (§4-§7). `@lhr/github` is not used by this sub-project — trends data lives
 entirely in Postgres, nothing is committed to git.
 
+**Amendment (2026-08-25, from the local-orchestrator spec):** §2's "Local weekly cron —
+mcp-server/scripts/source-weekly-trends.ts" is superseded on execution model. Scheduling moved to
+Vercel Cron Jobs — see `2026-08-25-local-orchestrator-design.md`. The sourcing/synthesis pipeline
+must be an exported async function (e.g. `sourceWeeklyTrends()`), not a standalone CLI script —
+the orchestrator's Vercel Cron-triggered endpoint imports and calls it directly, in-process.
+Everything else (SerpApi sourcing, seed-topic promotion, report storage) is unaffected.
+
 ## 1. Overview & Goals
 
 Adds a weekly-refreshed trends report — web design, cooking, and nutrition — sourced from Google

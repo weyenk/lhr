@@ -10,6 +10,13 @@ product-in-photo placement and a local orchestrator are separate, later specs)
 route it adds goes through the `requireAdminSession()` check established by the trends-watcher
 spec. No new auth work here.
 
+**Amendment (2026-08-25, from the local-orchestrator spec):** §2's "Local weekly cron —
+mcp-server/scripts/analyze-competitors.ts" is superseded on execution model. Scheduling moved to
+Vercel Cron Jobs — see `2026-08-25-local-orchestrator-design.md`. The discovery/analysis pipeline
+must be an exported async function (e.g. `analyzeCompetitors()`), not a standalone CLI script —
+the orchestrator's Vercel Cron-triggered endpoint imports and calls it directly, in-process.
+Everything else (discovery, four-dimension analysis, SEO tracking) is unaffected.
+
 ## 1. Overview & Goals
 
 Adds a weekly, always-current view of named competitors — other recipe/food content creators and

@@ -11,6 +11,13 @@ remaining, separate spec)
 commit approved changes — no new auth or hosting work. Directly depends on sub-project 2's output:
 this pipeline only has something to do once affiliate-sourcing approvals exist.
 
+**Amendment (2026-08-25, from the local-orchestrator spec, written the same day):** §2's "Local
+weekly cron — mcp-server/scripts/match-products-to-recipes.ts" is superseded on execution model.
+Scheduling moves to Vercel Cron Jobs — see `2026-08-25-local-orchestrator-design.md`. The
+matching/compositing pipeline must be an exported async function (e.g.
+`matchProductsToRecipes()`), not a standalone CLI script — the orchestrator's Vercel Cron-triggered
+endpoint imports and calls it directly, in-process. Everything else is unaffected.
+
 ## 1. Overview & Goals
 
 Takes affiliate products that have been approved (sub-project 2) but never attached to a recipe,
