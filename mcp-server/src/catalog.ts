@@ -1,20 +1,6 @@
-import { getFile, listFiles, type GitHubClient } from './github.js';
+import { listFiles, type GitHubClient } from './github.js';
 
-export interface CatalogEntry<T> {
-  id: string;
-  data: T;
-}
-
-export async function readCollection<T>(client: GitHubClient, dirPath: string, ref = 'main'): Promise<CatalogEntry<T>[]> {
-  const files = await listFiles(client, dirPath, ref);
-  const entries: CatalogEntry<T>[] = [];
-  for (const filename of files.filter((f) => f.endsWith('.json'))) {
-    const file = await getFile(client, `${dirPath}/${filename}`, ref);
-    if (!file) continue;
-    entries.push({ id: filename.replace(/\.json$/, ''), data: JSON.parse(file.content) as T });
-  }
-  return entries;
-}
+export { readCollection, type CatalogEntry } from '@lhr/github';
 
 export function slugify(title: string): string {
   return title

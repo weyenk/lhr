@@ -23,8 +23,17 @@ vi.mock('@octokit/rest', () => ({
   Octokit: vi.fn(() => mockOctokit),
 }));
 
-const { createGitHubClient, getFile, listFiles, createBranch, listBranches, deleteBranch, putFile, commitFilesToMain } =
-  await import('../src/index');
+const {
+  createGitHubClient,
+  getFile,
+  listFiles,
+  createBranch,
+  listBranches,
+  deleteBranch,
+  putFile,
+  commitFilesToMain,
+  readCollection,
+} = await import('../src/index');
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -114,6 +123,54 @@ describe('putFile', () => {
         sha: 'old-sha',
       }),
     );
+  });
+});
+
+describe('readCollection', () => {
+  // Routes the shared getContent mock: the directory path lists its entries, and each
+  // file path resolves to its content (or 404s when the mapped content is null).
+  function mockDirectory(dirPath: string, files: Record<string, string | null>) {
+    mockOctokit.repos.getContent.mockImplementation(async ({ path }: { path: string }) => {
+      if (path === dirPath) {
+        return { data: Object.keys(files).map((name) => ({ type: 'file', name })) };
+      }
+      const content = files[path.slice(dirPath.length + 1)];
+      if (content == null) throw { status: 404 };
+      return { data: { type: 'file', content: Buffer.from(content).toString('base64'), sha: 'file-sha' } };
+    });
+  }
+
+  it('reads and parses every JSON file in a directory into id/data entries', async () => {
+    mockDirectory('src/content/sets', {
+      'coastal-blue.json': JSON.stringify({ name: 'Coastal Blue' }),
+      'harvest-copper.json': JSON.stringify({ name: 'Harvest Copper' }),
+    });
+    const client = createGitHubClient('token');
+    const result = await readCollection(client, 'src/content/sets');
+    expect(result).toEqual([
+      { id: 'coastal-blue', data: { name: 'Coastal Blue' } },
+      { id: 'harvest-copper', data: { name: 'Harvest Copper' } },
+    ]);
+  });
+
+  it('skips files that are not .json', async () => {
+    mockDirectory('src/content/sets', {
+      'coastal-blue.json': JSON.stringify({ name: 'Coastal Blue' }),
+      'README.md': '# not a set',
+    });
+    const client = createGitHubClient('token');
+    const result = await readCollection(client, 'src/content/sets');
+    expect(result).toEqual([{ id: 'coastal-blue', data: { name: 'Coastal Blue' } }]);
+  });
+
+  it('skips files that no longer exist when fetched', async () => {
+    mockDirectory('src/content/sets', {
+      'coastal-blue.json': JSON.stringify({ name: 'Coastal Blue' }),
+      'vanished.json': null,
+    });
+    const client = createGitHubClient('token');
+    const result = await readCollection(client, 'src/content/sets');
+    expect(result).toEqual([{ id: 'coastal-blue', data: { name: 'Coastal Blue' } }]);
   });
 });
 

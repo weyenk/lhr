@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "npm run build --workspace=@lhr/schemas && npm run build --workspace=@lhr/github && npm run build --workspace=@lhr/db && tsc --noEmit -p tsconfig.json && node scripts/bundle.mjs",
+    "build": "npm run build --workspace=@lhr/schemas && npm run build --workspace=@lhr/github && npm run build --workspace=@lhr/jobs && npm run build --workspace=@lhr/db && npm run build --workspace=@lhr/affiliate-sourcing && tsc --noEmit -p tsconfig.json && node scripts/bundle.mjs",
     "test": "vitest run",
     "backfill:ingredient-links": "tsx scripts/backfill-ingredient-links.ts",
     "source:affiliate-candidates": "tsx scripts/source-affiliate-candidates.ts"
@@ -19,14 +19,12 @@
     "zod": "^3.24.0"
   },
   "devDependencies": {
-    "@lhr/db": "*",
+    "@lhr/affiliate-sourcing": "*",
     "@types/express": "^4.17.0",
     "@types/js-yaml": "^4.0.0",
     "@types/node": "^22.0.0",
-    "@types/pg": "^8.11.0",
     "@types/supertest": "^6.0.0",
     "esbuild": "^0.24.0",
-    "pg": "^8.13.0",
     "supertest": "^7.0.0",
     "tsx": "^4.23.1",
     "typescript": "^5.7.0",

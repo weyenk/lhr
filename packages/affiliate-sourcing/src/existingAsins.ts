@@ -1,5 +1,4 @@
-import type { GitHubClient } from './github.js';
-import { readCollection } from './catalog.js';
+import { readCollection, type GitHubClient } from '@lhr/github';
 
 const ASIN_URL_PATTERN = /\/dp\/([A-Z0-9]{10})(?:[/?]|$)/;
 

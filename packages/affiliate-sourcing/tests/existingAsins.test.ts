@@ -1,8 +1,8 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 
 const catalogMock = { readCollection: vi.fn() };
-vi.mock('../src/catalog', async () => {
-  const actual = await vi.importActual<typeof import('../src/catalog')>('../src/catalog');
+vi.mock('@lhr/github', async () => {
+  const actual = await vi.importActual<typeof import('@lhr/github')>('@lhr/github');
   return { ...actual, readCollection: catalogMock.readCollection };
 });
 

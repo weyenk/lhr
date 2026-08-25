@@ -1,5 +1,5 @@
 import type { Pool } from 'pg';
-import { listFiles, commitFilesToMain, type GitHubClient } from './github.js';
+import { listFiles, commitFilesToMain, type GitHubClient } from '@lhr/github';
 import { getApprovedCandidates, affiliateLinkFilename, buildAffiliateLinkFile } from '@lhr/db';
 
 export interface ReconcileResult {

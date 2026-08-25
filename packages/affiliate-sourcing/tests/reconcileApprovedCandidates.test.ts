@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 
-vi.mock('../src/github', () => ({
+vi.mock('@lhr/github', () => ({
   listFiles: vi.fn(),
   commitFilesToMain: vi.fn(),
 }));
@@ -13,7 +13,7 @@ vi.mock('@lhr/db', () => ({
   })),
 }));
 
-const { listFiles, commitFilesToMain } = await import('../src/github');
+const { listFiles, commitFilesToMain } = await import('@lhr/github');
 const { getApprovedCandidates } = await import('@lhr/db');
 const { reconcileApprovedCandidates } = await import('../src/reconcileApprovedCandidates');
 

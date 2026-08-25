@@ -45,6 +45,20 @@ vi.mock('../../src/github', () => ({
   }),
 }));
 
+// readCollection now lives in @lhr/github and calls that package's own getFile/listFiles
+// internally, so mocking the src/github re-export shim above no longer reaches it — the fake
+// repo has to back readCollection here instead.
+vi.mock('@lhr/github', () => ({
+  readCollection: vi.fn(async (_client: unknown, dirPath: string) =>
+    Array.from(state.main.keys())
+      .filter((p) => p.startsWith(`${dirPath}/`) && p.endsWith('.json'))
+      .map((p) => ({
+        id: p.slice(dirPath.length + 1).replace(/\.json$/, ''),
+        data: JSON.parse(state.main.get(p)!),
+      })),
+  ),
+}));
+
 vi.mock('../../src/blob', () => ({
   fetchAndStorePhoto: vi.fn(async (url: string) => `https://blob.vercel-storage.com/posts/${encodeURIComponent(url)}.jpg`),
 }));
