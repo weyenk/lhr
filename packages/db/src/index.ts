@@ -10,3 +10,4 @@ export * from './trendSeedTopics.js';
 export * from './trendsReports.js';
 export * from './competitors.js';
 export * from './competitorSeoKeywords.js';
+export * from './competitorReports.js';

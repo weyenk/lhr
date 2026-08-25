@@ -101,3 +101,17 @@ CREATE TABLE IF NOT EXISTS competitor_seo_keywords (
   added_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 `;
+
+export const COMPETITOR_REPORTS_TABLE_SQL = `
+CREATE TABLE IF NOT EXISTS competitor_reports (
+  id SERIAL PRIMARY KEY,
+  competitor_id INTEGER NOT NULL REFERENCES competitors(id),
+  cycle_id TEXT NOT NULL,
+  generated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  new_content JSONB NOT NULL,
+  seo_positions JSONB NOT NULL,
+  monetization_snapshot TEXT NOT NULL,
+  design_snapshot TEXT NOT NULL,
+  summary TEXT NOT NULL
+);
+`;
