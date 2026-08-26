@@ -1791,12 +1791,62 @@ git commit -m "Add SEO signal tracking: one SerpApi call per keyword, scanned fo
 ### Task 10: Weekly orchestration module (`analyzeCompetitors.ts`)
 
 **Files:**
+- Create: `mcp-server/src/computeCycleId.ts` (see correction note below — this plan originally assumed this file already existed in this worktree; it does not)
+- Create: `mcp-server/tests/computeCycleId.test.ts`
 - Create: `mcp-server/src/analyzeCompetitors.ts`
 - Create: `mcp-server/tests/analyzeCompetitors.test.ts`
 
+**Correction (added during Task 10 execution):** this task originally assumed `computeCycleId.ts` "already exists in this worktree," copied from having seen it in a sibling branch (`claude/affiliate-sourcing-agent-design-b97539`) while researching this plan. That was wrong on two counts: it was never pulled into *this* worktree, and that sibling branch has since moved the file into its own `packages/affiliate-sourcing` workspace package (as part of that sub-project's own Job-contract conformance work) — pulling that whole package would drag in unrelated Keepa/Amazon-commission code this plan has no use for. The fix is to create the small, dependency-free ISO-week helper directly here, verbatim from its last-known-good, already-tested form (before the sibling branch's move) — Steps 0a/0b below.
+
 **Interfaces:**
-- Consumes: `runDiscovery` (`./competitorDiscovery.js`); `trackSeoPositions` (`./competitorSeoTracking.js`); `fetchCompetitorPosts`, `diffNewPosts`, `type CompetitorPost` (`./competitorContent.js`); `fetchHomepageText`, `summarizeMonetization`, `summarizeDesign`, `diffSnapshot` (`./competitorSnapshots.js`); `callOpenRouter` (`./openrouter.js`); `computeCycleId` (`./computeCycleId.js` — already exists in this worktree); `listCompetitorsByStatus`, `getLatestReport`, `insertCompetitorReport`, `type NewCompetitorReport`, `type SeoPositionEntry` (`@lhr/db`).
+- Produces (this task, `computeCycleId.ts`): `computeCycleId(date: Date): string` — ISO week identifier, e.g. `'2026-W35'`. Consumed by this task's own `analyzeCompetitors.ts` below.
+- Consumes: `runDiscovery` (`./competitorDiscovery.js`); `trackSeoPositions` (`./competitorSeoTracking.js`); `fetchCompetitorPosts`, `diffNewPosts`, `type CompetitorPost` (`./competitorContent.js`); `fetchHomepageText`, `summarizeMonetization`, `summarizeDesign`, `diffSnapshot` (`./competitorSnapshots.js`); `callOpenRouter` (`./openrouter.js`); `computeCycleId` (`./computeCycleId.js`, created by this task's Step 0); `listCompetitorsByStatus`, `getLatestReport`, `insertCompetitorReport`, `type NewCompetitorReport`, `type SeoPositionEntry` (`@lhr/db`).
 - Produces: `WeeklyCompetitorRunSummary`, `runWeeklyCompetitorAnalysis(pool): Promise<WeeklyCompetitorRunSummary>`. Consumed by Tasks 11, 12.
+
+- [ ] **Step 0a: Write the failing test for `computeCycleId`**
+
+`mcp-server/tests/computeCycleId.test.ts`:
+
+```ts
+import { describe, expect, it } from 'vitest';
+import { computeCycleId } from '../src/computeCycleId';
+
+describe('computeCycleId', () => {
+  it('formats a mid-year Monday as its ISO week', () => {
+    expect(computeCycleId(new Date('2026-08-24T12:00:00Z'))).toBe('2026-W35');
+  });
+
+  it('formats the first week of January correctly', () => {
+    expect(computeCycleId(new Date('2026-01-01T00:00:00Z'))).toBe('2026-W01');
+  });
+
+  it('assigns the last days of December to week 53 when the ISO year rolls over', () => {
+    expect(computeCycleId(new Date('2026-12-31T00:00:00Z'))).toBe('2026-W53');
+  });
+});
+```
+
+Run `cd mcp-server && npx vitest run tests/computeCycleId.test.ts` — expect FAIL, module doesn't exist yet.
+
+- [ ] **Step 0b: Implement `computeCycleId.ts`**
+
+`mcp-server/src/computeCycleId.ts`:
+
+```ts
+export function computeCycleId(date: Date): string {
+  const target = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  const dayNum = (target.getUTCDay() + 6) % 7;
+  target.setUTCDate(target.getUTCDate() - dayNum + 3);
+  const isoYear = target.getUTCFullYear();
+  const firstThursday = new Date(Date.UTC(isoYear, 0, 4));
+  const firstThursdayDayNum = (firstThursday.getUTCDay() + 6) % 7;
+  firstThursday.setUTCDate(firstThursday.getUTCDate() - firstThursdayDayNum + 3);
+  const week = 1 + Math.round((target.getTime() - firstThursday.getTime()) / (7 * 86400000));
+  return `${isoYear}-W${String(week).padStart(2, '0')}`;
+}
+```
+
+Run `cd mcp-server && npx vitest run tests/computeCycleId.test.ts` — expect PASS (3/3).
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -2074,7 +2124,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add mcp-server/src/analyzeCompetitors.ts mcp-server/tests/analyzeCompetitors.test.ts
+git add mcp-server/src/computeCycleId.ts mcp-server/tests/computeCycleId.test.ts mcp-server/src/analyzeCompetitors.ts mcp-server/tests/analyzeCompetitors.test.ts
 git commit -m "Add weekly competitor analysis orchestration with per-dimension partial-failure handling"
 ```
 
