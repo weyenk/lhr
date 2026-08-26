@@ -22,4 +22,11 @@ describe('runMigrations', () => {
     const calls = pool.query.mock.calls.map((c) => c[0] as string);
     expect(calls.some((sql) => sql.includes('CREATE UNIQUE INDEX IF NOT EXISTS candidates_cycle_id_asin_key'))).toBe(true);
   });
+
+  it('creates the product_placement_proposals table', async () => {
+    const pool = { query: vi.fn().mockResolvedValue(undefined) };
+    await runMigrations(pool as never);
+    const calls = pool.query.mock.calls.map((c) => c[0] as string);
+    expect(calls.some((sql) => sql.includes('CREATE TABLE IF NOT EXISTS product_placement_proposals'))).toBe(true);
+  });
 });
