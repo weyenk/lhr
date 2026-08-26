@@ -111,4 +111,16 @@ describe('POST /api/product-placements/[id]/approve', () => {
     const res = await POST(makeContext('not-a-number'));
     expect(res.status).toBe(400);
   });
+
+  it('returns 502 but leaves the proposal approved when the commit fails', async () => {
+    dbMock.getProposalById.mockResolvedValue(pendingProposal);
+    contentMock.applyProductPlacement.mockReturnValue('updated-mdx');
+    githubMock.commitFilesToMain.mockRejectedValue(new Error('commit failed'));
+
+    const res = await POST(makeContext('1'));
+
+    expect(res.status).toBe(502);
+    expect(dbMock.markProposalStatus).toHaveBeenCalledWith(mockPool, 1, 'approved');
+    expect(dbMock.markProposalStatus).not.toHaveBeenCalledWith(mockPool, 1, 'stale');
+  });
 });
