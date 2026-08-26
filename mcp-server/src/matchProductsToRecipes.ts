@@ -1,9 +1,10 @@
 import type { Pool } from 'pg';
 import type { GitHubClient } from './github.js';
+import { getFile, commitFilesToMain } from './github.js';
 import { readCollection } from './catalog.js';
 import { callOpenRouter, type OpenRouterMessage } from './openrouter.js';
 import { listPublishedPosts } from './publishedPosts.js';
-import { enumeratePostImages } from '@lhr/content';
+import { enumeratePostImages, applyProductPlacement, StaleImageTargetError } from '@lhr/content';
 import { getImageEditProvider, type ImageEditProvider } from './imageEdit/index.js';
 import {
   computeUnattachedCandidates,
@@ -12,7 +13,12 @@ import {
   type AffiliateLinkCandidate,
   type MatchablePost,
 } from './productPlacementMatching.js';
-import { insertProductPlacementProposal, getPendingAffiliateLinkIds, type NewProductPlacementProposal } from '@lhr/db';
+import {
+  insertProductPlacementProposal,
+  getPendingAffiliateLinkIds,
+  getApprovedProposals,
+  type NewProductPlacementProposal,
+} from '@lhr/db';
 
 export interface MatchProductsToRecipesDeps {
   githubClient: GitHubClient;
@@ -31,9 +37,45 @@ function newCycleId(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+export async function reconcileApprovedProposals(deps: MatchProductsToRecipesDeps): Promise<void> {
+  const { githubClient, pool } = deps;
+  const approved = await getApprovedProposals(pool);
+
+  for (const proposal of approved) {
+    if (!proposal.compositedImageUrl) continue;
+
+    const file = await getFile(githubClient, `src/content/posts/${proposal.postSlug}.mdx`, 'main');
+    if (!file) continue;
+
+    const alreadyReflected =
+      file.content.includes(proposal.compositedImageUrl) && file.content.includes(proposal.affiliateLinkId);
+    if (alreadyReflected) continue;
+
+    try {
+      const updated = applyProductPlacement(file.content, {
+        targetImageKind: proposal.targetImageKind,
+        targetImageUrl: proposal.targetImageUrl,
+        targetImageLine: proposal.targetImageLine,
+        compositedImageUrl: proposal.compositedImageUrl,
+        affiliateLinkId: proposal.affiliateLinkId,
+      });
+      await commitFilesToMain(
+        githubClient,
+        [{ path: `src/content/posts/${proposal.postSlug}.mdx`, content: updated }],
+        `Add product placement: ${proposal.affiliateLinkId} in ${proposal.postSlug}`,
+      );
+    } catch (err) {
+      if (err instanceof StaleImageTargetError) continue;
+      continue; // commit failed again; retried on the next cycle
+    }
+  }
+}
+
 export async function matchProductsToRecipes(
   deps: MatchProductsToRecipesDeps,
 ): Promise<{ cycleId: string; proposalsCreated: number }> {
+  await reconcileApprovedProposals(deps);
+
   const { githubClient, pool } = deps;
   const imageEditProvider = deps.imageEditProvider ?? getImageEditProvider();
   const callLlm = deps.callLlm ?? callOpenRouter;

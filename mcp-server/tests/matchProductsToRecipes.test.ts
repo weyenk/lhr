@@ -1,14 +1,15 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 
-vi.mock('../src/github.js', () => ({ listFiles: vi.fn(), getFile: vi.fn() }));
+vi.mock('../src/github.js', () => ({ listFiles: vi.fn(), getFile: vi.fn(), commitFilesToMain: vi.fn() }));
 vi.mock('@lhr/db', () => ({
   insertProductPlacementProposal: vi.fn().mockResolvedValue(1),
   getPendingAffiliateLinkIds: vi.fn().mockResolvedValue(new Set()),
+  getApprovedProposals: vi.fn().mockResolvedValue([]),
 }));
 
-import { listFiles, getFile } from '../src/github.js';
-import { insertProductPlacementProposal } from '@lhr/db';
-import { matchProductsToRecipes } from '../src/matchProductsToRecipes';
+import { listFiles, getFile, commitFilesToMain } from '../src/github.js';
+import { insertProductPlacementProposal, getApprovedProposals } from '@lhr/db';
+import { matchProductsToRecipes, reconcileApprovedProposals } from '../src/matchProductsToRecipes';
 
 const recipeMdx = `---
 type: recipe
@@ -195,5 +196,48 @@ describe('matchProductsToRecipes', () => {
       {},
       expect.objectContaining({ affiliateLinkId: 'wooden-pizza-server-1234', status: 'pending' }),
     );
+  });
+});
+
+describe('reconcileApprovedProposals', () => {
+  it('retries the commit for an approved proposal the live post does not yet reflect', async () => {
+    vi.mocked(getApprovedProposals).mockResolvedValue([
+      {
+        id: 5, cycleId: '2026-08-25', affiliateLinkId: 'wooden-pizza-server-1234', postSlug: 'pizza',
+        targetImageKind: 'body', targetImageUrl: 'https://example.com/slice.jpg',
+        targetImageLine: '![Slicing the pizza](https://example.com/slice.jpg)',
+        matchRationale: 'x', compositedImageUrl: 'https://example.com/composited.jpg',
+        status: 'approved', decidedAt: new Date(), createdAt: new Date(),
+      } as never,
+    ]);
+    vi.mocked(getFile).mockResolvedValue({ content: recipeMdx, sha: 'a' });
+
+    await reconcileApprovedProposals({ githubClient: {} as never, pool: {} as never });
+
+    expect(commitFilesToMain).toHaveBeenCalledWith(
+      {},
+      [expect.objectContaining({ path: 'src/content/posts/pizza.mdx' })],
+      expect.stringContaining('wooden-pizza-server-1234'),
+    );
+  });
+
+  it('does nothing when the live post already reflects the approved proposal', async () => {
+    const alreadyUpdated = recipeMdx
+      .replace('https://example.com/slice.jpg', 'https://example.com/composited.jpg')
+      .replace('affiliateLinkIds: []', 'affiliateLinkIds:\n  - wooden-pizza-server-1234');
+    vi.mocked(getApprovedProposals).mockResolvedValue([
+      {
+        id: 5, cycleId: '2026-08-25', affiliateLinkId: 'wooden-pizza-server-1234', postSlug: 'pizza',
+        targetImageKind: 'body', targetImageUrl: 'https://example.com/slice.jpg',
+        targetImageLine: '![Slicing the pizza](https://example.com/slice.jpg)',
+        matchRationale: 'x', compositedImageUrl: 'https://example.com/composited.jpg',
+        status: 'approved', decidedAt: new Date(), createdAt: new Date(),
+      } as never,
+    ]);
+    vi.mocked(getFile).mockResolvedValue({ content: alreadyUpdated, sha: 'b' });
+
+    await reconcileApprovedProposals({ githubClient: {} as never, pool: {} as never });
+
+    expect(commitFilesToMain).not.toHaveBeenCalled();
   });
 });
