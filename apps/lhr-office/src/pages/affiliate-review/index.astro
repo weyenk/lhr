@@ -1,0 +1,95 @@
+---
+import { getPool } from '../../lib/db.js';
+import { requireSession, AuthNotConfiguredError } from '../../lib/auth.js';
+import { getLatestPendingCycleId, getPendingCandidates, type Candidate } from '@lhr/db';
+
+let notConfigured = false;
+try {
+  await requireSession();
+} catch (err) {
+  if (err instanceof AuthNotConfiguredError) {
+    notConfigured = true;
+  } else {
+    throw err;
+  }
+}
+
+const pool = notConfigured ? null : getPool();
+const cycleId = pool ? await getLatestPendingCycleId(pool) : null;
+const candidates: Candidate[] = pool && cycleId ? await getPendingCandidates(pool, cycleId) : [];
+
+function formatPrice(cents: number): string {
+  return `$${(cents / 100).toFixed(2)}`;
+}
+function formatSales(n: number | null): string {
+  return n === null ? 'No estimate available' : `~${n.toLocaleString()}/mo (est.)`;
+}
+---
+{notConfigured ? (
+  <html lang="en">
+    <head>
+      <meta charset="utf-8" />
+      <title>Affiliate candidate review</title>
+    </head>
+    <body>
+      <p>Admin auth isn't wired up yet on this app — this page isn't available until that lands.</p>
+    </body>
+  </html>
+) : (
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Affiliate candidate review</title>
+    <style>
+      body { font-family: sans-serif; max-width: 640px; margin: 2rem auto; padding: 0 1rem; }
+      .card { border: 1px solid #ddd; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; }
+      .card img { width: 100%; max-height: 220px; object-fit: cover; border-radius: 4px; }
+      .meta { font-size: 0.9rem; color: #444; margin: 0.5rem 0; }
+      .estimate { font-style: italic; }
+      .fallback { color: #b45309; }
+      .actions button { font-size: 1rem; padding: 0.5rem 1rem; margin-right: 0.5rem; cursor: pointer; }
+      .approve { background: #16a34a; color: white; border: none; border-radius: 4px; }
+      .deny { background: #dc2626; color: white; border: none; border-radius: 4px; }
+      .card.gone { display: none; }
+    </style>
+  </head>
+  <body>
+    <h1>Affiliate candidates{cycleId ? ` — cycle ${cycleId}` : ''}</h1>
+    {candidates.length === 0 && <p>No pending candidates right now.</p>}
+    {candidates.map((c) => (
+      <div class="card" id={`candidate-${c.id}`}>
+        <img src={c.imageUrl} alt={c.title} />
+        <h2>{c.title}</h2>
+        <p class="meta">{c.category} &middot; {formatPrice(c.priceCents)}{c.isWildcard && ' · wildcard'}</p>
+        <p class="meta estimate">
+          Est. commission: {(c.commissionRate * 100).toFixed(1)}%
+          {c.commissionRateIsFallback && <span class="fallback"> (fallback rate &mdash; verify)</span>}
+        </p>
+        <p class="meta estimate">Est. monthly sales: {formatSales(c.estimatedMonthlySales)}</p>
+        <div class="actions">
+          <button class="approve" data-id={c.id} data-action="approve">Approve</button>
+          <button class="deny" data-id={c.id} data-action="deny">Deny</button>
+        </div>
+      </div>
+    ))}
+    <script>
+      document.querySelectorAll('button[data-action]').forEach((button) => {
+        button.addEventListener('click', async () => {
+          const id = button.getAttribute('data-id');
+          const action = button.getAttribute('data-action');
+          button.setAttribute('disabled', 'true');
+          const res = await fetch(`/api/affiliate-review/candidates/${id}/${action}`, { method: 'POST' });
+          if (res.ok) {
+            document.getElementById(`candidate-${id}`)?.classList.add('gone');
+          } else {
+            const body = await res.json().catch(() => ({}));
+            alert(`Failed: ${body.error ?? res.statusText}`);
+            button.removeAttribute('disabled');
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
+)}
