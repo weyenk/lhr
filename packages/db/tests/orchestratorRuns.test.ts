@@ -77,6 +77,15 @@ describe('getLatestSuccess', () => {
     const db = fakeDb([]);
     expect(await getLatestSuccess(db, 'recipe-variant-generator')).toBeNull();
   });
+
+  it('queries for both success and partial statuses, since a partial run also counts as due-clearing', async () => {
+    const db = fakeDb([rawRow]);
+    await getLatestSuccess(db, 'recipe-variant-generator');
+    expect(db.query).toHaveBeenCalledWith(
+      expect.stringContaining("status IN ('success', 'partial')"),
+      ['recipe-variant-generator'],
+    );
+  });
 });
 
 describe('getRecentRunning', () => {
