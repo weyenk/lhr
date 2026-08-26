@@ -1,0 +1,85 @@
+---
+import { requireAdminSession } from '../../lib/auth.js';
+import { getPool } from '../../lib/db.js';
+import { listAdmins, getAllTopics, TREND_CATEGORIES, isLocked } from '@lhr/db';
+
+const authResult = await requireAdminSession(Astro);
+if ('response' in authResult) {
+  return authResult.response;
+}
+
+const pool = getPool();
+const admins = await listAdmins(pool);
+const topics = await getAllTopics(pool);
+const error = Astro.url.searchParams.get('error');
+---
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Admin — LHR Office</title>
+    <style>
+      body { font-family: sans-serif; max-width: 640px; margin: 2rem auto; padding: 0 1rem; }
+      h2 { border-bottom: 1px solid #ddd; padding-bottom: 0.25rem; margin-top: 2.5rem; }
+      table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+      th, td { text-align: left; padding: 0.4rem; border-bottom: 1px solid #eee; font-size: 0.9rem; }
+      form.inline { display: flex; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap; }
+      input { padding: 0.4rem; }
+      button { padding: 0.4rem 0.8rem; cursor: pointer; }
+      .error { color: #dc2626; font-size: 0.9rem; margin-top: 1rem; }
+    </style>
+  </head>
+  <body>
+    <p><a href="/">&larr; Office home</a></p>
+    <form method="POST" action="/api/logout"><button type="submit">Log out</button></form>
+    <h1>Admin</h1>
+
+    <h2>Admin accounts</h2>
+    <table>
+      <thead><tr><th>Username</th><th>Created</th><th>Locked?</th></tr></thead>
+      <tbody>
+        {admins.map((a) => (
+          <tr>
+            <td>{a.username}</td>
+            <td>{a.createdAt.toISOString().slice(0, 10)}</td>
+            <td>{isLocked(a) ? 'Yes' : 'No'}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+    <form class="inline" method="POST" action="/api/admin/create-admin">
+      <input type="text" name="username" placeholder="Username" required />
+      <input type="password" name="password" placeholder="Password" required />
+      <button type="submit">Add admin</button>
+    </form>
+    {error && <p class="error">{error}</p>}
+
+    <h2>Seed topics</h2>
+    <table>
+      <thead><tr><th>Category</th><th>Topic</th><th>Status</th><th>Times seen</th><th></th></tr></thead>
+      <tbody>
+        {topics.map((t) => (
+          <tr>
+            <td>{t.category}</td>
+            <td>{t.topic}</td>
+            <td>{t.status}</td>
+            <td>{t.timesSeen}</td>
+            <td>
+              <form method="POST" action={`/api/admin/topics/${t.id}/status`}>
+                <input type="hidden" name="status" value={t.status === 'curated' ? 'candidate' : 'curated'} />
+                <button type="submit">{t.status === 'curated' ? 'Demote' : 'Promote'}</button>
+              </form>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+    <form class="inline" method="POST" action="/api/admin/topics/add">
+      <select name="category" required>
+        {TREND_CATEGORIES.map((c) => <option value={c}>{c}</option>)}
+      </select>
+      <input type="text" name="topic" placeholder="New curated topic" required />
+      <button type="submit">Add curated topic</button>
+    </form>
+  </body>
+</html>
