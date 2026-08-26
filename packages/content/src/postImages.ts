@@ -15,8 +15,8 @@ export function enumeratePostImages(raw: string): PostImage[] {
   const frontmatterMatch = raw.match(FRONTMATTER_RE);
 
   if (frontmatterMatch) {
-    const frontmatter = yaml.load(frontmatterMatch[1]) as { coverPhoto?: string; coverPhotoAlt?: string };
-    if (frontmatter.coverPhoto) {
+    const frontmatter = yaml.load(frontmatterMatch[1]) as { coverPhoto?: string; coverPhotoAlt?: string } | undefined;
+    if (frontmatter && frontmatter.coverPhoto) {
       images.push({ kind: 'cover', url: frontmatter.coverPhoto, alt: frontmatter.coverPhotoAlt ?? '', line: null });
     }
   }

@@ -25,6 +25,18 @@ coverPhotoAlt: "Cover alt text"
 No body images here, just prose.
 `;
 
+// A blank line between the frontmatter delimiters is a genuinely empty YAML document:
+// js-yaml's \`load\` returns \`undefined\` for it (verified directly), which is what makes this
+// fixture exercise the crash path — a frontmatter block with the two \`---\` lines immediately
+// adjacent (no blank line between them) doesn't match the frontmatter regex at all, so it
+// wouldn't reach the \`yaml.load\` call this test is meant to guard.
+const emptyFrontmatter = `---
+
+---
+
+Some body text.
+`;
+
 const duplicateUrls = `---
 title: "Test"
 coverPhoto: "https://example.com/cover.jpg"
@@ -57,6 +69,11 @@ describe('enumeratePostImages', () => {
     expect(images).toEqual([
       { kind: 'cover', url: 'https://example.com/cover.jpg', alt: 'Cover alt text', line: null },
     ]);
+  });
+
+  it('returns an empty list, not a throw, when frontmatter parses to no usable object (empty YAML document)', () => {
+    const images = enumeratePostImages(emptyFrontmatter);
+    expect(images).toEqual([]);
   });
 
   it('distinguishes two body images sharing the same URL by their distinct lines', () => {
