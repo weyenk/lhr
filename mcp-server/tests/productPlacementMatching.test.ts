@@ -82,4 +82,19 @@ describe('parseMatchResponse', () => {
     const raw = JSON.stringify({ match: { slug: 'chicago-deep-dish-pizza', imageId: 99, rationale: 'x' } });
     expect(parseMatchResponse(raw, posts)).toBeNull();
   });
+
+  it('returns null when match is not an object', () => {
+    const raw = JSON.stringify({ match: 'oops' });
+    expect(parseMatchResponse(raw, posts)).toBeNull();
+  });
+
+  it('returns null when match is missing required fields', () => {
+    const raw = JSON.stringify({ match: { slug: 'chicago-deep-dish-pizza' } });
+    expect(parseMatchResponse(raw, posts)).toBeNull();
+  });
+
+  it('returns null when match has wrong field types', () => {
+    const raw = JSON.stringify({ match: { slug: 123, imageId: 'x', rationale: 'y' } });
+    expect(parseMatchResponse(raw, posts)).toBeNull();
+  });
 });
