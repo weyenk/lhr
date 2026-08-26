@@ -1,4 +1,4 @@
-import type { Pool } from 'pg';
+import { Pool } from 'pg';
 import { runDiscovery } from './competitorDiscovery.js';
 import { trackSeoPositions } from './competitorSeoTracking.js';
 import { fetchCompetitorPosts, diffNewPosts, type CompetitorPost } from './competitorContent.js';
@@ -117,4 +117,44 @@ export async function runWeeklyCompetitorAnalysis(pool: Pool): Promise<WeeklyCom
     failedSeoKeywords: seoTracking.failedKeywords,
     reportsWritten,
   };
+}
+
+// Mirrors packages/jobs/src/types.ts's JobResult contract (spec
+// 2026-08-25-local-orchestrator-design.md §2). Defined locally — not
+// imported from @lhr/jobs — because that package doesn't exist in this
+// worktree yet; the shape matches exactly, so it satisfies the real `Job`
+// type structurally once the orchestrator sub-project wires this in.
+export interface JobResult {
+  status: 'success' | 'partial' | 'failure';
+  summary: string;
+  details?: Record<string, unknown>;
+}
+
+export function summaryToJobResult(summary: WeeklyCompetitorRunSummary): JobResult {
+  const degraded = summary.failedDiscoveryQueries.length > 0 || summary.failedSeoKeywords.length > 0;
+  return {
+    status: degraded ? 'partial' : 'success',
+    summary: `Cycle ${summary.cycleId}: wrote ${summary.reportsWritten} report(s), ${summary.discoveredCandidates} new candidate(s) discovered.`,
+    details: {
+      discoveredCandidates: summary.discoveredCandidates,
+      failedDiscoveryQueries: summary.failedDiscoveryQueries,
+      failedSeoKeywords: summary.failedSeoKeywords,
+      reportsWritten: summary.reportsWritten,
+    },
+  };
+}
+
+export async function analyzeCompetitors(): Promise<JobResult> {
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) {
+    throw new Error('DATABASE_URL env var is required.');
+  }
+
+  const pool = new Pool({ connectionString: databaseUrl });
+  try {
+    const summary = await runWeeklyCompetitorAnalysis(pool);
+    return summaryToJobResult(summary);
+  } finally {
+    await pool.end();
+  }
 }
