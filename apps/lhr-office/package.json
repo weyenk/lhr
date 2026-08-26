@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@astrojs/vercel": "^8.0.0",
+    "@lhr/content": "*",
     "@lhr/db": "*",
     "@lhr/github": "*",
     "@lhr/schemas": "*",
