@@ -1,4 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { Pool } from 'pg';
 
 const mockPool = { end: vi.fn() };
 vi.mock('pg', () => ({ Pool: vi.fn(() => mockPool) }));
@@ -132,5 +133,16 @@ describe('sourceAffiliateCandidates', () => {
   it('throws if a required env var is missing, before constructing a Pool', async () => {
     delete process.env.KEEPA_API_KEY;
     await expect(sourceAffiliateCandidates()).rejects.toThrow('KEEPA_API_KEY');
+    expect(Pool).not.toHaveBeenCalled();
+  });
+
+  it('returns success (not partial) when zero candidates survive scoring, same as the zero-fresh path', async () => {
+    keepaMock.findTrendingCandidates.mockResolvedValue([keepaCandidate({ asin: 'B0NEW1' })]);
+    dbMock.selectCycle.mockReturnValue([]);
+    const result = await sourceAffiliateCandidates();
+    expect(result.status).toBe('success');
+    expect(result.summary).toContain('Wrote 0 candidate');
+    expect(dbMock.insertCandidates).toHaveBeenCalledWith(expect.anything(), []);
+    expect(mockPool.end).toHaveBeenCalledTimes(1);
   });
 });

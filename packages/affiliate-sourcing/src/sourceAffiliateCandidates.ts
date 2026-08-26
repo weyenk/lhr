@@ -93,6 +93,9 @@ export async function sourceAffiliateCandidates(): Promise<JobResult> {
     const summary = `Wrote ${newCandidates.length} candidate(s) for cycle ${cycleId} (${wildcardCount} wildcard).`;
     const details = { cycleId, count: newCandidates.length, wildcardCount, reconciledAsins: reconciled.reconciledAsins };
 
+    if (newCandidates.length === 0) {
+      return { status: 'success', summary, details };
+    }
     if (newCandidates.length < CYCLE_SLOTS) {
       return { status: 'partial', summary: `${summary} Target was ${CYCLE_SLOTS}; shipped what was found.`, details };
     }
