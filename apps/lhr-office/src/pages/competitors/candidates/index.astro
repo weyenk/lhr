@@ -1,0 +1,62 @@
+---
+import { requireAdminSession } from '../../../lib/auth.js';
+import { getPool } from '../../../lib/db.js';
+import { listCompetitorsByStatus } from '@lhr/db';
+
+const authResult = await requireAdminSession(Astro);
+if ('response' in authResult) {
+  return authResult.response;
+}
+
+const candidates = await listCompetitorsByStatus(getPool(), 'candidate');
+---
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Competitor candidates — LHR Office</title>
+    <style>
+      body { font-family: sans-serif; max-width: 640px; margin: 2rem auto; padding: 0 1rem; }
+      .card { border: 1px solid #ddd; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; }
+      .actions button { font-size: 1rem; padding: 0.5rem 1rem; margin-left: 0.5rem; cursor: pointer; }
+      .approve { background: #16a34a; color: white; border: none; border-radius: 4px; }
+      .reject { background: #dc2626; color: white; border: none; border-radius: 4px; }
+      .card.gone { display: none; }
+      nav a { margin-right: 1rem; }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <a href="/competitors/">Tracked</a>
+      <a href="/competitors/keywords/">SEO keywords</a>
+    </nav>
+    <h1>Discovered candidates</h1>
+    {candidates.length === 0 && <p>No pending candidates right now.</p>}
+    {candidates.map((c) => (
+      <div class="card" id={`candidate-${c.id}`}>
+        <span>{c.domain}</span>
+        <div class="actions">
+          <button class="approve" data-id={c.id} data-action="approve">Track</button>
+          <button class="reject" data-id={c.id} data-action="reject">Reject</button>
+        </div>
+      </div>
+    ))}
+    <script>
+      document.querySelectorAll('button[data-action]').forEach((button) => {
+        button.addEventListener('click', async () => {
+          const id = button.getAttribute('data-id');
+          const action = button.getAttribute('data-action');
+          button.setAttribute('disabled', 'true');
+          const res = await fetch(`/api/competitors/${id}/${action}`, { method: 'POST' });
+          if (res.ok) {
+            document.getElementById(`candidate-${id}`)?.classList.add('gone');
+          } else {
+            const body = await res.json().catch(() => ({}));
+            alert(`Failed: ${body.error ?? res.statusText}`);
+            button.removeAttribute('disabled');
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
