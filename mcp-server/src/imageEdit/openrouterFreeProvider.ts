@@ -16,46 +16,51 @@ interface OpenRouterImageChoice {
 
 export const openrouterFreeProvider: ImageEditProvider = {
   async compositeProductIntoPhoto({ sourceImageUrl, productImageUrl, productName }) {
-    const response = await fetch(OPENROUTER_URL, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${requireEnv('OPENROUTER_API_KEY')}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: process.env.IMAGE_EDIT_MODEL ?? DEFAULT_MODEL,
-        messages: [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: `Composite this product ("${productName}") naturally into the scene of the first photo, matching its lighting and perspective.`,
-              },
-              { type: 'image_url', image_url: { url: sourceImageUrl } },
-              { type: 'image_url', image_url: { url: productImageUrl } },
-            ],
-          },
-        ],
-      }),
-    });
+    try {
+      const response = await fetch(OPENROUTER_URL, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${requireEnv('OPENROUTER_API_KEY')}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: process.env.IMAGE_EDIT_MODEL ?? DEFAULT_MODEL,
+          messages: [
+            {
+              role: 'user',
+              content: [
+                {
+                  type: 'text',
+                  text: `Composite this product ("${productName}") naturally into the scene of the first photo, matching its lighting and perspective.`,
+                },
+                { type: 'image_url', image_url: { url: sourceImageUrl } },
+                { type: 'image_url', image_url: { url: productImageUrl } },
+              ],
+            },
+          ],
+        }),
+      });
 
-    if (!response.ok) {
-      return { error: `OpenRouter request failed: ${response.status}` };
-    }
+      if (!response.ok) {
+        return { error: `OpenRouter request failed: ${response.status}` };
+      }
 
-    const data = (await response.json()) as { choices?: OpenRouterImageChoice[] };
-    const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-    if (!imageUrl) {
-      return { error: 'OpenRouter response had no generated image' };
-    }
+      const data = (await response.json()) as { choices?: OpenRouterImageChoice[] };
+      const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+      if (!imageUrl) {
+        return { error: 'OpenRouter response had no generated image' };
+      }
 
-    const match = imageUrl.match(/^data:([^;]+);base64,(.+)$/);
-    if (!match) {
-      return { error: 'OpenRouter returned a non-data-URI image, which is not supported yet' };
+      const match = imageUrl.match(/^data:([^;]+);base64,(.+)$/);
+      if (!match) {
+        return { error: 'OpenRouter returned a non-data-URI image, which is not supported yet' };
+      }
+      const [, contentType, base64] = match;
+      const resultImageUrl = await storeImageBuffer(Buffer.from(base64, 'base64'), contentType);
+      return { resultImageUrl };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      return { error: `Failed to composite product into photo: ${message}` };
     }
-    const [, contentType, base64] = match;
-    const resultImageUrl = await storeImageBuffer(Buffer.from(base64, 'base64'), contentType);
-    return { resultImageUrl };
   },
 };
