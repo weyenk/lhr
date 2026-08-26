@@ -6,7 +6,8 @@
     "mcp-server",
     "packages/schemas",
     "packages/jobs",
-    "packages/db"
+    "packages/db",
+    "apps/lhr-office"
   ],
   "scripts": {
     "postinstall": "npm run build --workspace=@lhr/schemas && npm run build --workspace=@lhr/jobs && npm run build --workspace=@lhr/db",

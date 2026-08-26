@@ -1,0 +1,18 @@
+{
+  "name": "lhr-office",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "npm run build --workspace=@lhr/db && npm run build --workspace=@lhr/jobs && tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@lhr/db": "*",
+    "@lhr/jobs": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}
