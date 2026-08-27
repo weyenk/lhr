@@ -4,10 +4,14 @@
   "type": "module",
   "workspaces": [
     "mcp-server",
-    "packages/schemas"
+    "packages/schemas",
+    "packages/github",
+    "packages/db",
+    "apps/lhr-office",
+    "packages/content"
   ],
   "scripts": {
-    "postinstall": "npm run build --workspace=@lhr/schemas",
+    "postinstall": "npm run build --workspace=@lhr/schemas && npm run build --workspace=@lhr/github && npm run build --workspace=@lhr/db && npm run build --workspace=@lhr/content",
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
