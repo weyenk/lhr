@@ -26,6 +26,16 @@ affiliateLinkIds: []
 Body text.
 `;
 
+// A blank line between the frontmatter delimiters is a genuinely empty YAML document:
+// js-yaml's `load` returns `undefined` for it, which is what exercises the crash path this
+// guards against (mirrors the equivalent fixture in packages/content/tests/postImages.test.ts).
+const emptyFrontmatterMdx = `---
+
+---
+
+Some body.
+`;
+
 beforeEach(() => {
   vi.clearAllMocks();
 });
@@ -36,6 +46,27 @@ describe('listPublishedPosts', () => {
     vi.mocked(getFile).mockImplementation(async (_client, path) => {
       if (path === 'src/content/posts/test-recipe.mdx') return { content: recipeMdx, sha: 'abc' };
       if (path === 'src/content/posts/test-article.mdx') return { content: articleMdx, sha: 'def' };
+      return null;
+    });
+
+    const posts = await listPublishedPosts({} as never);
+
+    expect(posts).toEqual([
+      {
+        slug: 'test-recipe',
+        raw: recipeMdx,
+        title: 'Test Recipe',
+        ingredients: [{ item: 'Salt' }],
+        affiliateLinkIds: ['existing-link'],
+      },
+    ]);
+  });
+
+  it('does not throw and excludes a post with empty frontmatter', async () => {
+    vi.mocked(listFiles).mockResolvedValue(['test-recipe.mdx', 'empty-frontmatter.mdx']);
+    vi.mocked(getFile).mockImplementation(async (_client, path) => {
+      if (path === 'src/content/posts/test-recipe.mdx') return { content: recipeMdx, sha: 'abc' };
+      if (path === 'src/content/posts/empty-frontmatter.mdx') return { content: emptyFrontmatterMdx, sha: 'ghi' };
       return null;
     });
 

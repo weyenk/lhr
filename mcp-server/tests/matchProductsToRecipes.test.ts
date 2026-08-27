@@ -5,10 +5,11 @@ vi.mock('@lhr/db', () => ({
   insertProductPlacementProposal: vi.fn().mockResolvedValue(1),
   getPendingAffiliateLinkIds: vi.fn().mockResolvedValue(new Set()),
   getApprovedProposals: vi.fn().mockResolvedValue([]),
+  markProposalStatus: vi.fn(),
 }));
 
 import { listFiles, getFile, commitFilesToMain } from '../src/github.js';
-import { insertProductPlacementProposal, getApprovedProposals } from '@lhr/db';
+import { insertProductPlacementProposal, getApprovedProposals, markProposalStatus } from '@lhr/db';
 import { matchProductsToRecipes, reconcileApprovedProposals } from '../src/matchProductsToRecipes';
 
 const recipeMdx = `---
@@ -197,6 +198,15 @@ describe('matchProductsToRecipes', () => {
       expect.objectContaining({ affiliateLinkId: 'wooden-pizza-server-1234', status: 'pending' }),
     );
   });
+
+  it('reconciles approved proposals (calls getApprovedProposals) before doing discovery', async () => {
+    const callLlm = vi.fn().mockResolvedValue(JSON.stringify({ match: null }));
+    const imageEditProvider = { compositeProductIntoPhoto: vi.fn() };
+
+    await matchProductsToRecipes({ githubClient: {} as never, pool: {} as never, callLlm, imageEditProvider });
+
+    expect(getApprovedProposals).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('reconcileApprovedProposals', () => {
@@ -238,6 +248,59 @@ describe('reconcileApprovedProposals', () => {
 
     await reconcileApprovedProposals({ githubClient: {} as never, pool: {} as never });
 
+    expect(commitFilesToMain).not.toHaveBeenCalled();
+  });
+
+  it('isolates a getFile failure to one proposal so a later proposal in the same batch still commits', async () => {
+    vi.mocked(getApprovedProposals).mockResolvedValue([
+      {
+        id: 5, cycleId: '2026-08-25', affiliateLinkId: 'bad-product-9999', postSlug: 'gone-post',
+        targetImageKind: 'body', targetImageUrl: 'https://example.com/slice.jpg',
+        targetImageLine: '![Slicing the pizza](https://example.com/slice.jpg)',
+        matchRationale: 'x', compositedImageUrl: 'https://example.com/composited.jpg',
+        status: 'approved', decidedAt: new Date(), createdAt: new Date(),
+      } as never,
+      {
+        id: 6, cycleId: '2026-08-25', affiliateLinkId: 'wooden-pizza-server-1234', postSlug: 'pizza',
+        targetImageKind: 'body', targetImageUrl: 'https://example.com/slice.jpg',
+        targetImageLine: '![Slicing the pizza](https://example.com/slice.jpg)',
+        matchRationale: 'x', compositedImageUrl: 'https://example.com/composited.jpg',
+        status: 'approved', decidedAt: new Date(), createdAt: new Date(),
+      } as never,
+    ]);
+    vi.mocked(getFile).mockImplementation(async (_client, path: string) => {
+      if (path === 'src/content/posts/gone-post.mdx') throw new Error('GitHub rate limited');
+      if (path === 'src/content/posts/pizza.mdx') return { content: recipeMdx, sha: 'a' };
+      return null;
+    });
+
+    await expect(
+      reconcileApprovedProposals({ githubClient: {} as never, pool: {} as never }),
+    ).resolves.toBeUndefined();
+
+    expect(commitFilesToMain).toHaveBeenCalledTimes(1);
+    expect(commitFilesToMain).toHaveBeenCalledWith(
+      {},
+      [expect.objectContaining({ path: 'src/content/posts/pizza.mdx' })],
+      expect.stringContaining('wooden-pizza-server-1234'),
+    );
+  });
+
+  it('marks a proposal stale when applying the placement finds the target image has changed', async () => {
+    vi.mocked(getApprovedProposals).mockResolvedValue([
+      {
+        id: 7, cycleId: '2026-08-25', affiliateLinkId: 'wooden-pizza-server-1234', postSlug: 'pizza',
+        targetImageKind: 'body', targetImageUrl: 'https://example.com/slice.jpg',
+        targetImageLine: null, // no matching line in the body -> StaleImageTargetError
+        matchRationale: 'x', compositedImageUrl: 'https://example.com/composited.jpg',
+        status: 'approved', decidedAt: new Date(), createdAt: new Date(),
+      } as never,
+    ]);
+    vi.mocked(getFile).mockResolvedValue({ content: recipeMdx, sha: 'a' });
+
+    await reconcileApprovedProposals({ githubClient: {} as never, pool: {} as never });
+
+    expect(markProposalStatus).toHaveBeenCalledWith({}, 7, 'stale');
     expect(commitFilesToMain).not.toHaveBeenCalled();
   });
 });

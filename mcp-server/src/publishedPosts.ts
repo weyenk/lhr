@@ -28,8 +28,8 @@ export async function listPublishedPosts(client: GitHubClient): Promise<Publishe
 
     const match = file.content.match(FRONTMATTER_RE);
     if (!match) continue;
-    const frontmatter = yaml.load(match[1]) as RecipeFrontmatter;
-    if (frontmatter.type !== 'recipe') continue;
+    const frontmatter = yaml.load(match[1]) as RecipeFrontmatter | undefined;
+    if (!frontmatter || frontmatter.type !== 'recipe') continue;
 
     posts.push({
       slug: filename.replace(/\.mdx$/, ''),

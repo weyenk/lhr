@@ -17,6 +17,7 @@ import {
   insertProductPlacementProposal,
   getPendingAffiliateLinkIds,
   getApprovedProposals,
+  markProposalStatus,
   type NewProductPlacementProposal,
 } from '@lhr/db';
 
@@ -44,14 +45,14 @@ export async function reconcileApprovedProposals(deps: MatchProductsToRecipesDep
   for (const proposal of approved) {
     if (!proposal.compositedImageUrl) continue;
 
-    const file = await getFile(githubClient, `src/content/posts/${proposal.postSlug}.mdx`, 'main');
-    if (!file) continue;
-
-    const alreadyReflected =
-      file.content.includes(proposal.compositedImageUrl) && file.content.includes(proposal.affiliateLinkId);
-    if (alreadyReflected) continue;
-
     try {
+      const file = await getFile(githubClient, `src/content/posts/${proposal.postSlug}.mdx`, 'main');
+      if (!file) continue;
+
+      const alreadyReflected =
+        file.content.includes(proposal.compositedImageUrl) && file.content.includes(proposal.affiliateLinkId);
+      if (alreadyReflected) continue;
+
       const updated = applyProductPlacement(file.content, {
         targetImageKind: proposal.targetImageKind,
         targetImageUrl: proposal.targetImageUrl,
@@ -65,8 +66,11 @@ export async function reconcileApprovedProposals(deps: MatchProductsToRecipesDep
         `Add product placement: ${proposal.affiliateLinkId} in ${proposal.postSlug}`,
       );
     } catch (err) {
-      if (err instanceof StaleImageTargetError) continue;
-      continue; // commit failed again; retried on the next cycle
+      if (err instanceof StaleImageTargetError) {
+        await markProposalStatus(pool, proposal.id, 'stale');
+        continue;
+      }
+      continue; // getFile/commit failed; retried on the next cycle
     }
   }
 }
