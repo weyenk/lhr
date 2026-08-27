@@ -88,6 +88,13 @@ export async function getPendingProposals(pool: Pool): Promise<ProductPlacementP
   return res.rows.map(rowToProposal);
 }
 
+export async function getReviewableProposals(pool: Pool): Promise<ProductPlacementProposal[]> {
+  const res = (await pool.query(
+    `SELECT * FROM product_placement_proposals WHERE status IN ('pending', 'edit_failed') ORDER BY created_at ASC`,
+  )) as QueryResult<ProposalRow>;
+  return res.rows.map(rowToProposal);
+}
+
 export async function getProposalById(pool: Pool, id: number): Promise<ProductPlacementProposal | null> {
   const res = (await pool.query(
     `SELECT * FROM product_placement_proposals WHERE id = $1`,

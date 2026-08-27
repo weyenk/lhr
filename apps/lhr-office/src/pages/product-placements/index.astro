@@ -1,7 +1,7 @@
 ---
 import { getPool } from '../../lib/db.js';
 import { requireSession, AuthNotConfiguredError } from '../../lib/auth.js';
-import { getPendingProposals, type ProductPlacementProposal } from '@lhr/db';
+import { getReviewableProposals, type ProductPlacementProposal } from '@lhr/db';
 
 let notConfigured = false;
 try {
@@ -15,7 +15,7 @@ try {
 }
 
 const pool = notConfigured ? null : getPool();
-const proposals: ProductPlacementProposal[] = pool ? await getPendingProposals(pool) : [];
+const proposals: ProductPlacementProposal[] = pool ? await getReviewableProposals(pool) : [];
 ---
 {notConfigured ? (
   <html lang="en">

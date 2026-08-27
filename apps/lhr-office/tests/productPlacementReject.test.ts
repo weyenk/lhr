@@ -47,6 +47,13 @@ describe('POST /api/product-placements/[id]/reject', () => {
     expect(dbMock.markProposalStatus).toHaveBeenCalledWith(mockPool, 1, 'rejected');
   });
 
+  it('marks an edit_failed proposal rejected', async () => {
+    dbMock.getProposalById.mockResolvedValue({ ...pendingProposal, status: 'edit_failed', compositedImageUrl: null });
+    const res = await POST(makeContext('1'));
+    expect(res.status).toBe(200);
+    expect(dbMock.markProposalStatus).toHaveBeenCalledWith(mockPool, 1, 'rejected');
+  });
+
   it('returns 404 for an unknown proposal', async () => {
     dbMock.getProposalById.mockResolvedValue(null);
     const res = await POST(makeContext('999'));

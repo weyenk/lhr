@@ -2,6 +2,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import {
   insertProductPlacementProposal,
   getPendingProposals,
+  getReviewableProposals,
   getProposalById,
   markProposalStatus,
   getPendingAffiliateLinkIds,
@@ -69,6 +70,35 @@ describe('getPendingProposals', () => {
       status: 'pending', decidedAt: null, createdAt: new Date('2026-08-25T00:00:00Z'),
     }]);
     expect(pool.query.mock.calls[0][0]).toContain("status = 'pending'");
+  });
+});
+
+describe('getReviewableProposals', () => {
+  it('maps rows to camelCase and filters by pending or edit_failed status in the query', async () => {
+    const editFailedRow = { ...dbRow, id: 43, status: 'edit_failed', composited_image_url: null };
+    const pool = mockPool([dbRow, editFailedRow]);
+    const result = await getReviewableProposals(pool as never);
+    expect(result).toEqual([
+      {
+        id: 42, cycleId: '2026-08-25', affiliateLinkId: 'bamboo-skewers-1234',
+        postSlug: 'chicago-deep-dish-pizza', targetImageKind: 'body',
+        targetImageUrl: 'https://example.com/original.jpg',
+        targetImageLine: '![A photo](https://example.com/original.jpg)',
+        matchRationale: 'Skewers pair well with this recipe\'s garnish step.',
+        compositedImageUrl: 'https://example.com/composited.jpg',
+        status: 'pending', decidedAt: null, createdAt: new Date('2026-08-25T00:00:00Z'),
+      },
+      {
+        id: 43, cycleId: '2026-08-25', affiliateLinkId: 'bamboo-skewers-1234',
+        postSlug: 'chicago-deep-dish-pizza', targetImageKind: 'body',
+        targetImageUrl: 'https://example.com/original.jpg',
+        targetImageLine: '![A photo](https://example.com/original.jpg)',
+        matchRationale: 'Skewers pair well with this recipe\'s garnish step.',
+        compositedImageUrl: null,
+        status: 'edit_failed', decidedAt: null, createdAt: new Date('2026-08-25T00:00:00Z'),
+      },
+    ]);
+    expect(pool.query.mock.calls[0][0]).toContain("status IN ('pending', 'edit_failed')");
   });
 });
 

@@ -23,7 +23,7 @@ export async function POST({ params }: APIContext): Promise<Response> {
   if (!proposal) {
     return new Response(JSON.stringify({ error: 'Proposal not found' }), { status: 404 });
   }
-  if (proposal.status !== 'pending') {
+  if (proposal.status !== 'pending' && proposal.status !== 'edit_failed') {
     return new Response(JSON.stringify({ error: `Proposal is already ${proposal.status}` }), { status: 409 });
   }
 
