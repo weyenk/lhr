@@ -22,6 +22,8 @@ const originalEnv = { ...process.env };
 beforeEach(() => {
   vi.clearAllMocks();
   process.env.CRON_SECRET = 'test-secret';
+  process.env.STATUS_AUTH_USER = 'test-user';
+  process.env.STATUS_AUTH_PASSWORD = 'test-password';
 });
 
 afterEach(() => {
@@ -85,6 +87,49 @@ describe('cron endpoint auth', () => {
   });
 });
 
+describe('status endpoints auth', () => {
+  it('GET /status rejects a request with no Authorization header', async () => {
+    const app = createApp(fakeDb, []);
+    const res = await request(app).get('/status');
+    expect(res.status).toBe(401);
+    expect(res.headers['www-authenticate']).toContain('Basic');
+  });
+
+  it('GET /status rejects a request with the wrong credentials', async () => {
+    const app = createApp(fakeDb, []);
+    const res = await request(app).get('/status').auth('test-user', 'wrong-password');
+    expect(res.status).toBe(401);
+  });
+
+  it('GET /status rejects a request with the wrong username', async () => {
+    const app = createApp(fakeDb, []);
+    const res = await request(app).get('/status').auth('wrong-user', 'test-password');
+    expect(res.status).toBe(401);
+  });
+
+  it('GET /status is unauthorized when STATUS_AUTH_USER/PASSWORD are unset, even with a header', async () => {
+    delete process.env.STATUS_AUTH_USER;
+    delete process.env.STATUS_AUTH_PASSWORD;
+    const app = createApp(fakeDb, []);
+    const res = await request(app).get('/status').auth('test-user', 'test-password');
+    expect(res.status).toBe(401);
+  });
+
+  it('POST /status/run/:jobName rejects a request with no Authorization header, and does not invoke the job', async () => {
+    const app = createApp(fakeDb, [{ name: 'recipe-variant-generator', cadenceDays: 7, run: vi.fn() }]);
+    const res = await request(app).post('/status/run/recipe-variant-generator');
+    expect(res.status).toBe(401);
+    expect(runJobNowMock).not.toHaveBeenCalled();
+  });
+
+  it('POST /status/run/:jobName rejects wrong credentials, and does not invoke the job', async () => {
+    const app = createApp(fakeDb, [{ name: 'recipe-variant-generator', cadenceDays: 7, run: vi.fn() }]);
+    const res = await request(app).post('/status/run/recipe-variant-generator').auth('test-user', 'wrong-password');
+    expect(res.status).toBe(401);
+    expect(runJobNowMock).not.toHaveBeenCalled();
+  });
+});
+
 describe('GET /status', () => {
   it("renders each registered job's name and latest run", async () => {
     getRunHistoryMock.mockResolvedValue([
@@ -99,7 +144,7 @@ describe('GET /status', () => {
       },
     ]);
     const app = createApp(fakeDb, [{ name: 'recipe-variant-generator', cadenceDays: 7, run: vi.fn() }]);
-    const res = await request(app).get('/status');
+    const res = await request(app).get('/status').auth('test-user', 'test-password');
     expect(res.status).toBe(200);
     expect(res.text).toContain('recipe-variant-generator');
     expect(res.text).toContain('generated 1 variant');
@@ -107,14 +152,14 @@ describe('GET /status', () => {
 
   it('renders a placeholder when no jobs are registered', async () => {
     const app = createApp(fakeDb, []);
-    const res = await request(app).get('/status');
+    const res = await request(app).get('/status').auth('test-user', 'test-password');
     expect(res.text).toContain('No jobs registered yet');
   });
 
   it('returns 500 (not a hang) when getRunHistory rejects', async () => {
     getRunHistoryMock.mockRejectedValue(new Error('db down'));
     const app = createApp(fakeDb, [{ name: 'recipe-variant-generator', cadenceDays: 7, run: vi.fn() }]);
-    const res = await request(app).get('/status');
+    const res = await request(app).get('/status').auth('test-user', 'test-password');
     expect(res.status).toBe(500);
     expect(res.text).toContain('db down');
   });
@@ -124,7 +169,7 @@ describe('POST /status/run/:jobName', () => {
   it('runs the named job and redirects back to /status', async () => {
     runJobNowMock.mockResolvedValue({ outcome: 'ran', job: 'recipe-variant-generator', status: 'success', summary: 'ok' });
     const app = createApp(fakeDb, [{ name: 'recipe-variant-generator', cadenceDays: 7, run: vi.fn() }]);
-    const res = await request(app).post('/status/run/recipe-variant-generator');
+    const res = await request(app).post('/status/run/recipe-variant-generator').auth('test-user', 'test-password');
     expect(res.status).toBe(303);
     expect(res.headers.location).toBe('/status');
     expect(runJobNowMock).toHaveBeenCalledWith(fakeDb, expect.any(Array), 'recipe-variant-generator');
@@ -133,14 +178,14 @@ describe('POST /status/run/:jobName', () => {
   it('returns 404 for an unknown job name', async () => {
     runJobNowMock.mockResolvedValue(null);
     const app = createApp(fakeDb, []);
-    const res = await request(app).post('/status/run/nope');
+    const res = await request(app).post('/status/run/nope').auth('test-user', 'test-password');
     expect(res.status).toBe(404);
   });
 
   it('returns 500 (not a hang) when runJobNow rejects', async () => {
     runJobNowMock.mockRejectedValue(new Error('boom'));
     const app = createApp(fakeDb, [{ name: 'recipe-variant-generator', cadenceDays: 7, run: vi.fn() }]);
-    const res = await request(app).post('/status/run/recipe-variant-generator');
+    const res = await request(app).post('/status/run/recipe-variant-generator').auth('test-user', 'test-password');
     expect(res.status).toBe(500);
     expect(res.text).toContain('boom');
   });

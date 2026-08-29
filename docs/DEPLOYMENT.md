@@ -30,10 +30,16 @@ Manual, one-time setup (outside this repo's code):
      `Authorization: Bearer <CRON_SECRET>` on requests it makes to the paths listed under `crons`
      in `vercel.json` — this is what stops `/api/cron/orchestrator` from being triggered by an
      arbitrary public request.
+   - Generate credentials for the `/status` dashboard and set `STATUS_AUTH_USER` and
+     `STATUS_AUTH_PASSWORD` on the `apps/lhr-office` Vercel project (alongside `DATABASE_URL` and
+     `CRON_SECRET` above). These gate `GET /status` and `POST /status/run/:jobName` with HTTP
+     Basic Auth — without both set, those routes 401 on every request. When you visit `/status` in
+     a browser, it will prompt for this username/password.
    - Confirm the Cron Job appears (enabled by default) in that Vercel project's Cron Jobs tab.
    - Push to `main` — Vercel auto-deploys this project the same way it does the main site.
-   - Visit `https://office.loveheatrelationship.com/status` to confirm the page loads. Every job
-     will show "No jobs registered yet" until agents are added to the registry (next bullet).
+   - Visit `https://office.loveheatrelationship.com/status` (entering the `STATUS_AUTH_USER` /
+     `STATUS_AUTH_PASSWORD` credentials when prompted) to confirm the page loads. Every job will
+     show "No jobs registered yet" until agents are added to the registry (next bullet).
    - `packages/jobs/src/registry.ts` ships with zero entries. Each of the five planned automation
      agents (recipe variant generator, affiliate sourcing, trends watcher, competitor analysis,
      product-in-photo placement) is registered later, one at a time, in its own implementation
@@ -41,3 +47,10 @@ Manual, one-time setup (outside this repo's code):
      `apps/lhr-office` is needed to add a job. Each agent's own plan is also responsible for adding
      whatever env vars its pipeline needs (e.g. `OPENROUTER_API_KEY`, `KEEPA_API_KEY`,
      `SERPAPI_KEY`) to the `apps/lhr-office` Vercel project.
+   - The function is configured with a 300s `maxDuration` in `apps/lhr-office/vercel.json`
+     (matching the plan's assumption of one job per invocation, run against Vercel's 300s default
+     function timeout). If a job is shown as "in progress" on `/status` for longer than about 10
+     minutes, that almost certainly means its invocation was killed (timeout, crash, deployment)
+     partway through rather than that it's still genuinely running — the overlap guard already
+     ignores `running` rows older than that 10-minute window, so the job will naturally retry on
+     the next due-check. No manual intervention (e.g. editing the database row) is needed.
