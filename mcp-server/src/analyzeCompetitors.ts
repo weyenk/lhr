@@ -5,9 +5,10 @@ import { fetchCompetitorPosts, diffNewPosts, type CompetitorPost } from './compe
 import { fetchHomepageText, summarizeMonetization, summarizeDesign, diffSnapshot } from './competitorSnapshots.js';
 import { callOpenRouter } from './openrouter.js';
 import { computeCycleId } from './computeCycleId.js';
+import { requireEnv } from './blob.js';
 import {
   listCompetitorsByStatus,
-  getLatestReport,
+  listRecentCompetitorReports,
   insertCompetitorReport,
   type Competitor,
   type NewCompetitorReport,
@@ -23,6 +24,12 @@ export interface WeeklyCompetitorRunSummary {
   failedDiscoveryQueries: string[];
   failedSeoKeywords: string[];
   reportsWritten: number;
+  competitorsWithIssues: number;
+}
+
+interface CompetitorReportResult {
+  report: NewCompetitorReport;
+  hadIssue: boolean;
 }
 
 async function buildCompetitorReport(
@@ -30,8 +37,25 @@ async function buildCompetitorReport(
   competitor: Pick<Competitor, 'id' | 'domain'>,
   cycleId: string,
   seoPositions: SeoPositionEntry[],
-): Promise<NewCompetitorReport> {
-  const priorReport = await getLatestReport(pool, competitor.id);
+): Promise<CompetitorReportResult> {
+  // Cumulative baseline: prior reports only ever store each cycle's DELTA
+  // (the posts that were new *that* cycle) in newContent, not a running
+  // snapshot of everything seen. To know whether a post fetched this cycle
+  // is genuinely new, union the newContent across recent history rather
+  // than looking at only the single latest report.
+  const priorReports = await listRecentCompetitorReports(pool, competitor.id);
+  const priorLatest = priorReports[0] ?? null;
+  const priorPostsByUrl = new Map<string, CompetitorPost>();
+  for (const priorReport of priorReports) {
+    for (const post of priorReport.newContent) {
+      if (!priorPostsByUrl.has(post.url)) {
+        priorPostsByUrl.set(post.url, post);
+      }
+    }
+  }
+  const priorPosts = Array.from(priorPostsByUrl.values());
+
+  let hadIssue = false;
 
   let newContent: CompetitorPost[] = [];
   let contentDescriptor: string;
@@ -39,27 +63,42 @@ async function buildCompetitorReport(
     const { posts, source } = await fetchCompetitorPosts(competitor.domain);
     if (source === 'unparseable') {
       contentDescriptor = UNREACHABLE_NOTE;
+      hadIssue = true;
     } else {
-      newContent = diffNewPosts(posts, priorReport?.newContent ?? []);
+      newContent = diffNewPosts(posts, priorPosts);
       contentDescriptor = newContent.length > 0 ? JSON.stringify(newContent) : 'no new content this cycle';
     }
-  } catch {
+  } catch (err) {
+    console.error(`Content fetch for "${competitor.domain}" failed; marking unreachable this cycle.`, err);
     contentDescriptor = UNREACHABLE_NOTE;
+    hadIssue = true;
   }
 
+  // Snapshot columns store the raw current snapshot (a cumulative fact,
+  // not a delta) so the NEXT cycle has a real baseline to diff against.
+  // diffSnapshot's change-description output is used only locally, to feed
+  // the synthesis prompt below — it is never persisted to the report row.
   let monetizationSnapshot: string;
   let designSnapshot: string;
+  let monetizationChangeDescriptor: string;
+  let designChangeDescriptor: string;
   try {
     const pageText = await fetchHomepageText(competitor.domain);
     const [monetization, design] = await Promise.all([
       summarizeMonetization(competitor.domain, pageText),
       summarizeDesign(competitor.domain, pageText),
     ]);
-    monetizationSnapshot = await diffSnapshot(priorReport?.monetizationSnapshot ?? null, monetization);
-    designSnapshot = await diffSnapshot(priorReport?.designSnapshot ?? null, design);
-  } catch {
+    monetizationSnapshot = monetization;
+    designSnapshot = design;
+    monetizationChangeDescriptor = await diffSnapshot(priorLatest?.monetizationSnapshot ?? null, monetization);
+    designChangeDescriptor = await diffSnapshot(priorLatest?.designSnapshot ?? null, design);
+  } catch (err) {
+    console.error(`Snapshot fetch for "${competitor.domain}" failed; marking unreachable this cycle.`, err);
     monetizationSnapshot = UNREACHABLE_NOTE;
     designSnapshot = UNREACHABLE_NOTE;
+    monetizationChangeDescriptor = UNREACHABLE_NOTE;
+    designChangeDescriptor = UNREACHABLE_NOTE;
+    hadIssue = true;
   }
 
   let summary: string;
@@ -76,23 +115,28 @@ async function buildCompetitorReport(
           `Competitor: ${competitor.domain}`,
           `New content: ${contentDescriptor}`,
           `SEO positions: ${JSON.stringify(seoPositions)}`,
-          `Monetization change: ${monetizationSnapshot}`,
-          `Design change: ${designSnapshot}`,
+          `Monetization change: ${monetizationChangeDescriptor}`,
+          `Design change: ${designChangeDescriptor}`,
         ].join('\n'),
       },
     ]);
-  } catch {
+  } catch (err) {
+    console.error(`Synthesis LLM call for "${competitor.domain}" failed.`, err);
     summary = SYNTHESIS_FAILURE_PLACEHOLDER;
+    hadIssue = true;
   }
 
   return {
-    competitorId: competitor.id,
-    cycleId,
-    newContent,
-    seoPositions,
-    monetizationSnapshot,
-    designSnapshot,
-    summary,
+    report: {
+      competitorId: competitor.id,
+      cycleId,
+      newContent,
+      seoPositions,
+      monetizationSnapshot,
+      designSnapshot,
+      summary,
+    },
+    hadIssue,
   };
 }
 
@@ -103,11 +147,15 @@ export async function runWeeklyCompetitorAnalysis(pool: Pool): Promise<WeeklyCom
   const cycleId = computeCycleId(new Date());
 
   let reportsWritten = 0;
+  let competitorsWithIssues = 0;
   for (const competitor of tracked) {
     const seoPositions = seoTracking.positionsByCompetitorId.get(competitor.id) ?? [];
-    const report = await buildCompetitorReport(pool, competitor, cycleId, seoPositions);
+    const { report, hadIssue } = await buildCompetitorReport(pool, competitor, cycleId, seoPositions);
     await insertCompetitorReport(pool, report);
     reportsWritten += 1;
+    if (hadIssue) {
+      competitorsWithIssues += 1;
+    }
   }
 
   return {
@@ -116,6 +164,7 @@ export async function runWeeklyCompetitorAnalysis(pool: Pool): Promise<WeeklyCom
     failedDiscoveryQueries: discovery.failedQueries,
     failedSeoKeywords: seoTracking.failedKeywords,
     reportsWritten,
+    competitorsWithIssues,
   };
 }
 
@@ -131,7 +180,10 @@ export interface JobResult {
 }
 
 export function summaryToJobResult(summary: WeeklyCompetitorRunSummary): JobResult {
-  const degraded = summary.failedDiscoveryQueries.length > 0 || summary.failedSeoKeywords.length > 0;
+  const degraded =
+    summary.failedDiscoveryQueries.length > 0 ||
+    summary.failedSeoKeywords.length > 0 ||
+    summary.competitorsWithIssues > 0;
   return {
     status: degraded ? 'partial' : 'success',
     summary: `Cycle ${summary.cycleId}: wrote ${summary.reportsWritten} report(s), ${summary.discoveredCandidates} new candidate(s) discovered.`,
@@ -140,6 +192,7 @@ export function summaryToJobResult(summary: WeeklyCompetitorRunSummary): JobResu
       failedDiscoveryQueries: summary.failedDiscoveryQueries,
       failedSeoKeywords: summary.failedSeoKeywords,
       reportsWritten: summary.reportsWritten,
+      competitorsWithIssues: summary.competitorsWithIssues,
     },
   };
 }
@@ -149,6 +202,8 @@ export async function analyzeCompetitors(): Promise<JobResult> {
   if (!databaseUrl) {
     throw new Error('DATABASE_URL env var is required.');
   }
+  requireEnv('SERPAPI_KEY');
+  requireEnv('OPENROUTER_API_KEY');
 
   const pool = new Pool({ connectionString: databaseUrl });
   try {

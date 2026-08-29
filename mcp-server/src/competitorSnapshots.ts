@@ -9,7 +9,7 @@ function htmlToText(html: string): string {
 }
 
 export async function fetchHomepageText(domain: string): Promise<string> {
-  const response = await fetch(`https://${domain}`);
+  const response = await fetch(`https://${domain}`, { signal: AbortSignal.timeout(10_000) });
   if (!response.ok) {
     throw new Error(`Failed to fetch homepage for ${domain}: ${response.status}`);
   }

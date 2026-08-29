@@ -27,7 +27,7 @@ export async function fetchSearchResults(query: string, num = 10): Promise<Searc
   url.searchParams.set('num', String(num));
   url.searchParams.set('api_key', apiKey);
 
-  const response = await fetch(url);
+  const response = await fetch(url, { signal: AbortSignal.timeout(10_000) });
   if (!response.ok) {
     throw new Error(`SerpApi search request failed for query "${query}": ${response.status}`);
   }

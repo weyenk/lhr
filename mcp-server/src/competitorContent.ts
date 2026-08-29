@@ -82,7 +82,7 @@ export async function fetchCompetitorPosts(domain: string): Promise<CompetitorCo
 
   let homepageHtml: string;
   try {
-    const homepageRes = await fetch(baseUrl);
+    const homepageRes = await fetch(baseUrl, { signal: AbortSignal.timeout(10_000) });
     if (!homepageRes.ok) throw new Error(`status ${homepageRes.status}`);
     homepageHtml = (await homepageRes.text()).slice(0, MAX_HTML_CHARS);
   } catch {
@@ -92,7 +92,7 @@ export async function fetchCompetitorPosts(domain: string): Promise<CompetitorCo
   const feedUrl = discoverFeedUrl(homepageHtml, baseUrl);
   if (feedUrl) {
     try {
-      const feedRes = await fetch(feedUrl);
+      const feedRes = await fetch(feedUrl, { signal: AbortSignal.timeout(10_000) });
       if (feedRes.ok) {
         const xml = await feedRes.text();
         const posts = parseRssItems(xml);

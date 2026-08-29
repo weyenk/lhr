@@ -24,9 +24,12 @@ vi.mock('@lhr/db', () => ({
   }),
   listCompetitorsByStatus: vi.fn(async (_pool: unknown, status: string) => state.competitors.filter((c) => c.status === status)),
   listKeywords: vi.fn(async () => state.keywords),
-  getLatestReport: vi.fn(async (_pool: unknown, competitorId: number) => {
-    const forCompetitor = state.reports.filter((r) => r.competitorId === competitorId);
-    return forCompetitor.length > 0 ? forCompetitor[forCompetitor.length - 1] : null;
+  listRecentCompetitorReports: vi.fn(async (_pool: unknown, competitorId: number, limit = 10) => {
+    return state.reports
+      .filter((r) => r.competitorId === competitorId)
+      .slice()
+      .reverse()
+      .slice(0, limit);
   }),
   insertCompetitorReport: vi.fn(async (_pool: unknown, report: Record<string, unknown>) => {
     const row = { ...report, id: state.nextReportId++ } as FakeDbState['reports'][number];
@@ -110,5 +113,55 @@ describe('runWeeklyCompetitorAnalysis (integration)', () => {
     expect(flakyReport.monetizationSnapshot).toBe('unreachable this cycle');
     expect(flakyReport.designSnapshot).toBe('unreachable this cycle');
     expect(flakyReport.summary).toBeTruthy();
+  });
+});
+
+describe('runWeeklyCompetitorAnalysis (integration): cumulative content baseline across cycles', () => {
+  const STEADY_DOMAIN = 'steady-recipes.com';
+
+  const HOMEPAGE_WITH_FEED = `
+<html><head>
+<link rel="alternate" type="application/rss+xml" title="RSS" href="/feed.xml" />
+</head><body><h1>Shop the Kitchen</h1></body></html>
+`;
+
+  const RSS_FEED = `<?xml version="1.0"?>
+<rss><channel>
+<item><title>Sourdough Focaccia</title><link>https://steady-recipes.com/sourdough-focaccia</link><pubDate>Thu, 20 Aug 2026 00:00:00 GMT</pubDate></item>
+</channel></rss>`;
+
+  function mockSteadyFetch() {
+    global.fetch = vi.fn().mockImplementation(async (url: string | URL) => {
+      const u = url.toString();
+      if (u.includes('serpapi.com')) {
+        return { ok: true, json: async () => ({ organic_results: [] }) };
+      }
+      if (u === `https://${STEADY_DOMAIN}`) {
+        return { ok: true, text: async () => HOMEPAGE_WITH_FEED };
+      }
+      if (u === `https://${STEADY_DOMAIN}/feed.xml`) {
+        return { ok: true, text: async () => RSS_FEED };
+      }
+      throw new Error(`unexpected fetch ${u}`);
+    }) as unknown as typeof fetch;
+  }
+
+  it('does not re-flag an unchanged RSS feed as new content on the second consecutive cycle', async () => {
+    state.competitors = [
+      { id: 1, domain: STEADY_DOMAIN, name: null, status: 'tracked', discoveredAt: new Date(), approvedAt: new Date() },
+    ];
+    state.keywords = [];
+
+    mockSteadyFetch();
+    const cycle1 = await runWeeklyCompetitorAnalysis({} as never);
+    expect(cycle1.reportsWritten).toBe(1);
+    const cycle1Report = state.reports.find((r) => r.competitorId === 1)!;
+    expect(cycle1Report.newContent).toHaveLength(1);
+
+    mockSteadyFetch();
+    const cycle2 = await runWeeklyCompetitorAnalysis({} as never);
+    expect(cycle2.reportsWritten).toBe(1);
+    const cycle2Report = state.reports.filter((r) => r.competitorId === 1).slice(-1)[0]!;
+    expect(cycle2Report.newContent).toEqual([]);
   });
 });

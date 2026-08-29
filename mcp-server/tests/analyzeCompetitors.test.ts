@@ -12,7 +12,7 @@ vi.mock('../src/competitorSnapshots', () => ({
 vi.mock('../src/openrouter', () => ({ callOpenRouter: vi.fn() }));
 vi.mock('@lhr/db', () => ({
   listCompetitorsByStatus: vi.fn(),
-  getLatestReport: vi.fn(),
+  listRecentCompetitorReports: vi.fn(),
   insertCompetitorReport: vi.fn(),
 }));
 
@@ -21,7 +21,7 @@ const { trackSeoPositions } = await import('../src/competitorSeoTracking');
 const { fetchCompetitorPosts, diffNewPosts } = await import('../src/competitorContent');
 const { fetchHomepageText, summarizeMonetization, summarizeDesign, diffSnapshot } = await import('../src/competitorSnapshots');
 const { callOpenRouter } = await import('../src/openrouter');
-const { listCompetitorsByStatus, getLatestReport, insertCompetitorReport } = await import('@lhr/db');
+const { listCompetitorsByStatus, listRecentCompetitorReports, insertCompetitorReport } = await import('@lhr/db');
 const { runWeeklyCompetitorAnalysis } = await import('../src/analyzeCompetitors');
 
 const pool = {} as never;
@@ -31,9 +31,9 @@ function setHappyPathDefaults() {
   vi.mocked(runDiscovery).mockResolvedValue({ newCandidateDomains: [], failedQueries: [] });
   vi.mocked(trackSeoPositions).mockResolvedValue({ positionsByCompetitorId: new Map([[1, []]]), failedKeywords: [] });
   vi.mocked(listCompetitorsByStatus).mockResolvedValue([competitor] as never);
-  vi.mocked(getLatestReport).mockResolvedValue(null);
+  vi.mocked(listRecentCompetitorReports).mockResolvedValue([]);
   vi.mocked(fetchCompetitorPosts).mockResolvedValue({ posts: [], source: 'rss' });
-  vi.mocked(diffNewPosts).mockReturnValue([]);
+  vi.mocked(diffNewPosts).mockImplementation((posts) => posts as never);
   vi.mocked(fetchHomepageText).mockResolvedValue('page text');
   vi.mocked(summarizeMonetization).mockResolvedValue('monetization snapshot');
   vi.mocked(summarizeDesign).mockResolvedValue('design snapshot');
@@ -119,5 +119,100 @@ describe('runWeeklyCompetitorAnalysis', () => {
     expect(summary.discoveredCandidates).toBe(1);
     expect(summary.failedDiscoveryQueries).toEqual(['q1']);
     expect(summary.failedSeoKeywords).toEqual(['k1']);
+  });
+
+  it('builds the content baseline as the UNION of newContent across all recent historical reports, not just the latest one', async () => {
+    vi.mocked(listRecentCompetitorReports).mockResolvedValue([
+      {
+        id: 3,
+        competitorId: 1,
+        cycleId: 'cycle-3',
+        generatedAt: new Date(),
+        newContent: [{ title: 'Post C', url: 'https://a.com/c', publishedAt: null }],
+        seoPositions: [],
+        monetizationSnapshot: 'm3',
+        designSnapshot: 'd3',
+        summary: 's3',
+      },
+      {
+        id: 2,
+        competitorId: 1,
+        cycleId: 'cycle-2',
+        generatedAt: new Date(),
+        newContent: [{ title: 'Post B', url: 'https://a.com/b', publishedAt: null }],
+        seoPositions: [],
+        monetizationSnapshot: 'm2',
+        designSnapshot: 'd2',
+        summary: 's2',
+      },
+      {
+        id: 1,
+        competitorId: 1,
+        cycleId: 'cycle-1',
+        generatedAt: new Date(),
+        newContent: [{ title: 'Post A', url: 'https://a.com/a', publishedAt: null }],
+        seoPositions: [],
+        monetizationSnapshot: 'm1',
+        designSnapshot: 'd1',
+        summary: 's1',
+      },
+    ] as never);
+    vi.mocked(fetchCompetitorPosts).mockResolvedValue({
+      posts: [
+        { title: 'Post A', url: 'https://a.com/a', publishedAt: null },
+        { title: 'Post B', url: 'https://a.com/b', publishedAt: null },
+        { title: 'Post C', url: 'https://a.com/c', publishedAt: null },
+        { title: 'Post D', url: 'https://a.com/d', publishedAt: null },
+      ],
+      source: 'rss',
+    });
+    vi.mocked(diffNewPosts).mockImplementation((posts, priorPosts) =>
+      (posts as { url: string }[]).filter((p) => !(priorPosts as { url: string }[]).some((prior) => prior.url === p.url)) as never,
+    );
+
+    await runWeeklyCompetitorAnalysis(pool);
+
+    expect(diffNewPosts).toHaveBeenCalledWith(
+      expect.any(Array),
+      expect.arrayContaining([
+        expect.objectContaining({ url: 'https://a.com/a' }),
+        expect.objectContaining({ url: 'https://a.com/b' }),
+        expect.objectContaining({ url: 'https://a.com/c' }),
+      ]),
+    );
+    const priorPostsArg = vi.mocked(diffNewPosts).mock.calls[0][1];
+    expect(priorPostsArg).toHaveLength(3);
+
+    const [, report] = vi.mocked(insertCompetitorReport).mock.calls[0];
+    expect(report.newContent).toEqual([{ title: 'Post D', url: 'https://a.com/d', publishedAt: null }]);
+  });
+
+  it('stores the raw current snapshot in monetizationSnapshot/designSnapshot, not the diffSnapshot change description, while the synthesis prompt does receive the diff', async () => {
+    vi.mocked(summarizeMonetization).mockResolvedValue('RAW MONETIZATION SNAPSHOT');
+    vi.mocked(summarizeDesign).mockResolvedValue('RAW DESIGN SNAPSHOT');
+    vi.mocked(diffSnapshot).mockImplementation(async (_previous, current) => `CHANGED: ${current}`);
+
+    await runWeeklyCompetitorAnalysis(pool);
+
+    const [, report] = vi.mocked(insertCompetitorReport).mock.calls[0];
+    expect(report.monetizationSnapshot).toBe('RAW MONETIZATION SNAPSHOT');
+    expect(report.designSnapshot).toBe('RAW DESIGN SNAPSHOT');
+
+    const synthesisCall = vi.mocked(callOpenRouter).mock.calls[0][0];
+    const userMessage = synthesisCall.find((m) => m.role === 'user')!.content;
+    expect(userMessage).toContain('CHANGED: RAW MONETIZATION SNAPSHOT');
+    expect(userMessage).toContain('CHANGED: RAW DESIGN SNAPSHOT');
+    expect(userMessage).not.toContain('Monetization change: RAW MONETIZATION SNAPSHOT\n');
+  });
+
+  it('reports competitorsWithIssues as 0 on the happy path', async () => {
+    const summary = await runWeeklyCompetitorAnalysis(pool);
+    expect(summary.competitorsWithIssues).toBe(0);
+  });
+
+  it('reports competitorsWithIssues as 1 when a dimension fails for one competitor', async () => {
+    vi.mocked(fetchHomepageText).mockRejectedValue(new Error('network error'));
+    const summary = await runWeeklyCompetitorAnalysis(pool);
+    expect(summary.competitorsWithIssues).toBe(1);
   });
 });
