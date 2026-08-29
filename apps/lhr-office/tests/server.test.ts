@@ -68,4 +68,12 @@ describe('cron endpoint auth', () => {
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ outcome: 'ran', job: 'a', status: 'failure', summary: 'boom' });
   });
+
+  it('returns 200 (not a hang or 500) when runDueJob itself rejects', async () => {
+    runDueJobMock.mockRejectedValue(new Error('db down'));
+    const app = createApp(fakeDb, []);
+    const res = await request(app).get('/api/cron/orchestrator').set('Authorization', 'Bearer test-secret');
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ outcome: 'error', error: 'db down' });
+  });
 });

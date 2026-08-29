@@ -19,8 +19,20 @@ export function createApp(db: Queryable, registry: JobRegistration[] = defaultRe
       res.status(401).json({ error: 'unauthorized' });
       return;
     }
-    const outcome = await runDueJob(db, registry);
-    res.status(200).json(outcome);
+    try {
+      const outcome = await runDueJob(db, registry);
+      res.status(200).json(outcome);
+    } catch (err) {
+      // runDueJob's own job.run() is already guarded (see orchestrate.ts), but
+      // the due-check / overlap-guard / record-keeping calls around it can
+      // still throw (e.g. a DB connectivity failure). Express 4 does not
+      // catch rejections from async handlers, so without this catch such an
+      // error becomes an unhandled rejection: the request never gets a
+      // response, and the process can be torn down. The cron endpoint must
+      // always respond with 200, never crash or hang.
+      const message = err instanceof Error ? err.message : String(err);
+      res.status(200).json({ outcome: 'error', error: message });
+    }
   };
 
   // Vercel Cron always issues a GET request to the configured path; POST is
