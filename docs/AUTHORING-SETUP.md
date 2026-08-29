@@ -53,7 +53,9 @@ env vars, set in a local `.env` file (or your shell) alongside the `mcp-server/`
 - `GITHUB_TOKEN` — a GitHub personal access token with repo write access (same token used by
   `npm run backfill:ingredient-links`).
 - `OPENROUTER_API_KEY` — an OpenRouter API key (free tier is sufficient; the default model is
-  `meta-llama/llama-3.3-70b-instruct:free`). Override the model with `OPENROUTER_MODEL`.
+  `google/gemma-4-31b-it:free`). Override the model with `OPENROUTER_MODEL` if OpenRouter
+  discontinues this one too — check `https://openrouter.ai/api/v1/models` for current `:free`
+  slugs; OpenRouter has retired free model slugs before without notice.
 
 Run it manually with:
 
