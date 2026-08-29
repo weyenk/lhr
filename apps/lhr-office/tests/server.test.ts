@@ -110,6 +110,14 @@ describe('GET /status', () => {
     const res = await request(app).get('/status');
     expect(res.text).toContain('No jobs registered yet');
   });
+
+  it('returns 500 (not a hang) when getRunHistory rejects', async () => {
+    getRunHistoryMock.mockRejectedValue(new Error('db down'));
+    const app = createApp(fakeDb, [{ name: 'recipe-variant-generator', cadenceDays: 7, run: vi.fn() }]);
+    const res = await request(app).get('/status');
+    expect(res.status).toBe(500);
+    expect(res.text).toContain('db down');
+  });
 });
 
 describe('POST /status/run/:jobName', () => {
@@ -127,5 +135,13 @@ describe('POST /status/run/:jobName', () => {
     const app = createApp(fakeDb, []);
     const res = await request(app).post('/status/run/nope');
     expect(res.status).toBe(404);
+  });
+
+  it('returns 500 (not a hang) when runJobNow rejects', async () => {
+    runJobNowMock.mockRejectedValue(new Error('boom'));
+    const app = createApp(fakeDb, [{ name: 'recipe-variant-generator', cadenceDays: 7, run: vi.fn() }]);
+    const res = await request(app).post('/status/run/recipe-variant-generator');
+    expect(res.status).toBe(500);
+    expect(res.text).toContain('boom');
   });
 });

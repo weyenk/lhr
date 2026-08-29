@@ -4,7 +4,7 @@ import { getRunHistory } from '@lhr/db';
 import type { JobRegistration } from '@lhr/jobs';
 import { jobs as defaultRegistry } from '@lhr/jobs';
 import { runDueJob, runJobNow } from './orchestrate.js';
-import { renderStatusPage } from './statusPage.js';
+import { renderStatusPage, escapeHtml } from './statusPage.js';
 
 export function createApp(db: Queryable, registry: JobRegistration[] = defaultRegistry): express.Express {
   const app = express();
@@ -44,23 +44,43 @@ export function createApp(db: Queryable, registry: JobRegistration[] = defaultRe
   app.post('/api/cron/orchestrator', handleCron);
 
   app.get('/status', async (_req, res) => {
-    const rows = await Promise.all(
-      registry.map(async (job) => ({
-        name: job.name,
-        cadenceDays: job.cadenceDays,
-        history: await getRunHistory(db, job.name, 5),
-      })),
-    );
-    res.type('html').send(renderStatusPage(rows));
+    try {
+      const rows = await Promise.all(
+        registry.map(async (job) => ({
+          name: job.name,
+          cadenceDays: job.cadenceDays,
+          history: await getRunHistory(db, job.name, 5),
+        })),
+      );
+      res.type('html').send(renderStatusPage(rows));
+    } catch (err) {
+      // getRunHistory can throw (e.g. a DB connectivity failure). Express 4
+      // does not catch rejections from async handlers, so without this catch
+      // the request would hang instead of getting a response — the same
+      // failure mode handleCron above was hardened against.
+      const message = err instanceof Error ? err.message : String(err);
+      res
+        .status(500)
+        .type('html')
+        .send(`<!doctype html><html><body><h1>Orchestrator status</h1><p>Error loading status: ${escapeHtml(message)}</p></body></html>`);
+    }
   });
 
   app.post('/status/run/:jobName', async (req, res) => {
-    const outcome = await runJobNow(db, registry, req.params.jobName);
-    if (outcome === null) {
-      res.status(404).send('Unknown job');
-      return;
+    try {
+      const outcome = await runJobNow(db, registry, req.params.jobName);
+      if (outcome === null) {
+        res.status(404).send('Unknown job');
+        return;
+      }
+      res.redirect(303, '/status');
+    } catch (err) {
+      // runJobNow can throw despite its own internal guarding (see
+      // orchestrate.ts) if something above that layer fails unexpectedly.
+      // Same rationale as the /status catch above: never let this hang.
+      const message = err instanceof Error ? err.message : String(err);
+      res.status(500).send(`Failed to run job: ${escapeHtml(message)}`);
     }
-    res.redirect(303, '/status');
   });
 
   return app;
