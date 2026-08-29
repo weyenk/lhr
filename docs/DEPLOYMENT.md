@@ -16,3 +16,28 @@ Manual, one-time setup (outside this repo's code):
 4. In the Vercel project's Environment Variables, set `PUBLIC_UMAMI_URL` (the script URL) and `PUBLIC_UMAMI_WEBSITE_ID` (the website ID) to the values from step 3. If replays/heatmaps are enabled, also set `PUBLIC_UMAMI_RECORDER_URL` (the recorder script URL) to start capturing those too.
 5. Create a ConvertKit account and a signup form, then copy the form's numeric **Form ID** (visible in its dashboard URL or embed code). In the Vercel project's Environment Variables, set `PUBLIC_CONVERTKIT_FORM_ID` to that value — this powers the email signup component in the footer and on the `/community/` page, which otherwise renders nothing.
 6. Push to `main` — Vercel auto-deploys on every push.
+7. Set up the automation orchestrator (`apps/lhr-office`), which runs the site's weekly automation
+   jobs on a schedule — currently an empty engine with no jobs registered yet:
+   - In the Vercel dashboard, import this same GitHub repository as a **second**, separate Vercel
+     project, setting its **Root Directory** to `apps/lhr-office`. Vercel reads that project's own
+     `apps/lhr-office/vercel.json` automatically.
+   - Add the custom domain `office.loveheatrelationship.com` to this new project.
+   - Provision a Postgres database (e.g. Vercel Postgres or Neon) and set `DATABASE_URL` on the
+     `apps/lhr-office` Vercel project to its connection string.
+   - Run the schema once against that database: `psql "$DATABASE_URL" -f packages/db/src/schema.sql`.
+   - Generate a random secret (`openssl rand -hex 32`) and set it as `CRON_SECRET` on the
+     `apps/lhr-office` Vercel project. Vercel automatically sends this value as
+     `Authorization: Bearer <CRON_SECRET>` on requests it makes to the paths listed under `crons`
+     in `vercel.json` — this is what stops `/api/cron/orchestrator` from being triggered by an
+     arbitrary public request.
+   - Confirm the Cron Job appears (enabled by default) in that Vercel project's Cron Jobs tab.
+   - Push to `main` — Vercel auto-deploys this project the same way it does the main site.
+   - Visit `https://office.loveheatrelationship.com/status` to confirm the page loads. Every job
+     will show "No jobs registered yet" until agents are added to the registry (next bullet).
+   - `packages/jobs/src/registry.ts` ships with zero entries. Each of the five planned automation
+     agents (recipe variant generator, affiliate sourcing, trends watcher, competitor analysis,
+     product-in-photo placement) is registered later, one at a time, in its own implementation
+     plan, by appending a `JobRegistration` entry to that file — no other change to
+     `apps/lhr-office` is needed to add a job. Each agent's own plan is also responsible for adding
+     whatever env vars its pipeline needs (e.g. `OPENROUTER_API_KEY`, `KEEPA_API_KEY`,
+     `SERPAPI_KEY`) to the `apps/lhr-office` Vercel project.
