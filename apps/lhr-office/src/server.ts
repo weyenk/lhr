@@ -1,8 +1,10 @@
 import express from 'express';
 import type { Queryable } from '@lhr/db';
+import { getRunHistory } from '@lhr/db';
 import type { JobRegistration } from '@lhr/jobs';
 import { jobs as defaultRegistry } from '@lhr/jobs';
-import { runDueJob } from './orchestrate.js';
+import { runDueJob, runJobNow } from './orchestrate.js';
+import { renderStatusPage } from './statusPage.js';
 
 export function createApp(db: Queryable, registry: JobRegistration[] = defaultRegistry): express.Express {
   const app = express();
@@ -40,6 +42,26 @@ export function createApp(db: Queryable, registry: JobRegistration[] = defaultRe
   // during setup and debugging.
   app.get('/api/cron/orchestrator', handleCron);
   app.post('/api/cron/orchestrator', handleCron);
+
+  app.get('/status', async (_req, res) => {
+    const rows = await Promise.all(
+      registry.map(async (job) => ({
+        name: job.name,
+        cadenceDays: job.cadenceDays,
+        history: await getRunHistory(db, job.name, 5),
+      })),
+    );
+    res.type('html').send(renderStatusPage(rows));
+  });
+
+  app.post('/status/run/:jobName', async (req, res) => {
+    const outcome = await runJobNow(db, registry, req.params.jobName);
+    if (outcome === null) {
+      res.status(404).send('Unknown job');
+      return;
+    }
+    res.redirect(303, '/status');
+  });
 
   return app;
 }

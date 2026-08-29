@@ -3,8 +3,15 @@ import request from 'supertest';
 import type { Queryable } from '@lhr/db';
 
 const runDueJobMock = vi.fn();
+const runJobNowMock = vi.fn();
 vi.mock('../src/orchestrate', () => ({
   runDueJob: (...args: unknown[]) => runDueJobMock(...args),
+  runJobNow: (...args: unknown[]) => runJobNowMock(...args),
+}));
+
+const getRunHistoryMock = vi.fn();
+vi.mock('@lhr/db', () => ({
+  getRunHistory: (...args: unknown[]) => getRunHistoryMock(...args),
 }));
 
 const { createApp } = await import('../src/server');
@@ -75,5 +82,50 @@ describe('cron endpoint auth', () => {
     const res = await request(app).get('/api/cron/orchestrator').set('Authorization', 'Bearer test-secret');
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ outcome: 'error', error: 'db down' });
+  });
+});
+
+describe('GET /status', () => {
+  it("renders each registered job's name and latest run", async () => {
+    getRunHistoryMock.mockResolvedValue([
+      {
+        id: 1,
+        jobName: 'recipe-variant-generator',
+        status: 'success',
+        summary: 'generated 1 variant',
+        errorMessage: null,
+        startedAt: new Date('2026-08-20T00:00:00Z'),
+        finishedAt: new Date('2026-08-20T00:05:00Z'),
+      },
+    ]);
+    const app = createApp(fakeDb, [{ name: 'recipe-variant-generator', cadenceDays: 7, run: vi.fn() }]);
+    const res = await request(app).get('/status');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('recipe-variant-generator');
+    expect(res.text).toContain('generated 1 variant');
+  });
+
+  it('renders a placeholder when no jobs are registered', async () => {
+    const app = createApp(fakeDb, []);
+    const res = await request(app).get('/status');
+    expect(res.text).toContain('No jobs registered yet');
+  });
+});
+
+describe('POST /status/run/:jobName', () => {
+  it('runs the named job and redirects back to /status', async () => {
+    runJobNowMock.mockResolvedValue({ outcome: 'ran', job: 'recipe-variant-generator', status: 'success', summary: 'ok' });
+    const app = createApp(fakeDb, [{ name: 'recipe-variant-generator', cadenceDays: 7, run: vi.fn() }]);
+    const res = await request(app).post('/status/run/recipe-variant-generator');
+    expect(res.status).toBe(303);
+    expect(res.headers.location).toBe('/status');
+    expect(runJobNowMock).toHaveBeenCalledWith(fakeDb, expect.any(Array), 'recipe-variant-generator');
+  });
+
+  it('returns 404 for an unknown job name', async () => {
+    runJobNowMock.mockResolvedValue(null);
+    const app = createApp(fakeDb, []);
+    const res = await request(app).post('/status/run/nope');
+    expect(res.status).toBe(404);
   });
 });
