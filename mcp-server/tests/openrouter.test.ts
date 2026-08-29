@@ -32,7 +32,7 @@ describe('callOpenRouter', () => {
       }),
     );
     const body = JSON.parse((global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body);
-    expect(body.model).toBe('meta-llama/llama-3.3-70b-instruct:free');
+    expect(body.model).toBe('google/gemma-4-31b-it:free');
     expect(body.messages).toEqual([{ role: 'user', content: 'Substitute: bacon' }]);
   });
 

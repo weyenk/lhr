@@ -1,7 +1,7 @@
 import { requireEnv } from './blob.js';
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
-const DEFAULT_MODEL = 'meta-llama/llama-3.3-70b-instruct:free';
+const DEFAULT_MODEL = 'google/gemma-4-31b-it:free';
 
 export interface OpenRouterMessage {
   role: 'system' | 'user';
