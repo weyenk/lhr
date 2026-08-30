@@ -3,8 +3,10 @@ import { jobs } from '../src/registry';
 import { validateJobRegistrations } from '../src/validateRegistry';
 
 describe('jobs registry', () => {
-  it('starts empty, pending each agent pipeline getting its own implementation plan', () => {
-    expect(jobs).toEqual([]);
+  it('registers the recipe-variant-generator job on a 7-day cadence', () => {
+    expect(jobs).toHaveLength(1);
+    expect(jobs[0]).toMatchObject({ name: 'recipe-variant-generator', cadenceDays: 7 });
+    expect(jobs[0].run).toBeTypeOf('function');
   });
 
   it('is always shape-valid', () => {

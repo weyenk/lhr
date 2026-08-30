@@ -6,3 +6,5 @@ dist/
 !.env.example
 src/env/
 .superpowers/
+.vercel
+.env*

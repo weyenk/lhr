@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "npm run build --workspace=@lhr/schemas && tsc --noEmit -p tsconfig.json && node scripts/bundle.mjs",
+    "build": "npm run build --workspace=@lhr/schemas && tsc --noEmit -p tsconfig.json && tsc -p tsconfig.lib.json && node scripts/bundle.mjs",
     "test": "vitest run",
     "backfill:ingredient-links": "tsx scripts/backfill-ingredient-links.ts",
     "generate:weekly-recipe": "tsx --env-file-if-exists=.env scripts/generate-weekly-variant-recipe.ts"
