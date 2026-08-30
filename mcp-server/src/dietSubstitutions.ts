@@ -180,7 +180,10 @@ export async function generateVariant(
     try {
       const built = await buildVariantOnce(diet, originalIngredients, originalSteps);
       return { diet, ...built, rejected: false };
-    } catch {
+    } catch (err) {
+      console.error(
+        `[dietSubstitutions] ${diet}: attempt ${attempt + 1}/2 failed — ${err instanceof Error ? err.message : String(err)}`,
+      );
       if (attempt === 1) {
         return {
           diet,

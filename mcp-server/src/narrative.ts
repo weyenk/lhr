@@ -24,7 +24,8 @@ export async function generateNarrative(source: NarrativeSource): Promise<string
     ]);
     const trimmed = content.trim();
     return trimmed.length > 0 ? trimmed : FALLBACK_NARRATIVE;
-  } catch {
+  } catch (err) {
+    console.error(`[narrative] generation failed — ${err instanceof Error ? err.message : String(err)}`);
     return FALLBACK_NARRATIVE;
   }
 }
