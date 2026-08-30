@@ -4,8 +4,40 @@ import type { Queryable } from '@lhr/db';
 import { getRunHistory } from '@lhr/db';
 import type { JobRegistration } from '@lhr/jobs';
 import { jobs as defaultRegistry } from '@lhr/jobs';
+import { createGitHubClient } from 'lhr-authoring-mcp-server/dist-lib/github.js';
+import {
+  getPendingCandidate,
+  approveCandidate,
+  rerollCandidate,
+  type CandidateSummary,
+  type ApprovedCandidate,
+} from 'lhr-authoring-mcp-server/dist-lib/recipeCandidates.js';
 import { runDueJob, runJobNow } from './orchestrate.js';
 import { renderStatusPage, escapeHtml } from './statusPage.js';
+
+// Reads the pending recipe candidate (if any) and lets the author approve or reroll it — see the
+// 2026-08-30 "pick/approve" amendment in
+// docs/superpowers/specs/active/2026-08-24-recipe-variant-generator-design.md. Injectable so
+// tests never need a real GITHUB_TOKEN or GitHub API access.
+export interface CandidateOps {
+  getPending: () => Promise<CandidateSummary | null>;
+  approve: (id: string) => Promise<ApprovedCandidate>;
+  reroll: (id: string) => Promise<CandidateSummary | null>;
+}
+
+function requireGitHubToken(): string {
+  const token = process.env.GITHUB_TOKEN;
+  if (!token) throw new Error('GITHUB_TOKEN is not set');
+  return token;
+}
+
+function defaultCandidateOps(): CandidateOps {
+  return {
+    getPending: () => getPendingCandidate(createGitHubClient(requireGitHubToken())),
+    approve: (id) => approveCandidate(createGitHubClient(requireGitHubToken()), id),
+    reroll: (id) => rerollCandidate(createGitHubClient(requireGitHubToken()), id),
+  };
+}
 
 // Constant-time string comparison: guards against timing attacks on the
 // Basic Auth credential check below. Buffers of unequal length are rejected
@@ -73,7 +105,11 @@ function requireStatusAuth(req: express.Request, res: express.Response, next: ex
   next();
 }
 
-export function createApp(db: Queryable, registry: JobRegistration[] = defaultRegistry): express.Express {
+export function createApp(
+  db: Queryable,
+  registry: JobRegistration[] = defaultRegistry,
+  candidates: CandidateOps = defaultCandidateOps(),
+): express.Express {
   const app = express();
   app.set('trust proxy', 1);
 
@@ -119,12 +155,14 @@ export function createApp(db: Queryable, registry: JobRegistration[] = defaultRe
           history: await getRunHistory(db, job.name, 5),
         })),
       );
-      res.type('html').send(renderStatusPage(rows));
+      const candidate = await candidates.getPending();
+      res.type('html').send(renderStatusPage(rows, candidate));
     } catch (err) {
-      // getRunHistory can throw (e.g. a DB connectivity failure). Express 4
-      // does not catch rejections from async handlers, so without this catch
-      // the request would hang instead of getting a response — the same
-      // failure mode handleCron above was hardened against.
+      // getRunHistory/candidates.getPending can throw (e.g. a DB or GitHub
+      // connectivity failure). Express 4 does not catch rejections from async
+      // handlers, so without this catch the request would hang instead of
+      // getting a response — the same failure mode handleCron above was
+      // hardened against.
       const message = err instanceof Error ? err.message : String(err);
       res
         .status(500)
@@ -147,6 +185,26 @@ export function createApp(db: Queryable, registry: JobRegistration[] = defaultRe
       // Same rationale as the /status catch above: never let this hang.
       const message = err instanceof Error ? err.message : String(err);
       res.status(500).send(`Failed to run job: ${escapeHtml(message)}`);
+    }
+  });
+
+  app.post('/status/candidate/:id/approve', requireStatusAuth, async (req, res) => {
+    try {
+      await candidates.approve(req.params.id);
+      res.redirect(303, '/status');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      res.status(500).send(`Failed to approve candidate: ${escapeHtml(message)}`);
+    }
+  });
+
+  app.post('/status/candidate/:id/reroll', requireStatusAuth, async (req, res) => {
+    try {
+      await candidates.reroll(req.params.id);
+      res.redirect(303, '/status');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      res.status(500).send(`Failed to reroll candidate: ${escapeHtml(message)}`);
     }
   });
 

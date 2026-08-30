@@ -36,4 +36,35 @@ describe('renderStatusPage', () => {
     expect(html).not.toContain('<script>');
     expect(html).toContain('&lt;script&gt;');
   });
+
+  it('renders the pending candidate with approve/reroll actions when one is given', () => {
+    const html = renderStatusPage([], {
+      id: 'cand1',
+      record: {
+        status: 'pending',
+        source: { idMeal: '52772', title: 'Teriyaki Chicken Casserole', cuisine: 'Japanese', category: 'Chicken' },
+      },
+    });
+    expect(html).toContain('Teriyaki Chicken Casserole');
+    expect(html).toContain('Japanese');
+    expect(html).toMatch(/action="\/status\/candidate\/cand1\/approve"/);
+    expect(html).toMatch(/action="\/status\/candidate\/cand1\/reroll"/);
+  });
+
+  it('renders no candidate section when none is pending', () => {
+    const html = renderStatusPage([], null);
+    expect(html).not.toContain('/status/candidate/');
+  });
+
+  it('escapes HTML in a candidate title', () => {
+    const html = renderStatusPage([], {
+      id: 'cand1',
+      record: {
+        status: 'pending',
+        source: { idMeal: '1', title: '<script>alert(1)</script>', cuisine: 'x', category: 'y' },
+      },
+    });
+    expect(html).not.toContain('<script>');
+    expect(html).toContain('&lt;script&gt;');
+  });
 });

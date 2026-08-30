@@ -133,7 +133,7 @@ export async function findDraftKind(client: GitHubClient, id: string): Promise<'
   return null;
 }
 
-const MANUAL_PASS_SENTINEL = "couldn't generate — needs manual pass";
+export const MANUAL_PASS_SENTINEL = "couldn't generate — needs manual pass";
 
 export function summarizeDraftPost(draft: DraftPost): string {
   const lines = [`Type: ${draft.postType}`, `Title: ${draft.title || '(untitled)'}`];

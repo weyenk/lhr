@@ -6,13 +6,7 @@ vi.mock('../src/openrouter', () => ({
   callOpenRouter: (...args: unknown[]) => callOpenRouter(...args),
 }));
 
-const {
-  substituteIngredient,
-  rewriteSteps,
-  generateVariant,
-  generateAllVariants,
-  ALL_SUBSTITUTABLE_DIETS,
-} = await import('../src/dietSubstitutions');
+const { substituteIngredient, rewriteSteps, generateVariant } = await import('../src/dietSubstitutions');
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -143,63 +137,3 @@ describe('deadline propagation', () => {
   });
 });
 
-describe('generateAllVariants', () => {
-  it('produces 8 variants (original + 7 diets) and flags any diet whose step-rewrite fails', async () => {
-    callOpenRouter.mockImplementation(async (messages: { role: string; content: string }[]) => {
-      const systemPrompt = messages[0].content;
-      const userPrompt = messages[messages.length - 1].content;
-      if (systemPrompt.startsWith('You rewrite recipe steps')) {
-        if (userPrompt.includes('Diet: low-fat')) throw new Error('simulated failure');
-        return JSON.stringify(['Brown the beef.']);
-      }
-      return 'no substitution needed';
-    });
-
-    const { variants, flaggedDiets } = await generateAllVariants(
-      [{ item: 'Ground beef', amount: '1 lb' }],
-      ['Brown the beef.'],
-    );
-
-    expect(variants).toHaveLength(8);
-    expect(variants.map((v) => v.diet)).toEqual(['original', ...ALL_SUBSTITUTABLE_DIETS]);
-    expect(flaggedDiets).toEqual(['low-fat']);
-    const lowFatVariant = variants.find((v) => v.diet === 'low-fat')!;
-    expect(lowFatVariant.notes).toBe("couldn't generate — needs manual pass");
-    const veganVariant = variants.find((v) => v.diet === 'vegan')!;
-    expect(veganVariant.notes).not.toBe("couldn't generate — needs manual pass");
-  });
-
-  it('flags every diet needing the LLM as a manual pass, without hanging, once the deadline has already passed', async () => {
-    // Mirrors callOpenRouter's real deadline contract (see openrouter.ts) so this test exercises
-    // generateAllVariants' actual responsibility: threading the deadline through and degrading
-    // gracefully when every downstream call reports it's out of time.
-    callOpenRouter.mockImplementation(async (_messages: unknown, deadline?: number) => {
-      if (deadline !== undefined && Date.now() >= deadline) {
-        throw new Error('OpenRouter call skipped: ran out of time for this pipeline run');
-      }
-      return 'no substitution needed';
-    });
-
-    const { variants, flaggedDiets } = await generateAllVariants(
-      [{ item: 'Smoked salmon' }],
-      ['Grill the salmon.'],
-      Date.now() - 1,
-    );
-
-    expect(flaggedDiets).toEqual(ALL_SUBSTITUTABLE_DIETS);
-    for (const variant of variants) {
-      if (variant.diet === 'original') continue;
-      expect(variant.notes).toBe("couldn't generate — needs manual pass");
-      expect(variant.ingredients).toEqual([{ item: 'Smoked salmon' }]);
-    }
-  });
-
-  it('leaves plenty of room for a normal run to complete when no deadline is given', async () => {
-    callOpenRouter.mockResolvedValue('no substitution needed');
-
-    const { flaggedDiets } = await generateAllVariants([{ item: 'Smoked salmon' }], ['Grill the salmon.']);
-
-    expect(callOpenRouter).toHaveBeenCalled();
-    expect(flaggedDiets).toEqual([]);
-  });
-});
