@@ -148,7 +148,13 @@ async function buildVariantOnce(
   originalIngredients: RecipeIngredient[],
   originalSteps: string[],
 ): Promise<{ ingredients: RecipeIngredient[]; steps: string[]; notes?: string }> {
-  const substituted = await Promise.all(originalIngredients.map((ing) => substituteIngredient(ing, diet)));
+  // Sequential, not Promise.all: firing one call per ingredient (times every diet, via the
+  // Promise.all this replaced in generateAllVariants below) burst well past OpenRouter's
+  // free-tier rate limit on any recipe with more than a handful of ingredients.
+  const substituted: SubstitutedIngredient[] = [];
+  for (const ing of originalIngredients) {
+    substituted.push(await substituteIngredient(ing, diet));
+  }
 
   const changes = originalIngredients
     .map((original, i) => ({ from: original.item, to: substituted[i].item, changed: substituted[i].changed }))
@@ -204,9 +210,12 @@ export async function generateAllVariants(
     steps: originalSteps,
   };
 
-  const results = await Promise.all(
-    ALL_SUBSTITUTABLE_DIETS.map((diet) => generateVariant(diet, originalIngredients, originalSteps)),
-  );
+  // Sequential, not Promise.all: see the note in buildVariantOnce above — running all 7 diets'
+  // worth of LLM calls concurrently is what caused the rate-limit bursts.
+  const results: RecipeVariantResult[] = [];
+  for (const diet of ALL_SUBSTITUTABLE_DIETS) {
+    results.push(await generateVariant(diet, originalIngredients, originalSteps));
+  }
 
   const variants: RecipeVariantData[] = [
     original,

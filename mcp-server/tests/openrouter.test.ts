@@ -54,9 +54,41 @@ describe('callOpenRouter', () => {
     await expect(callOpenRouter([{ role: 'user', content: 'hi' }])).rejects.toThrow(/OPENROUTER_API_KEY/);
   });
 
-  it('throws when the request is not ok', async () => {
-    global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 429 }) as unknown as typeof fetch;
+  it('throws immediately when the request fails with a non-429 status', async () => {
+    global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 500 }) as unknown as typeof fetch;
+    await expect(callOpenRouter([{ role: 'user', content: 'hi' }])).rejects.toThrow(/500/);
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('retries a 429 (honoring Retry-After) and succeeds on a later attempt', async () => {
+    let calls = 0;
+    global.fetch = vi.fn().mockImplementation(async () => {
+      calls++;
+      if (calls < 3) {
+        return { ok: false, status: 429, headers: new Headers({ 'retry-after': '0' }) };
+      }
+      return {
+        ok: true,
+        headers: new Headers(),
+        json: async () => ({ choices: [{ message: { content: 'ok after retry' } }] }),
+      };
+    }) as unknown as typeof fetch;
+
+    const result = await callOpenRouter([{ role: 'user', content: 'hi' }]);
+
+    expect(result).toBe('ok after retry');
+    expect(calls).toBe(3);
+  });
+
+  it('throws after exhausting retries when persistently rate limited', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 429,
+      headers: new Headers({ 'retry-after': '0' }),
+    }) as unknown as typeof fetch;
+
     await expect(callOpenRouter([{ role: 'user', content: 'hi' }])).rejects.toThrow(/429/);
+    expect(global.fetch).toHaveBeenCalledTimes(4);
   });
 
   it('throws when the response has no message content', async () => {
