@@ -1,0 +1,366 @@
+{
+  "kind": "post",
+  "postType": "recipe",
+  "title": "Syrian Spaghetti",
+  "ingredients": [
+    {
+      "item": "Spaghetti",
+      "amount": "16 ounces"
+    },
+    {
+      "item": "Tomato Sauce",
+      "amount": "8 ounces"
+    },
+    {
+      "item": "Tomato Puree",
+      "amount": "6 oz"
+    },
+    {
+      "item": "Cinnamon",
+      "amount": "1 teaspoon"
+    },
+    {
+      "item": "Vegetable Oil",
+      "amount": "1/4 cup"
+    },
+    {
+      "item": "Salt",
+      "amount": "Dash"
+    },
+    {
+      "item": "Pepper",
+      "amount": "Dash"
+    }
+  ],
+  "steps": [
+    "Preheat oven to 350 degrees F (175 degrees C). Grease a 9x13 inch baking dish.",
+    "Bring a large pot of lightly salted water to a boil. Add spaghetti and cook for 8 to 10 minutes or until al dente; drain and stir in tomato sauce, tomato paste, cinnamon, oil, salt and pepper. Transfer to prepared dish.",
+    "Bake in preheated oven for 1 hour, or until top is crunchy."
+  ],
+  "sections": [],
+  "photos": [
+    {
+      "url": "https://www.themealdb.com/images/media/meals/5fu4ew1760524857.jpg",
+      "caption": "Syrian Spaghetti"
+    }
+  ],
+  "kitchenwareIds": [],
+  "affiliateLinkIds": [],
+  "pendingAffiliateLinks": [],
+  "pendingIngredientLinks": [],
+  "variants": [
+    {
+      "diet": "original",
+      "ingredients": [
+        {
+          "item": "Spaghetti",
+          "amount": "16 ounces"
+        },
+        {
+          "item": "Tomato Sauce",
+          "amount": "8 ounces"
+        },
+        {
+          "item": "Tomato Puree",
+          "amount": "6 oz"
+        },
+        {
+          "item": "Cinnamon",
+          "amount": "1 teaspoon"
+        },
+        {
+          "item": "Vegetable Oil",
+          "amount": "1/4 cup"
+        },
+        {
+          "item": "Salt",
+          "amount": "Dash"
+        },
+        {
+          "item": "Pepper",
+          "amount": "Dash"
+        }
+      ],
+      "steps": [
+        "Preheat oven to 350 degrees F (175 degrees C). Grease a 9x13 inch baking dish.",
+        "Bring a large pot of lightly salted water to a boil. Add spaghetti and cook for 8 to 10 minutes or until al dente; drain and stir in tomato sauce, tomato paste, cinnamon, oil, salt and pepper. Transfer to prepared dish.",
+        "Bake in preheated oven for 1 hour, or until top is crunchy."
+      ]
+    },
+    {
+      "diet": "gluten-free",
+      "ingredients": [
+        {
+          "item": "Spaghetti",
+          "amount": "16 ounces"
+        },
+        {
+          "item": "Tomato Sauce",
+          "amount": "8 ounces"
+        },
+        {
+          "item": "Tomato Puree",
+          "amount": "6 oz"
+        },
+        {
+          "item": "Cinnamon",
+          "amount": "1 teaspoon"
+        },
+        {
+          "item": "Vegetable Oil",
+          "amount": "1/4 cup"
+        },
+        {
+          "item": "Salt",
+          "amount": "Dash"
+        },
+        {
+          "item": "Pepper",
+          "amount": "Dash"
+        }
+      ],
+      "steps": [
+        "Preheat oven to 350 degrees F (175 degrees C). Grease a 9x13 inch baking dish.",
+        "Bring a large pot of lightly salted water to a boil. Add spaghetti and cook for 8 to 10 minutes or until al dente; drain and stir in tomato sauce, tomato paste, cinnamon, oil, salt and pepper. Transfer to prepared dish.",
+        "Bake in preheated oven for 1 hour, or until top is crunchy."
+      ],
+      "notes": "couldn't generate — needs manual pass"
+    },
+    {
+      "diet": "vegan",
+      "ingredients": [
+        {
+          "item": "Spaghetti",
+          "amount": "16 ounces"
+        },
+        {
+          "item": "Tomato Sauce",
+          "amount": "8 ounces"
+        },
+        {
+          "item": "Tomato Puree",
+          "amount": "6 oz"
+        },
+        {
+          "item": "Cinnamon",
+          "amount": "1 teaspoon"
+        },
+        {
+          "item": "Vegetable Oil",
+          "amount": "1/4 cup"
+        },
+        {
+          "item": "Salt",
+          "amount": "Dash"
+        },
+        {
+          "item": "Pepper",
+          "amount": "Dash"
+        }
+      ],
+      "steps": [
+        "Preheat oven to 350 degrees F (175 degrees C). Grease a 9x13 inch baking dish.",
+        "Bring a large pot of lightly salted water to a boil. Add spaghetti and cook for 8 to 10 minutes or until al dente; drain and stir in tomato sauce, tomato paste, cinnamon, oil, salt and pepper. Transfer to prepared dish.",
+        "Bake in preheated oven for 1 hour, or until top is crunchy."
+      ],
+      "notes": "couldn't generate — needs manual pass"
+    },
+    {
+      "diet": "vegetarian",
+      "ingredients": [
+        {
+          "item": "Spaghetti",
+          "amount": "16 ounces"
+        },
+        {
+          "item": "Tomato Sauce",
+          "amount": "8 ounces"
+        },
+        {
+          "item": "Tomato Puree",
+          "amount": "6 oz"
+        },
+        {
+          "item": "Cinnamon",
+          "amount": "1 teaspoon"
+        },
+        {
+          "item": "Vegetable Oil",
+          "amount": "1/4 cup"
+        },
+        {
+          "item": "Salt",
+          "amount": "Dash"
+        },
+        {
+          "item": "Pepper",
+          "amount": "Dash"
+        }
+      ],
+      "steps": [
+        "Preheat oven to 350 degrees F (175 degrees C). Grease a 9x13 inch baking dish.",
+        "Bring a large pot of lightly salted water to a boil. Add spaghetti and cook for 8 to 10 minutes or until al dente; drain and stir in tomato sauce, tomato paste, cinnamon, oil, salt and pepper. Transfer to prepared dish.",
+        "Bake in preheated oven for 1 hour, or until top is crunchy."
+      ],
+      "notes": "couldn't generate — needs manual pass"
+    },
+    {
+      "diet": "pescatarian",
+      "ingredients": [
+        {
+          "item": "Spaghetti",
+          "amount": "16 ounces"
+        },
+        {
+          "item": "Tomato Sauce",
+          "amount": "8 ounces"
+        },
+        {
+          "item": "Tomato Puree",
+          "amount": "6 oz"
+        },
+        {
+          "item": "Cinnamon",
+          "amount": "1 teaspoon"
+        },
+        {
+          "item": "Vegetable Oil",
+          "amount": "1/4 cup"
+        },
+        {
+          "item": "Salt",
+          "amount": "Dash"
+        },
+        {
+          "item": "Pepper",
+          "amount": "Dash"
+        }
+      ],
+      "steps": [
+        "Preheat oven to 350 degrees F (175 degrees C). Grease a 9x13 inch baking dish.",
+        "Bring a large pot of lightly salted water to a boil. Add spaghetti and cook for 8 to 10 minutes or until al dente; drain and stir in tomato sauce, tomato paste, cinnamon, oil, salt and pepper. Transfer to prepared dish.",
+        "Bake in preheated oven for 1 hour, or until top is crunchy."
+      ],
+      "notes": "couldn't generate — needs manual pass"
+    },
+    {
+      "diet": "low-carb",
+      "ingredients": [
+        {
+          "item": "Spaghetti",
+          "amount": "16 ounces"
+        },
+        {
+          "item": "Tomato Sauce",
+          "amount": "8 ounces"
+        },
+        {
+          "item": "Tomato Puree",
+          "amount": "6 oz"
+        },
+        {
+          "item": "Cinnamon",
+          "amount": "1 teaspoon"
+        },
+        {
+          "item": "Vegetable Oil",
+          "amount": "1/4 cup"
+        },
+        {
+          "item": "Salt",
+          "amount": "Dash"
+        },
+        {
+          "item": "Pepper",
+          "amount": "Dash"
+        }
+      ],
+      "steps": [
+        "Preheat oven to 350 degrees F (175 degrees C). Grease a 9x13 inch baking dish.",
+        "Bring a large pot of lightly salted water to a boil. Add spaghetti and cook for 8 to 10 minutes or until al dente; drain and stir in tomato sauce, tomato paste, cinnamon, oil, salt and pepper. Transfer to prepared dish.",
+        "Bake in preheated oven for 1 hour, or until top is crunchy."
+      ],
+      "notes": "couldn't generate — needs manual pass"
+    },
+    {
+      "diet": "low-salt",
+      "ingredients": [
+        {
+          "item": "Spaghetti",
+          "amount": "16 ounces"
+        },
+        {
+          "item": "Tomato Sauce",
+          "amount": "8 ounces"
+        },
+        {
+          "item": "Tomato Puree",
+          "amount": "6 oz"
+        },
+        {
+          "item": "Cinnamon",
+          "amount": "1 teaspoon"
+        },
+        {
+          "item": "Vegetable Oil",
+          "amount": "1/4 cup"
+        },
+        {
+          "item": "Salt",
+          "amount": "Dash"
+        },
+        {
+          "item": "Pepper",
+          "amount": "Dash"
+        }
+      ],
+      "steps": [
+        "Preheat oven to 350 degrees F (175 degrees C). Grease a 9x13 inch baking dish.",
+        "Bring a large pot of lightly salted water to a boil. Add spaghetti and cook for 8 to 10 minutes or until al dente; drain and stir in tomato sauce, tomato paste, cinnamon, oil, salt and pepper. Transfer to prepared dish.",
+        "Bake in preheated oven for 1 hour, or until top is crunchy."
+      ],
+      "notes": "couldn't generate — needs manual pass"
+    },
+    {
+      "diet": "low-fat",
+      "ingredients": [
+        {
+          "item": "Spaghetti",
+          "amount": "16 ounces"
+        },
+        {
+          "item": "Tomato Sauce",
+          "amount": "8 ounces"
+        },
+        {
+          "item": "Tomato Puree",
+          "amount": "6 oz"
+        },
+        {
+          "item": "Cinnamon",
+          "amount": "1 teaspoon"
+        },
+        {
+          "item": "Vegetable Oil",
+          "amount": "1/4 cup"
+        },
+        {
+          "item": "Salt",
+          "amount": "Dash"
+        },
+        {
+          "item": "Pepper",
+          "amount": "Dash"
+        }
+      ],
+      "steps": [
+        "Preheat oven to 350 degrees F (175 degrees C). Grease a 9x13 inch baking dish.",
+        "Bring a large pot of lightly salted water to a boil. Add spaghetti and cook for 8 to 10 minutes or until al dente; drain and stir in tomato sauce, tomato paste, cinnamon, oil, salt and pepper. Transfer to prepared dish.",
+        "Bake in preheated oven for 1 hour, or until top is crunchy."
+      ],
+      "notes": "couldn't generate — needs manual pass"
+    }
+  ],
+  "sourceMealDbId": "53093",
+  "narrativeBody": "[Narrative draft pending — auto-generation failed]"
+}
