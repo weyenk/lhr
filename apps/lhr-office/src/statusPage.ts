@@ -1,4 +1,5 @@
 import type { OrchestratorRun } from '@lhr/db';
+import type { CandidateSummary } from 'lhr-authoring-mcp-server/dist-lib/recipeCandidates.js';
 
 export interface JobStatusRow {
   name: string;
@@ -16,7 +17,26 @@ function describeRun(run: OrchestratorRun): string {
   return `${escapeHtml(run.status)} — ${detail} (${when})`;
 }
 
-export function renderStatusPage(rows: JobStatusRow[]): string {
+// Shown above the job history so a picked recipe is visible — and rerollable — before any AI
+// cycles are spent generating its diet variants (2026-08-30 "pick/approve" amendment).
+function renderCandidateSection(candidate: CandidateSummary | null): string {
+  if (!candidate) return '';
+  const { id, record } = candidate;
+  const { source } = record;
+  return `
+    <section>
+      <h2>Recipe candidate awaiting approval</h2>
+      <p><strong>${escapeHtml(source.title)}</strong> — ${escapeHtml(source.cuisine)} ${escapeHtml(source.category)} (TheMealDB id ${escapeHtml(source.idMeal)})</p>
+      <form method="post" action="/status/candidate/${encodeURIComponent(id)}/approve" style="display:inline">
+        <button type="submit">Approve</button>
+      </form>
+      <form method="post" action="/status/candidate/${encodeURIComponent(id)}/reroll" style="display:inline">
+        <button type="submit">Reroll</button>
+      </form>
+    </section>`;
+}
+
+export function renderStatusPage(rows: JobStatusRow[], candidate: CandidateSummary | null = null): string {
   const sections = rows
     .map((row) => {
       const latest = row.history[0];
@@ -44,6 +64,7 @@ export function renderStatusPage(rows: JobStatusRow[]): string {
   </head>
   <body>
     <h1>Orchestrator status</h1>
+    ${renderCandidateSection(candidate)}
     ${sections || '<p>No jobs registered yet.</p>'}
   </body>
 </html>`;

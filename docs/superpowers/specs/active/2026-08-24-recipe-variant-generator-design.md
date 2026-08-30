@@ -217,6 +217,61 @@ This keeps the whole job inside one Vercel invocation — no cross-invocation ch
 needed, since the deadline guarantees the job always finishes (successfully or partially flagged)
 well inside the timeout.
 
+## Implementation Note (added 2026-08-30, pick/finish split)
+
+The deadline fix above bounds a single invocation's runtime, but it left a gap: a diet flagged
+"couldn't generate — needs manual pass" was never retried — `confirmAndPublish` blocks publishing
+until it's resolved (§8), but nothing in the pipeline ever revisited it, and no MCP tool existed to
+fix one from chat. Once the finisher had a reason to run repeatedly, it also became the natural
+place to satisfy a separate ask: seeing which recipe was picked before any AI cycles are spent
+generating its variants, in service of `apps/lhr-office` becoming a real ops dashboard over time
+rather than a static job-history page.
+
+The pipeline is now split into two registered jobs (`packages/jobs/src/registry.ts`) instead of
+one:
+
+- **`recipe-variant-generator`** (`generateWeeklyVariantRecipe`, unchanged 7-day cadence) now only
+  picks a recipe (§5), generates the narrative (§4), and lands a draft with just the `original`
+  variant — none of §3's diet substitution happens here anymore. Its `/status` run summary
+  ("Picked ... diet variants pending") is visible immediately, before the expensive part runs.
+- **`recipe-variant-finisher`** (`finishPendingRecipeVariants`, new file
+  `mcp-server/src/finishRecipeVariants.ts`, 1-day cadence) finds the first open recipe draft with
+  any diet still missing or flagged, and retries just those diets (bounded by the same 180s
+  deadline as before, via the unchanged `generateVariant`). A diet that's still flagged after a
+  tick gets picked up again on the next one, instead of being abandoned once the picker's weekly
+  cadence clears. The picker and finisher never collide: the picker's dedup check already treats
+  every open draft — finished or not — as "used" for `sourceMealDbId` purposes.
+
+No orchestrator, DB schema, or job-contract changes were needed — this is exactly the "adding a job
+is registering one more entry" property the shared-orchestrator spec's §1 goals describe.
+
+## Implementation Note (added 2026-08-30, UI-based pick/approve/reroll)
+
+The picker described above still only *chose* a recipe automatically — there was no way for the
+author to see or influence which one, short of reading raw job-summary text. This amendment makes
+picking UI-based on `/status`, consistent with `apps/lhr-office` moving toward a real ops dashboard
+rather than a static job-history page:
+
+- **`recipe-variant-generator`**'s job body changed again: instead of creating a draft directly, it
+  now only ensures a **candidate** is pending (`getPendingCandidate`/`pickNewCandidate` in the new
+  `mcp-server/src/recipeCandidates.ts`). A candidate is a lightweight `candidate/<id>` GitHub
+  branch (`.candidates/<id>.json`, `{ status: 'pending' | 'rerolled', source }`) — not yet a real
+  draft, and no narrative/diet-variant AI calls have been spent on it.
+- `/status` on `apps/lhr-office` renders the pending candidate (title/cuisine/category) with
+  **Approve** and **Reroll** buttons (`POST /status/candidate/:id/approve` / `/reroll`, same Basic
+  Auth gate as the existing "Run now" button).
+- **Approve** (`approveCandidate`) is the only point an AI cycle is spent on the pick: it generates
+  the narrative and creates the real draft (exactly what the picker used to do directly), then
+  deletes the candidate branch.
+- **Reroll** (`rerollCandidate`) flips the candidate's status to `rerolled` (kept, not deleted, so
+  its `idMeal` is permanently excluded from future suggestions) and immediately picks a fresh one,
+  so the UI has something new to show without waiting for the picker's next weekly tick.
+- `apps/lhr-office` now depends directly on `lhr-authoring-mcp-server` (`package.json`) to read/act
+  on candidates via the same GitHub-branch mechanism drafts already use — no new database table.
+  Learned from the two prior subdirectory-install incidents (`docs/AUTHORING-SETUP.md`): the
+  dependency must be declared in `apps/lhr-office`'s own `package.json`, not just transitively
+  available, since Vercel installs each subdirectory project's own dependency closure.
+
 ## Out of Scope
 
 - Nutritional computation (§1) — heuristic substitution only.

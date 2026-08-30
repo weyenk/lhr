@@ -4,9 +4,15 @@ import { validateJobRegistrations } from '../src/validateRegistry';
 
 describe('jobs registry', () => {
   it('registers the recipe-variant-generator job on a 7-day cadence', () => {
-    expect(jobs).toHaveLength(1);
-    expect(jobs[0]).toMatchObject({ name: 'recipe-variant-generator', cadenceDays: 7 });
-    expect(jobs[0].run).toBeTypeOf('function');
+    const job = jobs.find((j) => j.name === 'recipe-variant-generator');
+    expect(job).toMatchObject({ cadenceDays: 7 });
+    expect(job?.run).toBeTypeOf('function');
+  });
+
+  it('registers the recipe-variant-finisher job on a daily cadence', () => {
+    const job = jobs.find((j) => j.name === 'recipe-variant-finisher');
+    expect(job).toMatchObject({ cadenceDays: 1 });
+    expect(job?.run).toBeTypeOf('function');
   });
 
   it('is always shape-valid', () => {
