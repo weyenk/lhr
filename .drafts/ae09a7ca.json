@@ -1,0 +1,465 @@
+{
+  "kind": "post",
+  "postType": "recipe",
+  "title": "Macaroni Pudding",
+  "ingredients": [
+    {
+      "item": "Macaroni",
+      "amount": "4 cups"
+    },
+    {
+      "item": "Evaporated Milk",
+      "amount": "4 cups"
+    },
+    {
+      "item": "Water",
+      "amount": "1 cup"
+    },
+    {
+      "item": "Sugar",
+      "amount": "3 Cups"
+    },
+    {
+      "item": "Salt",
+      "amount": "2 tsp"
+    },
+    {
+      "item": "Eggs",
+      "amount": "4"
+    },
+    {
+      "item": "Butter",
+      "amount": "1/4 cup"
+    },
+    {
+      "item": "Raisins",
+      "amount": "1 cup"
+    },
+    {
+      "item": "Nutmeg",
+      "amount": "2 1/2 Tsp"
+    },
+    {
+      "item": "Vanilla",
+      "amount": "2 tablespoons"
+    }
+  ],
+  "steps": [
+    "Add macaroni to large pan with sufficient water to cover (approximately 4 cups). Add salt and bring to boil until tender (approximately 25 -30 minutes). Meanwhile, beat eggs and sugar together, then add vanilla and nutmeg. Mix well and set aside. In a separate medium sauce pan, heat evaporated milk plus 1 cup of water and butter to almost a boiling point. Remove from heat and add to sugar mixture. Drain cooked macaroni. Add macaroni and raisins to the milk mixture and stir well. (This mixture will have quite a bit of liquid, but this will form a nice custard textured pudding once baked.)",
+    "Grease a large baking dish with butter or margarine, add the macaroni mixture and sprinkle with additional nutmeg. Bake at 350° F for 1 hour or until golden brown. (Pudding should be firm enough to cut, but moist and not dry)."
+  ],
+  "sections": [],
+  "photos": [
+    {
+      "url": "https://www.themealdb.com/images/media/meals/hbte551782770868.jpg",
+      "caption": "Macaroni Pudding"
+    }
+  ],
+  "kitchenwareIds": [],
+  "affiliateLinkIds": [],
+  "pendingAffiliateLinks": [],
+  "pendingIngredientLinks": [],
+  "variants": [
+    {
+      "diet": "original",
+      "ingredients": [
+        {
+          "item": "Macaroni",
+          "amount": "4 cups"
+        },
+        {
+          "item": "Evaporated Milk",
+          "amount": "4 cups"
+        },
+        {
+          "item": "Water",
+          "amount": "1 cup"
+        },
+        {
+          "item": "Sugar",
+          "amount": "3 Cups"
+        },
+        {
+          "item": "Salt",
+          "amount": "2 tsp"
+        },
+        {
+          "item": "Eggs",
+          "amount": "4"
+        },
+        {
+          "item": "Butter",
+          "amount": "1/4 cup"
+        },
+        {
+          "item": "Raisins",
+          "amount": "1 cup"
+        },
+        {
+          "item": "Nutmeg",
+          "amount": "2 1/2 Tsp"
+        },
+        {
+          "item": "Vanilla",
+          "amount": "2 tablespoons"
+        }
+      ],
+      "steps": [
+        "Add macaroni to large pan with sufficient water to cover (approximately 4 cups). Add salt and bring to boil until tender (approximately 25 -30 minutes). Meanwhile, beat eggs and sugar together, then add vanilla and nutmeg. Mix well and set aside. In a separate medium sauce pan, heat evaporated milk plus 1 cup of water and butter to almost a boiling point. Remove from heat and add to sugar mixture. Drain cooked macaroni. Add macaroni and raisins to the milk mixture and stir well. (This mixture will have quite a bit of liquid, but this will form a nice custard textured pudding once baked.)",
+        "Grease a large baking dish with butter or margarine, add the macaroni mixture and sprinkle with additional nutmeg. Bake at 350° F for 1 hour or until golden brown. (Pudding should be firm enough to cut, but moist and not dry)."
+      ]
+    },
+    {
+      "diet": "gluten-free",
+      "ingredients": [
+        {
+          "item": "Macaroni",
+          "amount": "4 cups"
+        },
+        {
+          "item": "Evaporated Milk",
+          "amount": "4 cups"
+        },
+        {
+          "item": "Water",
+          "amount": "1 cup"
+        },
+        {
+          "item": "Sugar",
+          "amount": "3 Cups"
+        },
+        {
+          "item": "Salt",
+          "amount": "2 tsp"
+        },
+        {
+          "item": "Eggs",
+          "amount": "4"
+        },
+        {
+          "item": "Butter",
+          "amount": "1/4 cup"
+        },
+        {
+          "item": "Raisins",
+          "amount": "1 cup"
+        },
+        {
+          "item": "Nutmeg",
+          "amount": "2 1/2 Tsp"
+        },
+        {
+          "item": "Vanilla",
+          "amount": "2 tablespoons"
+        }
+      ],
+      "steps": [
+        "Add macaroni to large pan with sufficient water to cover (approximately 4 cups). Add salt and bring to boil until tender (approximately 25 -30 minutes). Meanwhile, beat eggs and sugar together, then add vanilla and nutmeg. Mix well and set aside. In a separate medium sauce pan, heat evaporated milk plus 1 cup of water and butter to almost a boiling point. Remove from heat and add to sugar mixture. Drain cooked macaroni. Add macaroni and raisins to the milk mixture and stir well. (This mixture will have quite a bit of liquid, but this will form a nice custard textured pudding once baked.)",
+        "Grease a large baking dish with butter or margarine, add the macaroni mixture and sprinkle with additional nutmeg. Bake at 350° F for 1 hour or until golden brown. (Pudding should be firm enough to cut, but moist and not dry)."
+      ],
+      "notes": "couldn't generate — needs manual pass"
+    },
+    {
+      "diet": "vegan",
+      "ingredients": [
+        {
+          "item": "Macaroni",
+          "amount": "4 cups"
+        },
+        {
+          "item": "Evaporated Milk",
+          "amount": "4 cups"
+        },
+        {
+          "item": "Water",
+          "amount": "1 cup"
+        },
+        {
+          "item": "Sugar",
+          "amount": "3 Cups"
+        },
+        {
+          "item": "Salt",
+          "amount": "2 tsp"
+        },
+        {
+          "item": "Eggs",
+          "amount": "4"
+        },
+        {
+          "item": "Butter",
+          "amount": "1/4 cup"
+        },
+        {
+          "item": "Raisins",
+          "amount": "1 cup"
+        },
+        {
+          "item": "Nutmeg",
+          "amount": "2 1/2 Tsp"
+        },
+        {
+          "item": "Vanilla",
+          "amount": "2 tablespoons"
+        }
+      ],
+      "steps": [
+        "Add macaroni to large pan with sufficient water to cover (approximately 4 cups). Add salt and bring to boil until tender (approximately 25 -30 minutes). Meanwhile, beat eggs and sugar together, then add vanilla and nutmeg. Mix well and set aside. In a separate medium sauce pan, heat evaporated milk plus 1 cup of water and butter to almost a boiling point. Remove from heat and add to sugar mixture. Drain cooked macaroni. Add macaroni and raisins to the milk mixture and stir well. (This mixture will have quite a bit of liquid, but this will form a nice custard textured pudding once baked.)",
+        "Grease a large baking dish with butter or margarine, add the macaroni mixture and sprinkle with additional nutmeg. Bake at 350° F for 1 hour or until golden brown. (Pudding should be firm enough to cut, but moist and not dry)."
+      ],
+      "notes": "couldn't generate — needs manual pass"
+    },
+    {
+      "diet": "vegetarian",
+      "ingredients": [
+        {
+          "item": "Macaroni",
+          "amount": "4 cups"
+        },
+        {
+          "item": "Evaporated Milk",
+          "amount": "4 cups"
+        },
+        {
+          "item": "Water",
+          "amount": "1 cup"
+        },
+        {
+          "item": "Sugar",
+          "amount": "3 Cups"
+        },
+        {
+          "item": "Salt",
+          "amount": "2 tsp"
+        },
+        {
+          "item": "Eggs",
+          "amount": "4"
+        },
+        {
+          "item": "Butter",
+          "amount": "1/4 cup"
+        },
+        {
+          "item": "Raisins",
+          "amount": "1 cup"
+        },
+        {
+          "item": "Nutmeg",
+          "amount": "2 1/2 Tsp"
+        },
+        {
+          "item": "Vanilla",
+          "amount": "2 tablespoons"
+        }
+      ],
+      "steps": [
+        "Add macaroni to large pan with sufficient water to cover (approximately 4 cups). Add salt and bring to boil until tender (approximately 25 -30 minutes). Meanwhile, beat eggs and sugar together, then add vanilla and nutmeg. Mix well and set aside. In a separate medium sauce pan, heat evaporated milk plus 1 cup of water and butter to almost a boiling point. Remove from heat and add to sugar mixture. Drain cooked macaroni. Add macaroni and raisins to the milk mixture and stir well. (This mixture will have quite a bit of liquid, but this will form a nice custard textured pudding once baked.)",
+        "Grease a large baking dish with butter or margarine, add the macaroni mixture and sprinkle with additional nutmeg. Bake at 350° F for 1 hour or until golden brown. (Pudding should be firm enough to cut, but moist and not dry)."
+      ],
+      "notes": "couldn't generate — needs manual pass"
+    },
+    {
+      "diet": "pescatarian",
+      "ingredients": [
+        {
+          "item": "Macaroni",
+          "amount": "4 cups"
+        },
+        {
+          "item": "Evaporated Milk",
+          "amount": "4 cups"
+        },
+        {
+          "item": "Water",
+          "amount": "1 cup"
+        },
+        {
+          "item": "Sugar",
+          "amount": "3 Cups"
+        },
+        {
+          "item": "Salt",
+          "amount": "2 tsp"
+        },
+        {
+          "item": "Eggs",
+          "amount": "4"
+        },
+        {
+          "item": "Butter",
+          "amount": "1/4 cup"
+        },
+        {
+          "item": "Raisins",
+          "amount": "1 cup"
+        },
+        {
+          "item": "Nutmeg",
+          "amount": "2 1/2 Tsp"
+        },
+        {
+          "item": "Vanilla",
+          "amount": "2 tablespoons"
+        }
+      ],
+      "steps": [
+        "Add macaroni to large pan with sufficient water to cover (approximately 4 cups). Add salt and bring to boil until tender (approximately 25 -30 minutes). Meanwhile, beat eggs and sugar together, then add vanilla and nutmeg. Mix well and set aside. In a separate medium sauce pan, heat evaporated milk plus 1 cup of water and butter to almost a boiling point. Remove from heat and add to sugar mixture. Drain cooked macaroni. Add macaroni and raisins to the milk mixture and stir well. (This mixture will have quite a bit of liquid, but this will form a nice custard textured pudding once baked.)",
+        "Grease a large baking dish with butter or margarine, add the macaroni mixture and sprinkle with additional nutmeg. Bake at 350° F for 1 hour or until golden brown. (Pudding should be firm enough to cut, but moist and not dry)."
+      ],
+      "notes": "couldn't generate — needs manual pass"
+    },
+    {
+      "diet": "low-carb",
+      "ingredients": [
+        {
+          "item": "Macaroni",
+          "amount": "4 cups"
+        },
+        {
+          "item": "Evaporated Milk",
+          "amount": "4 cups"
+        },
+        {
+          "item": "Water",
+          "amount": "1 cup"
+        },
+        {
+          "item": "Sugar",
+          "amount": "3 Cups"
+        },
+        {
+          "item": "Salt",
+          "amount": "2 tsp"
+        },
+        {
+          "item": "Eggs",
+          "amount": "4"
+        },
+        {
+          "item": "Butter",
+          "amount": "1/4 cup"
+        },
+        {
+          "item": "Raisins",
+          "amount": "1 cup"
+        },
+        {
+          "item": "Nutmeg",
+          "amount": "2 1/2 Tsp"
+        },
+        {
+          "item": "Vanilla",
+          "amount": "2 tablespoons"
+        }
+      ],
+      "steps": [
+        "Add macaroni to large pan with sufficient water to cover (approximately 4 cups). Add salt and bring to boil until tender (approximately 25 -30 minutes). Meanwhile, beat eggs and sugar together, then add vanilla and nutmeg. Mix well and set aside. In a separate medium sauce pan, heat evaporated milk plus 1 cup of water and butter to almost a boiling point. Remove from heat and add to sugar mixture. Drain cooked macaroni. Add macaroni and raisins to the milk mixture and stir well. (This mixture will have quite a bit of liquid, but this will form a nice custard textured pudding once baked.)",
+        "Grease a large baking dish with butter or margarine, add the macaroni mixture and sprinkle with additional nutmeg. Bake at 350° F for 1 hour or until golden brown. (Pudding should be firm enough to cut, but moist and not dry)."
+      ],
+      "notes": "couldn't generate — needs manual pass"
+    },
+    {
+      "diet": "low-salt",
+      "ingredients": [
+        {
+          "item": "Macaroni",
+          "amount": "4 cups"
+        },
+        {
+          "item": "Evaporated Milk",
+          "amount": "4 cups"
+        },
+        {
+          "item": "Water",
+          "amount": "1 cup"
+        },
+        {
+          "item": "Sugar",
+          "amount": "3 Cups"
+        },
+        {
+          "item": "Salt",
+          "amount": "2 tsp"
+        },
+        {
+          "item": "Eggs",
+          "amount": "4"
+        },
+        {
+          "item": "Butter",
+          "amount": "1/4 cup"
+        },
+        {
+          "item": "Raisins",
+          "amount": "1 cup"
+        },
+        {
+          "item": "Nutmeg",
+          "amount": "2 1/2 Tsp"
+        },
+        {
+          "item": "Vanilla",
+          "amount": "2 tablespoons"
+        }
+      ],
+      "steps": [
+        "Add macaroni to large pan with sufficient water to cover (approximately 4 cups). Add salt and bring to boil until tender (approximately 25 -30 minutes). Meanwhile, beat eggs and sugar together, then add vanilla and nutmeg. Mix well and set aside. In a separate medium sauce pan, heat evaporated milk plus 1 cup of water and butter to almost a boiling point. Remove from heat and add to sugar mixture. Drain cooked macaroni. Add macaroni and raisins to the milk mixture and stir well. (This mixture will have quite a bit of liquid, but this will form a nice custard textured pudding once baked.)",
+        "Grease a large baking dish with butter or margarine, add the macaroni mixture and sprinkle with additional nutmeg. Bake at 350° F for 1 hour or until golden brown. (Pudding should be firm enough to cut, but moist and not dry)."
+      ],
+      "notes": "couldn't generate — needs manual pass"
+    },
+    {
+      "diet": "low-fat",
+      "ingredients": [
+        {
+          "item": "Macaroni",
+          "amount": "4 cups"
+        },
+        {
+          "item": "Evaporated Milk",
+          "amount": "4 cups"
+        },
+        {
+          "item": "Water",
+          "amount": "1 cup"
+        },
+        {
+          "item": "Sugar",
+          "amount": "3 Cups"
+        },
+        {
+          "item": "Salt",
+          "amount": "2 tsp"
+        },
+        {
+          "item": "Eggs",
+          "amount": "4"
+        },
+        {
+          "item": "Butter",
+          "amount": "1/4 cup"
+        },
+        {
+          "item": "Raisins",
+          "amount": "1 cup"
+        },
+        {
+          "item": "Nutmeg",
+          "amount": "2 1/2 Tsp"
+        },
+        {
+          "item": "Vanilla",
+          "amount": "2 tablespoons"
+        }
+      ],
+      "steps": [
+        "Add macaroni to large pan with sufficient water to cover (approximately 4 cups). Add salt and bring to boil until tender (approximately 25 -30 minutes). Meanwhile, beat eggs and sugar together, then add vanilla and nutmeg. Mix well and set aside. In a separate medium sauce pan, heat evaporated milk plus 1 cup of water and butter to almost a boiling point. Remove from heat and add to sugar mixture. Drain cooked macaroni. Add macaroni and raisins to the milk mixture and stir well. (This mixture will have quite a bit of liquid, but this will form a nice custard textured pudding once baked.)",
+        "Grease a large baking dish with butter or margarine, add the macaroni mixture and sprinkle with additional nutmeg. Bake at 350° F for 1 hour or until golden brown. (Pudding should be firm enough to cut, but moist and not dry)."
+      ],
+      "notes": "couldn't generate — needs manual pass"
+    }
+  ],
+  "sourceMealDbId": "53504",
+  "narrativeBody": "[Narrative draft pending — auto-generation failed]"
+}
