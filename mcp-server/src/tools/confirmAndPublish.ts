@@ -3,7 +3,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { createGitHubClient, commitFilesToMain, listFiles, type FileWrite } from '../github.js';
 import { readDraft, findDraftKind, deleteDraftBranch, type DraftSet } from '../drafts.js';
 import { readCollection, slugify, uniqueSlug } from '../catalog.js';
-import { buildPostFrontmatter, renderFrontmatterYaml } from '../render.js';
+import { buildPostFrontmatter, renderPostMdx } from '../render.js';
 import { postSchema, setSchema, productSchema } from '@lhr/schemas';
 
 type GitHubClient = ReturnType<typeof createGitHubClient>;
@@ -21,6 +21,16 @@ async function publishPost(client: GitHubClient, draftId: string) {
   }
   if (draft.photos.length === 0) {
     throw new Error('Draft has no cover photo; attach at least one photo before publishing.');
+  }
+  if (draft.postType === 'recipe' && draft.variants.length > 0) {
+    const unresolvedDiets = draft.variants
+      .filter((v) => v.notes === "couldn't generate — needs manual pass")
+      .map((v) => v.diet);
+    if (unresolvedDiets.length > 0) {
+      throw new Error(
+        `Some diet variants couldn't be generated and need a manual pass before publishing: ${unresolvedDiets.join(', ')}. Edit or remove them first.`,
+      );
+    }
   }
 
   const frontmatter = buildPostFrontmatter(draft);
@@ -46,7 +56,7 @@ async function publishPost(client: GitHubClient, draftId: string) {
   });
 
   const files: FileWrite[] = [
-    { path: `src/content/posts/${slug}.mdx`, content: renderFrontmatterYaml(frontmatter) },
+    { path: `src/content/posts/${slug}.mdx`, content: renderPostMdx(draft) },
     ...draft.pendingAffiliateLinks.map((link) => ({
       path: `src/content/affiliate-links/${link.id}.json`,
       content: JSON.stringify({ label: link.label, url: link.url, tag: link.tag }, null, 2),

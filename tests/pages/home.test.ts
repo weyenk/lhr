@@ -58,9 +58,9 @@ describe('home page', () => {
     expect(html).toContain('aria-current="page"');
   });
 
-  it('has a final page with just the single oldest leftover post', () => {
+  it('has a final page with just the oldest leftover posts', () => {
     const html = readFileSync('dist/5/index.html', 'utf-8');
-    expect((html.match(/article-card/g) ?? []).length).toBe(1);
+    expect((html.match(/article-card/g) ?? []).length).toBe(3);
     expect(html).toContain('href="/posts/arancini-a-sicilian-street-food-sensation/"');
   });
 
@@ -87,8 +87,8 @@ describe('home page', () => {
     const page2 = readFileSync('dist/2/index.html', 'utf-8');
     expect(countItems(page2)).toBe(3);
 
-    // Page 5 (last): no hero, 1 leftover card = 200px -> round(200 / 380) = 1
-    // would-be item, but the sidebar now starts right after this page's own
+    // Page 5 (last): no hero, 3 leftover cards = 600px -> round(600 / 380) = 2
+    // would-be items, but the sidebar starts right after this page's own last
     // card (sidebarOffset) and there are no posts left in the pool past that
     // point, so the sidebar is empty here.
     const page5 = readFileSync('dist/5/index.html', 'utf-8');

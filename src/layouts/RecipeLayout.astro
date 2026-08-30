@@ -4,6 +4,7 @@ import PostTag from '../components/PostTag.astro';
 import ProductCard from '../components/ProductCard.astro';
 import AffiliateLink from '../components/AffiliateLink.astro';
 import AffiliateDisclosureBanner from '../components/AffiliateDisclosureBanner.astro';
+import RecipeVariantTabs from '../components/RecipeVariantTabs.astro';
 import { render, type CollectionEntry } from 'astro:content';
 import { getEntriesByIds } from '../lib/content';
 
@@ -74,22 +75,26 @@ const recipeMeta = [
       </div>
     )}
     </br>
-    <div class="recipe-post__layout grid grid-cols-1 gap-6 md:grid-cols-12">
-      <div class="order-2 md:order-none md:col-span-8">
-        <h2 class={`font-heading text-sm font-bold uppercase tracking-wide text-accent-secondary ${recipeMeta ? 'mb-1' : 'mb-4'}`}>Recipe</h2>
-        {recipeMeta && <p class="recipe-post__meta mb-4 text-sm italic text-text">{recipeMeta}</p>}
-        <ol class="recipe-post__steps list-decimal space-y-2 pl-5 text-sm">
-          {data.steps.map((step) => <li>{step}</li>)}
-        </ol>
+    {data.variants && data.variants.length > 0 ? (
+      <RecipeVariantTabs variants={data.variants} recipeMeta={recipeMeta} />
+    ) : (
+      <div class="recipe-post__layout grid grid-cols-1 gap-6 md:grid-cols-12">
+        <div class="order-2 md:order-none md:col-span-8">
+          <h2 class={`font-heading text-sm font-bold uppercase tracking-wide text-accent-secondary ${recipeMeta ? 'mb-1' : 'mb-4'}`}>Recipe</h2>
+          {recipeMeta && <p class="recipe-post__meta mb-4 text-sm italic text-text">{recipeMeta}</p>}
+          <ol class="recipe-post__steps list-decimal space-y-2 pl-5 text-sm">
+            {data.steps.map((step) => <li>{step}</li>)}
+          </ol>
+        </div>
+        <div class="order-1 md:order-none md:col-span-4">
+          <h2 class="mb-1 font-heading text-sm font-bold uppercase tracking-wide text-accent-secondary">Ingredients</h2>
+          <ul class="recipe-post__ingredients rounded-lg bg-white p-4 text-sm shadow-md">
+            {data.ingredients.map((ingredient) => (
+              <li class="mb-1">• {ingredient.amount ? `${ingredient.amount} ` : ''} {ingredient.item}</li>
+            ))}
+          </ul>
+        </div>
       </div>
-      <div class="order-1 md:order-none md:col-span-4">
-        <h2 class="mb-1 font-heading text-sm font-bold uppercase tracking-wide text-accent-secondary">Ingredients</h2>
-        <ul class="recipe-post__ingredients rounded-lg bg-white p-4 text-sm shadow-md">
-          {data.ingredients.map((ingredient) => (
-            <li class="mb-1">• {ingredient.amount ? `${ingredient.amount} ` : ''} {ingredient.item}</li>
-          ))}
-        </ul>
-      </div>
-    </div>
+    )}
   </article>
 </BaseLayout>

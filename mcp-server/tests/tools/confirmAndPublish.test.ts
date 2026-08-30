@@ -56,6 +56,7 @@ const validRecipeDraft = {
   affiliateLinkIds: [],
   pendingAffiliateLinks: [{ id: 'sauce-ab12', label: 'Sauce', url: 'https://vendor.example.com/sauce', tag: 'sauce' }],
   pendingIngredientLinks: [{ ingredient: 'jerk seasoning', affiliateLinkId: 'sauce-ab12' }],
+  variants: [],
 };
 
 beforeEach(() => {
@@ -215,6 +216,90 @@ describe('confirm_and_publish (post)', () => {
     registerConfirmAndPublish(server as never, 'token');
 
     await expect(server.call('confirm_and_publish', { draftId: 'nope' })).rejects.toThrow(/No draft found/);
+  });
+
+  it('writes the narrative body into the committed .mdx file alongside the frontmatter', async () => {
+    draftsMock.findDraftKind.mockResolvedValue('post');
+    draftsMock.readDraft.mockResolvedValue({
+      ...validRecipeDraft,
+      narrativeBody: 'This jerk chicken is a weeknight favorite in our house.',
+    });
+    catalogMock.uniqueSlug.mockResolvedValue('jerk-chicken');
+    githubMock.commitFilesToMain.mockResolvedValue('commit-sha');
+
+    const server = fakeServer();
+    registerConfirmAndPublish(server as never, 'token');
+
+    await server.call('confirm_and_publish', { draftId: 'abc1' });
+
+    const [, files] = githubMock.commitFilesToMain.mock.calls[0] as [unknown, { path: string; content: string }[]];
+    const postFile = files.find((f) => f.path === 'src/content/posts/jerk-chicken.mdx');
+    expect(postFile?.content).toContain('This jerk chicken is a weeknight favorite in our house.');
+    expect(postFile?.content).toContain('title: Jerk Chicken');
+  });
+
+  it('escapes MDX-unsafe characters in the narrative body before committing', async () => {
+    draftsMock.findDraftKind.mockResolvedValue('post');
+    draftsMock.readDraft.mockResolvedValue({
+      ...validRecipeDraft,
+      narrativeBody: 'Ready in <10 minutes, add sugar {optional}.',
+    });
+    catalogMock.uniqueSlug.mockResolvedValue('jerk-chicken');
+    githubMock.commitFilesToMain.mockResolvedValue('commit-sha');
+
+    const server = fakeServer();
+    registerConfirmAndPublish(server as never, 'token');
+
+    await server.call('confirm_and_publish', { draftId: 'abc1' });
+
+    const [, files] = githubMock.commitFilesToMain.mock.calls[0] as [unknown, { path: string; content: string }[]];
+    const postFile = files.find((f) => f.path === 'src/content/posts/jerk-chicken.mdx');
+    expect(postFile?.content).toContain('Ready in &lt;10 minutes, add sugar \\{optional\\}.');
+  });
+
+  it('rejects publishing a recipe draft when a variant still needs a manual pass', async () => {
+    draftsMock.findDraftKind.mockResolvedValue('post');
+    draftsMock.readDraft.mockResolvedValue({
+      ...validRecipeDraft,
+      variants: [
+        { diet: 'original', ingredients: [{ item: 'Chicken' }], steps: ['Grill it'] },
+        {
+          diet: 'low-fat',
+          ingredients: [{ item: 'Chicken' }],
+          steps: ['Grill it'],
+          notes: "couldn't generate — needs manual pass",
+        },
+        { diet: 'vegan', ingredients: [{ item: 'Plant-based chicken' }], steps: ['Grill it'] },
+      ],
+    });
+
+    const server = fakeServer();
+    registerConfirmAndPublish(server as never, 'token');
+
+    await expect(server.call('confirm_and_publish', { draftId: 'abc1' })).rejects.toThrow(/low-fat/);
+    expect(githubMock.commitFilesToMain).not.toHaveBeenCalled();
+    expect(draftsMock.deleteDraftBranch).not.toHaveBeenCalled();
+  });
+
+  it('publishes a recipe draft normally when all variants are clean', async () => {
+    draftsMock.findDraftKind.mockResolvedValue('post');
+    draftsMock.readDraft.mockResolvedValue({
+      ...validRecipeDraft,
+      variants: [
+        { diet: 'original', ingredients: [{ item: 'Chicken' }], steps: ['Grill it'] },
+        { diet: 'vegan', ingredients: [{ item: 'Plant-based chicken' }], steps: ['Grill it'] },
+      ],
+    });
+    catalogMock.uniqueSlug.mockResolvedValue('jerk-chicken');
+    githubMock.commitFilesToMain.mockResolvedValue('commit-sha');
+
+    const server = fakeServer();
+    registerConfirmAndPublish(server as never, 'token');
+
+    const result = (await server.call('confirm_and_publish', { draftId: 'abc1' })) as { content: { text: string }[] };
+
+    expect(githubMock.commitFilesToMain).toHaveBeenCalled();
+    expect(result.content[0].text).toContain('jerk-chicken');
   });
 });
 

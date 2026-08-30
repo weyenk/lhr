@@ -43,3 +43,37 @@ Claude.ai (the downstream OAuth client) and GitHub (the upstream identity provid
 **Resolved — step 2's project root and the shared schemas:** the first real deploy confirmed the risk flagged here previously: `confirmAndPublish.ts`'s original `../../../src/content/schemas` import (reaching outside `mcp-server/`) broke the build, not just the runtime bundle. It widened TypeScript's inferred `rootDir` to the repo root, which shifted the compiled output down an extra directory level and made Vercel's entrypoint search (`app.js`/`index.js`/`server.js`/`src/...`) come up empty. The fix: the schemas now live in `packages/schemas` (an `@lhr/schemas` npm workspace package), depended on normally by both the site and `mcp-server/`; `src/content/schemas.ts` is now a one-line re-export so the site's own imports were untouched. `mcp-server/package.json`'s `build` script builds `@lhr/schemas` first.
 
 **Update — explicit bundling replaces relying on Vercel's entrypoint search:** rather than continuing to depend on Vercel auto-discovering a compiled entrypoint under `dist/`, `mcp-server/package.json`'s `build` script now runs `tsc --noEmit` for type-checking only and then `node scripts/bundle.mjs`, which uses esbuild to bundle `api/index.ts` and `src/server.ts` (dependencies left external, i.e. resolved from `node_modules` at runtime) directly into `dist/api/index.js` and `dist/src/server.js`. `vercel.json` rewrites all requests to `/api`, which Vercel's zero-config Node function detection picks up from `api/index.ts` — the explicit bundle output gives that a known, single-file artifact to run instead of depending on tsc's mirrored directory layout.
+
+## Weekly recipe-variant generator (local cron)
+
+`mcp-server/scripts/generate-weekly-variant-recipe.ts` runs standalone, outside the deployed
+Vercel project — invoked by your own `cron`/`launchd` entry, not a hosted service. It needs two
+env vars. `npm run generate:weekly-recipe` loads them from `mcp-server/.env` automatically (via
+Node's `--env-file-if-exists`, wired into the npm script — that file is gitignored, never
+committed) if present, or falls back to whatever's already in your shell if it's not:
+
+- `GITHUB_TOKEN` — a GitHub personal access token with repo write access (same token used by
+  `npm run backfill:ingredient-links`).
+- `OPENROUTER_API_KEY` — an OpenRouter API key (free tier is sufficient). By default the script
+  sends a fallback chain of three free models across three different upstream providers (Google
+  AI Studio, NVIDIA, Z.ai — see `DEFAULT_MODELS` in `mcp-server/src/openrouter.ts`), so OpenRouter
+  automatically tries the next one if one provider's shared free pool is rate-limited. Set
+  `OPENROUTER_MODEL` to force a single specific model instead (bypasses the fallback chain
+  entirely) — check `https://openrouter.ai/api/v1/models` for current `:free` slugs; OpenRouter
+  has retired free model slugs before without notice.
+
+Run it manually with:
+
+```bash
+cd mcp-server && npm run generate:weekly-recipe
+```
+
+Example weekly `crontab -e` entry (Sunday 6am, loading env vars from a local `.env` file):
+
+```cron
+0 6 * * 0 cd /path/to/lhr/mcp-server && env $(cat ../.env | xargs) npx tsx scripts/generate-weekly-variant-recipe.ts >> /tmp/weekly-recipe.log 2>&1
+```
+
+The script only ever creates a draft (via the same `createDraft` the manual authoring flow uses)
+— it never publishes. Review and publish it like any other draft through the normal chat-based
+authoring flow.
