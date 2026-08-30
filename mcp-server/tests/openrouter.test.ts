@@ -32,11 +32,16 @@ describe('callOpenRouter', () => {
       }),
     );
     const body = JSON.parse((global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body);
-    expect(body.model).toBe('google/gemma-4-31b-it:free');
+    expect(body.model).toBeUndefined();
+    expect(body.models).toEqual([
+      'google/gemma-4-31b-it:free',
+      'nvidia/nemotron-3-super-120b-a12b:free',
+      'z-ai/glm-5.2:free',
+    ]);
     expect(body.messages).toEqual([{ role: 'user', content: 'Substitute: bacon' }]);
   });
 
-  it('uses OPENROUTER_MODEL when set instead of the default', async () => {
+  it('uses OPENROUTER_MODEL as the sole model when set, bypassing the default fallback chain', async () => {
     process.env.OPENROUTER_MODEL = 'some/other-model:free';
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
@@ -46,7 +51,7 @@ describe('callOpenRouter', () => {
     await callOpenRouter([{ role: 'user', content: 'hi' }]);
 
     const body = JSON.parse((global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body);
-    expect(body.model).toBe('some/other-model:free');
+    expect(body.models).toEqual(['some/other-model:free']);
   });
 
   it('throws when OPENROUTER_API_KEY is not set', async () => {

@@ -1,7 +1,19 @@
 import { requireEnv } from './blob.js';
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
-const DEFAULT_MODEL = 'google/gemma-4-31b-it:free';
+// Each of these free models routes through a different upstream provider's own shared free
+// pool (Google AI Studio, NVIDIA, Z.ai respectively). OpenRouter tries them in order server-side
+// within a single request/response cycle and falls through automatically on an error (including
+// rate limiting) - see https://openrouter.ai/docs/guides/routing/model-fallbacks. This matters
+// because a single free model's shared pool getting saturated is common and NOT something our
+// own request pacing can fix (it's rate-limited upstream, shared across every OpenRouter user on
+// that model, regardless of how slowly we call it) - spreading the fallback chain across
+// different providers means one saturated pool doesn't take down the whole run.
+const DEFAULT_MODELS = [
+  'google/gemma-4-31b-it:free',
+  'nvidia/nemotron-3-super-120b-a12b:free',
+  'z-ai/glm-5.2:free',
+];
 const MAX_RATE_LIMIT_ATTEMPTS = 4;
 const DEFAULT_RATE_LIMIT_BACKOFF_MS = 5000;
 
@@ -30,7 +42,7 @@ async function safeResponseText(response: Response): Promise<string> {
 
 export async function callOpenRouter(messages: OpenRouterMessage[]): Promise<string> {
   const apiKey = requireEnv('OPENROUTER_API_KEY');
-  const model = process.env.OPENROUTER_MODEL ?? DEFAULT_MODEL;
+  const models = process.env.OPENROUTER_MODEL ? [process.env.OPENROUTER_MODEL] : DEFAULT_MODELS;
 
   const doFetch = () =>
     fetch(OPENROUTER_URL, {
@@ -39,7 +51,7 @@ export async function callOpenRouter(messages: OpenRouterMessage[]): Promise<str
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ model, messages }),
+      body: JSON.stringify({ models, messages }),
     });
 
   let response = await doFetch();
