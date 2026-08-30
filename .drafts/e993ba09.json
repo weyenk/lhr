@@ -1,0 +1,339 @@
+{
+  "kind": "post",
+  "postType": "recipe",
+  "title": "Fettuccine Alfredo",
+  "ingredients": [
+    {
+      "item": "Fettuccine",
+      "amount": "1 lb"
+    },
+    {
+      "item": "Heavy Cream",
+      "amount": "1/2 cup"
+    },
+    {
+      "item": "Butter",
+      "amount": "1/2 cup"
+    },
+    {
+      "item": "Parmesan",
+      "amount": "1/2 cup"
+    },
+    {
+      "item": "Parsley",
+      "amount": "2 tbsp"
+    },
+    {
+      "item": "Black Pepper"
+    }
+  ],
+  "steps": [
+    "Cook pasta according to package instructions in a large pot of boiling water and salt.",
+    "Add heavy cream and butter to a large skillet over medium heat until the cream bubbles and the butter melts.",
+    "Whisk in parmesan and add seasoning (salt and black pepper).",
+    "Let the sauce thicken slightly and then add the pasta and toss until coated in sauce.",
+    "Garnish with parsley, and it's ready."
+  ],
+  "sections": [],
+  "photos": [
+    {
+      "url": "https://www.themealdb.com/images/media/meals/0jv5gx1661040802.jpg",
+      "caption": "Fettuccine Alfredo"
+    }
+  ],
+  "kitchenwareIds": [],
+  "affiliateLinkIds": [],
+  "pendingAffiliateLinks": [],
+  "pendingIngredientLinks": [],
+  "variants": [
+    {
+      "diet": "original",
+      "ingredients": [
+        {
+          "item": "Fettuccine",
+          "amount": "1 lb"
+        },
+        {
+          "item": "Heavy Cream",
+          "amount": "1/2 cup"
+        },
+        {
+          "item": "Butter",
+          "amount": "1/2 cup"
+        },
+        {
+          "item": "Parmesan",
+          "amount": "1/2 cup"
+        },
+        {
+          "item": "Parsley",
+          "amount": "2 tbsp"
+        },
+        {
+          "item": "Black Pepper"
+        }
+      ],
+      "steps": [
+        "Cook pasta according to package instructions in a large pot of boiling water and salt.",
+        "Add heavy cream and butter to a large skillet over medium heat until the cream bubbles and the butter melts.",
+        "Whisk in parmesan and add seasoning (salt and black pepper).",
+        "Let the sauce thicken slightly and then add the pasta and toss until coated in sauce.",
+        "Garnish with parsley, and it's ready."
+      ]
+    },
+    {
+      "diet": "gluten-free",
+      "ingredients": [
+        {
+          "item": "Fettuccine",
+          "amount": "1 lb"
+        },
+        {
+          "item": "Heavy Cream",
+          "amount": "1/2 cup"
+        },
+        {
+          "item": "Butter",
+          "amount": "1/2 cup"
+        },
+        {
+          "item": "Parmesan",
+          "amount": "1/2 cup"
+        },
+        {
+          "item": "Parsley",
+          "amount": "2 tbsp"
+        },
+        {
+          "item": "Black Pepper"
+        }
+      ],
+      "steps": [
+        "Cook pasta according to package instructions in a large pot of boiling water and salt.",
+        "Add heavy cream and butter to a large skillet over medium heat until the cream bubbles and the butter melts.",
+        "Whisk in parmesan and add seasoning (salt and black pepper).",
+        "Let the sauce thicken slightly and then add the pasta and toss until coated in sauce.",
+        "Garnish with parsley, and it's ready."
+      ],
+      "notes": "couldn't generate — needs manual pass"
+    },
+    {
+      "diet": "vegan",
+      "ingredients": [
+        {
+          "item": "Fettuccine",
+          "amount": "1 lb"
+        },
+        {
+          "item": "Heavy Cream",
+          "amount": "1/2 cup"
+        },
+        {
+          "item": "Butter",
+          "amount": "1/2 cup"
+        },
+        {
+          "item": "Parmesan",
+          "amount": "1/2 cup"
+        },
+        {
+          "item": "Parsley",
+          "amount": "2 tbsp"
+        },
+        {
+          "item": "Black Pepper"
+        }
+      ],
+      "steps": [
+        "Cook pasta according to package instructions in a large pot of boiling water and salt.",
+        "Add heavy cream and butter to a large skillet over medium heat until the cream bubbles and the butter melts.",
+        "Whisk in parmesan and add seasoning (salt and black pepper).",
+        "Let the sauce thicken slightly and then add the pasta and toss until coated in sauce.",
+        "Garnish with parsley, and it's ready."
+      ],
+      "notes": "couldn't generate — needs manual pass"
+    },
+    {
+      "diet": "vegetarian",
+      "ingredients": [
+        {
+          "item": "Fettuccine",
+          "amount": "1 lb"
+        },
+        {
+          "item": "Heavy Cream",
+          "amount": "1/2 cup"
+        },
+        {
+          "item": "Butter",
+          "amount": "1/2 cup"
+        },
+        {
+          "item": "Parmesan",
+          "amount": "1/2 cup"
+        },
+        {
+          "item": "Parsley",
+          "amount": "2 tbsp"
+        },
+        {
+          "item": "Black Pepper"
+        }
+      ],
+      "steps": [
+        "Cook pasta according to package instructions in a large pot of boiling water and salt.",
+        "Add heavy cream and butter to a large skillet over medium heat until the cream bubbles and the butter melts.",
+        "Whisk in parmesan and add seasoning (salt and black pepper).",
+        "Let the sauce thicken slightly and then add the pasta and toss until coated in sauce.",
+        "Garnish with parsley, and it's ready."
+      ],
+      "notes": "couldn't generate — needs manual pass"
+    },
+    {
+      "diet": "pescatarian",
+      "ingredients": [
+        {
+          "item": "Fettuccine",
+          "amount": "1 lb"
+        },
+        {
+          "item": "Heavy Cream",
+          "amount": "1/2 cup"
+        },
+        {
+          "item": "Butter",
+          "amount": "1/2 cup"
+        },
+        {
+          "item": "Parmesan",
+          "amount": "1/2 cup"
+        },
+        {
+          "item": "Parsley",
+          "amount": "2 tbsp"
+        },
+        {
+          "item": "Black Pepper"
+        }
+      ],
+      "steps": [
+        "Cook pasta according to package instructions in a large pot of boiling water and salt.",
+        "Add heavy cream and butter to a large skillet over medium heat until the cream bubbles and the butter melts.",
+        "Whisk in parmesan and add seasoning (salt and black pepper).",
+        "Let the sauce thicken slightly and then add the pasta and toss until coated in sauce.",
+        "Garnish with parsley, and it's ready."
+      ],
+      "notes": "couldn't generate — needs manual pass"
+    },
+    {
+      "diet": "low-carb",
+      "ingredients": [
+        {
+          "item": "Fettuccine",
+          "amount": "1 lb"
+        },
+        {
+          "item": "Heavy Cream",
+          "amount": "1/2 cup"
+        },
+        {
+          "item": "Butter",
+          "amount": "1/2 cup"
+        },
+        {
+          "item": "Parmesan",
+          "amount": "1/2 cup"
+        },
+        {
+          "item": "Parsley",
+          "amount": "2 tbsp"
+        },
+        {
+          "item": "Black Pepper"
+        }
+      ],
+      "steps": [
+        "Cook pasta according to package instructions in a large pot of boiling water and salt.",
+        "Add heavy cream and butter to a large skillet over medium heat until the cream bubbles and the butter melts.",
+        "Whisk in parmesan and add seasoning (salt and black pepper).",
+        "Let the sauce thicken slightly and then add the pasta and toss until coated in sauce.",
+        "Garnish with parsley, and it's ready."
+      ],
+      "notes": "couldn't generate — needs manual pass"
+    },
+    {
+      "diet": "low-salt",
+      "ingredients": [
+        {
+          "item": "Fettuccine",
+          "amount": "1 lb"
+        },
+        {
+          "item": "Heavy Cream",
+          "amount": "1/2 cup"
+        },
+        {
+          "item": "Butter",
+          "amount": "1/2 cup"
+        },
+        {
+          "item": "Parmesan",
+          "amount": "1/2 cup"
+        },
+        {
+          "item": "Parsley",
+          "amount": "2 tbsp"
+        },
+        {
+          "item": "Black Pepper"
+        }
+      ],
+      "steps": [
+        "Cook pasta according to package instructions in a large pot of boiling water and salt.",
+        "Add heavy cream and butter to a large skillet over medium heat until the cream bubbles and the butter melts.",
+        "Whisk in parmesan and add seasoning (salt and black pepper).",
+        "Let the sauce thicken slightly and then add the pasta and toss until coated in sauce.",
+        "Garnish with parsley, and it's ready."
+      ],
+      "notes": "couldn't generate — needs manual pass"
+    },
+    {
+      "diet": "low-fat",
+      "ingredients": [
+        {
+          "item": "Fettuccine",
+          "amount": "1 lb"
+        },
+        {
+          "item": "Heavy Cream",
+          "amount": "1/2 cup"
+        },
+        {
+          "item": "Butter",
+          "amount": "1/2 cup"
+        },
+        {
+          "item": "Parmesan",
+          "amount": "1/2 cup"
+        },
+        {
+          "item": "Parsley",
+          "amount": "2 tbsp"
+        },
+        {
+          "item": "Black Pepper"
+        }
+      ],
+      "steps": [
+        "Cook pasta according to package instructions in a large pot of boiling water and salt.",
+        "Add heavy cream and butter to a large skillet over medium heat until the cream bubbles and the butter melts.",
+        "Whisk in parmesan and add seasoning (salt and black pepper).",
+        "Let the sauce thicken slightly and then add the pasta and toss until coated in sauce.",
+        "Garnish with parsley, and it's ready."
+      ],
+      "notes": "couldn't generate — needs manual pass"
+    }
+  ],
+  "sourceMealDbId": "53064",
+  "narrativeBody": "[Narrative draft pending — auto-generation failed]"
+}
