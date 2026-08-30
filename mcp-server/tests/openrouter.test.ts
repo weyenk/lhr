@@ -55,9 +55,23 @@ describe('callOpenRouter', () => {
   });
 
   it('throws immediately when the request fails with a non-429 status', async () => {
-    global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 500 }) as unknown as typeof fetch;
+    global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 500, text: async () => '' }) as unknown as typeof fetch;
     await expect(callOpenRouter([{ role: 'user', content: 'hi' }])).rejects.toThrow(/500/);
     expect(global.fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('includes the response body in the thrown error, so the real reason is visible', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 402,
+      text: async () => '{"error":{"message":"Insufficient credits for this request","code":402}}',
+    }) as unknown as typeof fetch;
+    await expect(callOpenRouter([{ role: 'user', content: 'hi' }])).rejects.toThrow(/Insufficient credits/);
+  });
+
+  it('does not crash when the error response has no body/text() available', async () => {
+    global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 500 }) as unknown as typeof fetch;
+    await expect(callOpenRouter([{ role: 'user', content: 'hi' }])).rejects.toThrow(/500/);
   });
 
   it('retries a 429 (honoring Retry-After) and succeeds on a later attempt', async () => {
@@ -80,14 +94,15 @@ describe('callOpenRouter', () => {
     expect(calls).toBe(3);
   });
 
-  it('throws after exhausting retries when persistently rate limited', async () => {
+  it('throws after exhausting retries when persistently rate limited, with the body in the error', async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: false,
       status: 429,
       headers: new Headers({ 'retry-after': '0' }),
+      text: async () => '{"error":{"message":"Rate limit exceeded","code":429}}',
     }) as unknown as typeof fetch;
 
-    await expect(callOpenRouter([{ role: 'user', content: 'hi' }])).rejects.toThrow(/429/);
+    await expect(callOpenRouter([{ role: 'user', content: 'hi' }])).rejects.toThrow(/429.*Rate limit exceeded/s);
     expect(global.fetch).toHaveBeenCalledTimes(4);
   });
 

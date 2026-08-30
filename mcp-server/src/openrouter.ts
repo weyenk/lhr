@@ -20,6 +20,14 @@ function retryDelayMs(response: Response): number {
   return Number.isFinite(seconds) && seconds >= 0 ? seconds * 1000 : DEFAULT_RATE_LIMIT_BACKOFF_MS;
 }
 
+async function safeResponseText(response: Response): Promise<string> {
+  try {
+    return await response.text();
+  } catch {
+    return '';
+  }
+}
+
 export async function callOpenRouter(messages: OpenRouterMessage[]): Promise<string> {
   const apiKey = requireEnv('OPENROUTER_API_KEY');
   const model = process.env.OPENROUTER_MODEL ?? DEFAULT_MODEL;
@@ -41,7 +49,8 @@ export async function callOpenRouter(messages: OpenRouterMessage[]): Promise<str
   }
 
   if (!response.ok) {
-    throw new Error(`OpenRouter request failed: ${response.status}`);
+    const detail = await safeResponseText(response);
+    throw new Error(`OpenRouter request failed: ${response.status}${detail ? ` — ${detail}` : ''}`);
   }
 
   const data = (await response.json()) as { choices?: { message?: { content?: string } }[] };
