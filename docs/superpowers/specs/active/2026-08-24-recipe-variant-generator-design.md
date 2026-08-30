@@ -17,6 +17,17 @@ serverless function timeout (300s default) — this pipeline makes several seque
 variants × ingredient substitution + step rewriting, plus the narrative), so parallelizing
 independent calls where safe may be necessary to stay under it.
 
+**Status as merged to `main` (2026-08-30):** the implementation that landed still uses the
+original §6 approach — a standalone script (`mcp-server/scripts/generate-weekly-variant-recipe.ts`,
+`npm run generate:weekly-recipe`) invoked by the user's own cron/launchd, not the orchestrator
+model this amendment describes. `runWeeklyVariantRecipeGeneration()` in
+`mcp-server/src/generateWeeklyVariantRecipe.ts` is already an exported async function the script
+thinly wraps, so adapting it to be called in-process from a Vercel Cron endpoint later is a small
+follow-up, not a rewrite — but that follow-up hasn't been done. Whoever picks up the
+local/shared-orchestrator work should either do that adaptation or explicitly re-confirm the
+cron/launchd approach is fine to keep.
+
+
 ## 1. Overview & Goals
 
 Today every recipe post is written by hand through the `site-help` MCP flow: one recipe, one
