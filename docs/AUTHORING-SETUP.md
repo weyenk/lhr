@@ -48,7 +48,9 @@ Claude.ai (the downstream OAuth client) and GitHub (the upstream identity provid
 
 `mcp-server/scripts/generate-weekly-variant-recipe.ts` runs standalone, outside the deployed
 Vercel project — invoked by your own `cron`/`launchd` entry, not a hosted service. It needs two
-env vars, set in a local `.env` file (or your shell) alongside the `mcp-server/` checkout:
+env vars. `npm run generate:weekly-recipe` loads them from `mcp-server/.env` automatically (via
+Node's `--env-file-if-exists`, wired into the npm script — that file is gitignored, never
+committed) if present, or falls back to whatever's already in your shell if it's not:
 
 - `GITHUB_TOKEN` — a GitHub personal access token with repo write access (same token used by
   `npm run backfill:ingredient-links`).
