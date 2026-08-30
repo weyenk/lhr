@@ -1,0 +1,50 @@
+---
+import { requireAdminSession } from '../../lib/auth.js';
+import { getPool } from '../../lib/db.js';
+import { listCompetitorsByStatus, getLatestReport, type CompetitorReport } from '@lhr/db';
+
+const authResult = await requireAdminSession(Astro);
+if ('response' in authResult) {
+  return authResult.response;
+}
+
+const pool = getPool();
+const tracked = await listCompetitorsByStatus(pool, 'tracked');
+const reports = new Map<number, CompetitorReport | null>();
+for (const competitor of tracked) {
+  reports.set(competitor.id, await getLatestReport(pool, competitor.id));
+}
+---
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Competitors — LHR Office</title>
+    <style>
+      body { font-family: sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem; }
+      .card { border: 1px solid #ddd; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; }
+      .cycle { font-size: 0.85rem; color: #666; }
+      .empty { color: #888; font-style: italic; }
+      nav a { margin-right: 1rem; }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <a href="/">Home</a>
+      <a href="/competitors/candidates/">Candidates</a>
+      <a href="/competitors/keywords/">SEO keywords</a>
+    </nav>
+    <h1>Tracked competitors</h1>
+    {tracked.length === 0 && <p class="empty">No tracked competitors yet — approve a candidate first.</p>}
+    {tracked.map((competitor) => {
+      const report = reports.get(competitor.id);
+      return (
+        <div class="card">
+          <h2>{competitor.name ?? competitor.domain}</h2>
+          <p class="cycle">{competitor.domain}{report ? ` — cycle ${report.cycleId}` : ''}</p>
+          {report ? <p>{report.summary}</p> : <p class="empty">No report yet — the next weekly cycle will generate one.</p>}
+        </div>
+      );
+    })}
+  </body>
+</html>

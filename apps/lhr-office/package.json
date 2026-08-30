@@ -1,0 +1,25 @@
+{
+  "name": "lhr-office",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@astrojs/vercel": "^8.0.0",
+    "@lhr/db": "*",
+    "@lhr/github": "*",
+    "@lhr/schemas": "*",
+    "astro": "^5.0.0",
+    "pg": "^8.13.0"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.11.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}

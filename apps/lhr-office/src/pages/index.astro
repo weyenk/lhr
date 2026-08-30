@@ -1,0 +1,24 @@
+---
+import { requireAdminSession } from '../lib/auth.js';
+
+const authResult = await requireAdminSession(Astro);
+if ('response' in authResult) {
+  return authResult.response;
+}
+---
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>LHR Office</title>
+  </head>
+  <body>
+    <h1>LHR Office</h1>
+    <ul>
+      <li><a href="/trends/">Trends report</a></li>
+      <li><a href="/admin/">Admin</a></li>
+      <li><a href="/affiliate-review/">Affiliate candidate review</a></li>
+      <li><a href="/competitors/">Competitor analysis</a></li>
+    </ul>
+    <form method="POST" action="/api/logout"><button type="submit">Log out</button></form>
+  </body>
+</html>
