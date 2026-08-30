@@ -16,6 +16,12 @@ const DEFAULT_MODELS = [
 ];
 const MAX_RATE_LIMIT_ATTEMPTS = 4;
 const DEFAULT_RATE_LIMIT_BACKOFF_MS = 5000;
+// A hung free-tier model never throws on its own — without a hard cap a single stuck call can
+// eat the whole pipeline's time budget (this is exactly what took down loveheatrelationship's
+// sibling office app: apps/lhr-office's /status/run/recipe-variant-generator ran past Vercel's
+// 300s maxDuration and got killed mid-request). Bounding every request lets a stuck model fail
+// over (or fail fast) instead of hanging indefinitely.
+const REQUEST_TIMEOUT_MS = 25_000;
 
 export interface OpenRouterMessage {
   role: 'system' | 'user';
@@ -40,7 +46,15 @@ async function safeResponseText(response: Response): Promise<string> {
   }
 }
 
-export async function callOpenRouter(messages: OpenRouterMessage[]): Promise<string> {
+// `deadline`, when given, is an epoch-ms cutoff for a whole multi-call pipeline (e.g. one diet
+// variant's worth of ingredient substitutions), not just this single request — see
+// dietSubstitutions.ts. Once it's passed, skip the network call entirely rather than spending
+// another REQUEST_TIMEOUT_MS finding out something already knows: the pipeline is out of time.
+export async function callOpenRouter(messages: OpenRouterMessage[], deadline?: number): Promise<string> {
+  if (deadline !== undefined && Date.now() >= deadline) {
+    throw new Error('OpenRouter call skipped: ran out of time for this pipeline run');
+  }
+
   const apiKey = requireEnv('OPENROUTER_API_KEY');
   const models = process.env.OPENROUTER_MODEL ? [process.env.OPENROUTER_MODEL] : DEFAULT_MODELS;
 
@@ -52,6 +66,7 @@ export async function callOpenRouter(messages: OpenRouterMessage[]): Promise<str
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ models, messages }),
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
 
   let response = await doFetch();

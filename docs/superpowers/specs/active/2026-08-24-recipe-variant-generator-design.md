@@ -192,6 +192,31 @@ Following the existing `mcp-server/tests/**` pattern:
 - Component test/snapshot for `RecipeVariantTabs` (tab switching shows the right ingredients/steps
   for each diet) alongside existing `tests/components`.
 
+## Implementation Note (added 2026-08-30, after a production incident)
+
+This pipeline now runs inside `apps/lhr-office`'s orchestrator (per the shared-orchestrator spec),
+whose Vercel function is capped at 300s. On 2026-08-30, `POST /status/run/recipe-variant-generator`
+ran past that cap and was killed by Vercel mid-request (`FUNCTION_INVOCATION_TIMEOUT`) — seven
+diets' worth of sequential, free-tier OpenRouter calls (§3), each of which could hang rather than
+throw, added up past the limit. Root cause and prior art (`ecff-website`'s `press-box` desk hit the
+identical failure mode) are in `docs/superpowers/plans/` history; the fix, layered onto §3/§8's
+existing per-variant retry-then-flag behavior:
+
+- `callOpenRouter` (`mcp-server/src/openrouter.ts`) now passes `AbortSignal.timeout(25_000)` to
+  every request, so a hung model fails fast instead of hanging indefinitely.
+- `generateAllVariants` (`mcp-server/src/dietSubstitutions.ts`) takes an overall deadline
+  (default: 180s from call time, leaving headroom under the 300s cap for the recipe pick,
+  narrative, and draft-creation steps around it). Once the deadline passes, every further
+  LLM-dependent substitution/step-rewrite call fails immediately (no network call), which the
+  existing two-attempt retry-then-flag logic already turns into a "couldn't generate — needs
+  manual pass" variant — the same UX as any other LLM failure, just triggered by running out of
+  time instead of erroring twice. Diets whose ingredients are fully covered by the static
+  substitution table are unaffected, since those never call the LLM at all.
+
+This keeps the whole job inside one Vercel invocation — no cross-invocation checkpointing was
+needed, since the deadline guarantees the job always finishes (successfully or partially flagged)
+well inside the timeout.
+
 ## Out of Scope
 
 - Nutritional computation (§1) — heuristic substitution only.

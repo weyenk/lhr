@@ -118,4 +118,36 @@ describe('callOpenRouter', () => {
     }) as unknown as typeof fetch;
     await expect(callOpenRouter([{ role: 'user', content: 'hi' }])).rejects.toThrow(/no message content/);
   });
+
+  it('bounds the request with an abort signal, so a hung model cannot stall the pipeline forever', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ choices: [{ message: { content: 'ok' } }] }),
+    }) as unknown as typeof fetch;
+
+    await callOpenRouter([{ role: 'user', content: 'hi' }]);
+
+    const options = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1];
+    expect(options.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it('skips the request and throws immediately once the given deadline has already passed', async () => {
+    global.fetch = vi.fn();
+    await expect(callOpenRouter([{ role: 'user', content: 'hi' }], Date.now() - 1)).rejects.toThrow(
+      /ran out of time/,
+    );
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it('still calls the model when the deadline has not passed yet', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ choices: [{ message: { content: 'ok' } }] }),
+    }) as unknown as typeof fetch;
+
+    const result = await callOpenRouter([{ role: 'user', content: 'hi' }], Date.now() + 60_000);
+
+    expect(result).toBe('ok');
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+  });
 });
