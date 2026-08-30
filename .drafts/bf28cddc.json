@@ -1,0 +1,599 @@
+{
+  "kind": "post",
+  "postType": "recipe",
+  "title": "Chilli prawn linguine",
+  "ingredients": [
+    {
+      "item": "Linguine Pasta",
+      "amount": "280g"
+    },
+    {
+      "item": "Sugar Snap Peas",
+      "amount": "200g"
+    },
+    {
+      "item": "Olive Oil",
+      "amount": "2 tblsp"
+    },
+    {
+      "item": "Garlic Clove",
+      "amount": "2 cloves chopped"
+    },
+    {
+      "item": "Red Chilli",
+      "amount": "1 large"
+    },
+    {
+      "item": "King Prawns",
+      "amount": "24 Skinned"
+    },
+    {
+      "item": "Cherry Tomatoes",
+      "amount": "12"
+    },
+    {
+      "item": "Basil Leaves",
+      "amount": "Handful"
+    },
+    {
+      "item": "Lettuce",
+      "amount": "Leaves"
+    },
+    {
+      "item": "Bread",
+      "amount": "to serve"
+    },
+    {
+      "item": "Fromage Frais",
+      "amount": "2 tbsp"
+    },
+    {
+      "item": "Lime",
+      "amount": "Grated Zest of 2"
+    },
+    {
+      "item": "Caster Sugar",
+      "amount": "2 tsp"
+    }
+  ],
+  "steps": [
+    "Mix the dressing ingredients in a small bowl and season with salt and pepper. Set aside.",
+    "Cook the pasta according to the packet instructions. Add the sugar snap peas for the last minute or so of cooking time.",
+    "Meanwhile, heat the oil in a wok or large frying pan, toss in the garlic and chilli and cook over a fairly gentle heat for about 30 seconds without letting the garlic brown. Tip in the prawns and cook over a high heat, stirring frequently, for about 3 minutes until they turn pink.",
+    "Add the tomatoes and cook, stirring occasionally, for 3 minutes until they just start to soften. Drain the pasta and sugar snaps well, then toss into the prawn mixture. Tear in the basil leaves, stir, and season with salt and pepper.",
+    "Serve with salad leaves drizzled with the lime dressing, and warm crusty bread."
+  ],
+  "sections": [],
+  "photos": [
+    {
+      "url": "https://www.themealdb.com/images/media/meals/usywpp1511189717.jpg",
+      "caption": "Chilli prawn linguine"
+    }
+  ],
+  "kitchenwareIds": [],
+  "affiliateLinkIds": [],
+  "pendingAffiliateLinks": [],
+  "pendingIngredientLinks": [],
+  "variants": [
+    {
+      "diet": "original",
+      "ingredients": [
+        {
+          "item": "Linguine Pasta",
+          "amount": "280g"
+        },
+        {
+          "item": "Sugar Snap Peas",
+          "amount": "200g"
+        },
+        {
+          "item": "Olive Oil",
+          "amount": "2 tblsp"
+        },
+        {
+          "item": "Garlic Clove",
+          "amount": "2 cloves chopped"
+        },
+        {
+          "item": "Red Chilli",
+          "amount": "1 large"
+        },
+        {
+          "item": "King Prawns",
+          "amount": "24 Skinned"
+        },
+        {
+          "item": "Cherry Tomatoes",
+          "amount": "12"
+        },
+        {
+          "item": "Basil Leaves",
+          "amount": "Handful"
+        },
+        {
+          "item": "Lettuce",
+          "amount": "Leaves"
+        },
+        {
+          "item": "Bread",
+          "amount": "to serve"
+        },
+        {
+          "item": "Fromage Frais",
+          "amount": "2 tbsp"
+        },
+        {
+          "item": "Lime",
+          "amount": "Grated Zest of 2"
+        },
+        {
+          "item": "Caster Sugar",
+          "amount": "2 tsp"
+        }
+      ],
+      "steps": [
+        "Mix the dressing ingredients in a small bowl and season with salt and pepper. Set aside.",
+        "Cook the pasta according to the packet instructions. Add the sugar snap peas for the last minute or so of cooking time.",
+        "Meanwhile, heat the oil in a wok or large frying pan, toss in the garlic and chilli and cook over a fairly gentle heat for about 30 seconds without letting the garlic brown. Tip in the prawns and cook over a high heat, stirring frequently, for about 3 minutes until they turn pink.",
+        "Add the tomatoes and cook, stirring occasionally, for 3 minutes until they just start to soften. Drain the pasta and sugar snaps well, then toss into the prawn mixture. Tear in the basil leaves, stir, and season with salt and pepper.",
+        "Serve with salad leaves drizzled with the lime dressing, and warm crusty bread."
+      ]
+    },
+    {
+      "diet": "gluten-free",
+      "ingredients": [
+        {
+          "item": "gluten free pasta",
+          "amount": "280g"
+        },
+        {
+          "item": "Sugar Snap Peas",
+          "amount": "200g"
+        },
+        {
+          "item": "Olive Oil",
+          "amount": "2 tblsp"
+        },
+        {
+          "item": "Garlic Clove",
+          "amount": "2 cloves chopped"
+        },
+        {
+          "item": "Red Chilli",
+          "amount": "1 large"
+        },
+        {
+          "item": "King Prawns",
+          "amount": "24 Skinned"
+        },
+        {
+          "item": "Cherry Tomatoes",
+          "amount": "12"
+        },
+        {
+          "item": "Basil Leaves",
+          "amount": "Handful"
+        },
+        {
+          "item": "Lettuce",
+          "amount": "Leaves"
+        },
+        {
+          "item": "gluten-free bread",
+          "amount": "to serve"
+        },
+        {
+          "item": "Fromage Frais",
+          "amount": "2 tbsp"
+        },
+        {
+          "item": "Lime",
+          "amount": "Grated Zest of 2"
+        },
+        {
+          "item": "Caster Sugar",
+          "amount": "2 tsp"
+        }
+      ],
+      "steps": [
+        "Mix the dressing ingredients in a small bowl and season with salt and pepper. Set aside.",
+        "Cook the pasta according to the packet instructions. Add the sugar snap peas for the last minute or so of cooking time.",
+        "Meanwhile, heat the oil in a wok or large frying pan, toss in the garlic and chilli and cook over a fairly gentle heat for about 30 seconds without letting the garlic brown. Tip in the prawns and cook over a high heat, stirring frequently, for about 3 minutes until they turn pink.",
+        "Add the tomatoes and cook, stirring occasionally, for 3 minutes until they just start to soften. Drain the pasta and sugar snaps well, then toss into the prawn mixture. Tear in the basil leaves, stir, and season with salt and pepper.",
+        "Serve with salad leaves drizzled with the lime dressing, and warm crusty gluten-free bread."
+      ],
+      "notes": "Swapped Linguine Pasta for gluten free pasta; Swapped Bread for gluten-free bread"
+    },
+    {
+      "diet": "vegan",
+      "ingredients": [
+        {
+          "item": "Linguine Pasta",
+          "amount": "280g"
+        },
+        {
+          "item": "Sugar Snap Peas",
+          "amount": "200g"
+        },
+        {
+          "item": "Olive Oil",
+          "amount": "2 tblsp"
+        },
+        {
+          "item": "Garlic Clove",
+          "amount": "2 cloves chopped"
+        },
+        {
+          "item": "Red Chilli",
+          "amount": "1 large"
+        },
+        {
+          "item": "king oyster mushroom",
+          "amount": "24 Skinned"
+        },
+        {
+          "item": "Cherry Tomatoes",
+          "amount": "12"
+        },
+        {
+          "item": "Basil Leaves",
+          "amount": "Handful"
+        },
+        {
+          "item": "Lettuce",
+          "amount": "Leaves"
+        },
+        {
+          "item": "vegan bread",
+          "amount": "to serve"
+        },
+        {
+          "item": "vegan cream cheese",
+          "amount": "2 tbsp"
+        },
+        {
+          "item": "Lime",
+          "amount": "Grated Zest of 2"
+        },
+        {
+          "item": "organic cane sugar",
+          "amount": "2 tsp"
+        }
+      ],
+      "steps": [
+        "Mix the dressing ingredients in a small bowl and season with salt and pepper. Set aside.",
+        "Cook the pasta according to the packet instructions. Add the sugar snap peas for the last minute or so of cooking time.",
+        "Meanwhile, heat the oil in a wok or large frying pan, toss in the garlic and chilli and cook over a fairly gentle heat for about 30 seconds without letting the garlic brown. Tip in the king oyster mushroom and cook over a high heat, stirring frequently, for about 3 minutes until they turn pink.",
+        "Add the tomatoes and cook, stirring occasionally, for 3 minutes until they just start to soften. Drain the pasta and sugar snaps well, then toss into the king oyster mushroom mixture. Tear in the basil leaves, stir, and season with salt and pepper.",
+        "Serve with salad leaves drizzled with the lime dressing, and warm crusty vegan bread."
+      ],
+      "notes": "Swapped King Prawns for king oyster mushroom; Swapped Bread for vegan bread; Swapped Fromage Frais for vegan cream cheese; Swapped Caster Sugar for organic cane sugar"
+    },
+    {
+      "diet": "vegetarian",
+      "ingredients": [
+        {
+          "item": "Linguine Pasta",
+          "amount": "280g"
+        },
+        {
+          "item": "Sugar Snap Peas",
+          "amount": "200g"
+        },
+        {
+          "item": "Olive Oil",
+          "amount": "2 tblsp"
+        },
+        {
+          "item": "Garlic Clove",
+          "amount": "2 cloves chopped"
+        },
+        {
+          "item": "Red Chilli",
+          "amount": "1 large"
+        },
+        {
+          "item": "tofu",
+          "amount": "24 Skinned"
+        },
+        {
+          "item": "Cherry Tomatoes",
+          "amount": "12"
+        },
+        {
+          "item": "Basil Leaves",
+          "amount": "Handful"
+        },
+        {
+          "item": "Lettuce",
+          "amount": "Leaves"
+        },
+        {
+          "item": "Bread",
+          "amount": "to serve"
+        },
+        {
+          "item": "Fromage Frais",
+          "amount": "2 tbsp"
+        },
+        {
+          "item": "Lime",
+          "amount": "Grated Zest of 2"
+        },
+        {
+          "item": "Caster Sugar",
+          "amount": "2 tsp"
+        }
+      ],
+      "steps": [
+        "Mix the dressing ingredients in a small bowl and season with salt and pepper. Set aside.",
+        "Cook the pasta according to the packet instructions. Add the sugar snap peas for the last minute or so of cooking time.",
+        "Meanwhile, heat the oil in a wok or large frying pan, toss in the garlic and chilli and cook over a fairly gentle heat for about 30 seconds without letting the garlic brown. Tip in the tofu and cook over a high heat, stirring frequently, for about 3 minutes until they turn pink.",
+        "Add the tomatoes and cook, stirring occasionally, for 3 minutes until they just start to soften. Drain the pasta and sugar snaps well, then toss into the tofu mixture. Tear in the basil leaves, stir, and season with salt and pepper.",
+        "Serve with salad leaves drizzled with the lime dressing, and warm crusty bread."
+      ],
+      "notes": "Swapped King Prawns for tofu"
+    },
+    {
+      "diet": "pescatarian",
+      "ingredients": [
+        {
+          "item": "Linguine Pasta",
+          "amount": "280g"
+        },
+        {
+          "item": "Sugar Snap Peas",
+          "amount": "200g"
+        },
+        {
+          "item": "Olive Oil",
+          "amount": "2 tblsp"
+        },
+        {
+          "item": "Garlic Clove",
+          "amount": "2 cloves chopped"
+        },
+        {
+          "item": "Red Chilli",
+          "amount": "1 large"
+        },
+        {
+          "item": "King Prawns",
+          "amount": "24 Skinned"
+        },
+        {
+          "item": "Cherry Tomatoes",
+          "amount": "12"
+        },
+        {
+          "item": "Basil Leaves",
+          "amount": "Handful"
+        },
+        {
+          "item": "Lettuce",
+          "amount": "Leaves"
+        },
+        {
+          "item": "Bread",
+          "amount": "to serve"
+        },
+        {
+          "item": "Fromage Frais",
+          "amount": "2 tbsp"
+        },
+        {
+          "item": "Lime",
+          "amount": "Grated Zest of 2"
+        },
+        {
+          "item": "Caster Sugar",
+          "amount": "2 tsp"
+        }
+      ],
+      "steps": [
+        "Mix the dressing ingredients in a small bowl and season with salt and pepper. Set aside.",
+        "Cook the pasta according to the packet instructions. Add the sugar snap peas for the last minute or so of cooking time.",
+        "Meanwhile, heat the oil in a wok or large frying pan, toss in the garlic and chilli and cook over a fairly gentle heat for about 30 seconds without letting the garlic brown. Tip in the prawns and cook over a high heat, stirring frequently, for about 3 minutes until they turn pink.",
+        "Add the tomatoes and cook, stirring occasionally, for 3 minutes until they just start to soften. Drain the pasta and sugar snaps well, then toss into the prawn mixture. Tear in the basil leaves, stir, and season with salt and pepper.",
+        "Serve with salad leaves drizzled with the lime dressing, and warm crusty bread."
+      ]
+    },
+    {
+      "diet": "low-carb",
+      "ingredients": [
+        {
+          "item": "zucchini noodles",
+          "amount": "280g"
+        },
+        {
+          "item": "zucchini",
+          "amount": "200g"
+        },
+        {
+          "item": "Olive Oil",
+          "amount": "2 tblsp"
+        },
+        {
+          "item": "Garlic Clove",
+          "amount": "2 cloves chopped"
+        },
+        {
+          "item": "Red Chilli",
+          "amount": "1 large"
+        },
+        {
+          "item": "King Prawns",
+          "amount": "24 Skinned"
+        },
+        {
+          "item": "Cherry Tomatoes",
+          "amount": "12"
+        },
+        {
+          "item": "Basil Leaves",
+          "amount": "Handful"
+        },
+        {
+          "item": "Lettuce",
+          "amount": "Leaves"
+        },
+        {
+          "item": "cloud bread",
+          "amount": "to serve"
+        },
+        {
+          "item": "Fromage Frais",
+          "amount": "2 tbsp"
+        },
+        {
+          "item": "Lime",
+          "amount": "Grated Zest of 2"
+        },
+        {
+          "item": "erythritol",
+          "amount": "2 tsp"
+        }
+      ],
+      "steps": [
+        "Mix the dressing ingredients in a small bowl and season with salt and pepper. Set aside.",
+        "Cook the zucchini noodles according to the packet instructions. Add the zucchini for the last minute or so of cooking time.",
+        "Meanwhile, heat the oil in a wok or large frying pan, toss in the garlic and chilli and cook over a fairly gentle heat for about 30 seconds without letting the garlic brown. Tip in the prawns and cook over a high heat, stirring frequently, for about 3 minutes until they turn pink.",
+        "Add the tomatoes and cook, stirring occasionally, for 3 minutes until they just start to soften. Drain the zucchini noodles and zucchini well, then toss into the prawn mixture. Tear in the basil leaves, stir, and season with salt and pepper.",
+        "Serve with salad leaves drizzled with the lime dressing, and warm crusty cloud bread."
+      ],
+      "notes": "Swapped Linguine Pasta for zucchini noodles; Swapped Sugar Snap Peas for zucchini; Swapped Bread for cloud bread; Swapped Caster Sugar for erythritol"
+    },
+    {
+      "diet": "low-salt",
+      "ingredients": [
+        {
+          "item": "Linguine Pasta",
+          "amount": "280g"
+        },
+        {
+          "item": "Sugar Snap Peas",
+          "amount": "200g"
+        },
+        {
+          "item": "Olive Oil",
+          "amount": "2 tblsp"
+        },
+        {
+          "item": "Garlic Clove",
+          "amount": "2 cloves chopped"
+        },
+        {
+          "item": "Red Chilli",
+          "amount": "1 large"
+        },
+        {
+          "item": "King Prawns",
+          "amount": "24 Skinned"
+        },
+        {
+          "item": "Cherry Tomatoes",
+          "amount": "12"
+        },
+        {
+          "item": "Basil Leaves",
+          "amount": "Handful"
+        },
+        {
+          "item": "Lettuce",
+          "amount": "Leaves"
+        },
+        {
+          "item": "unsalted bread",
+          "amount": "to serve"
+        },
+        {
+          "item": "Fromage Frais",
+          "amount": "2 tbsp"
+        },
+        {
+          "item": "Lime",
+          "amount": "Grated Zest of 2"
+        },
+        {
+          "item": "Caster Sugar",
+          "amount": "2 tsp"
+        }
+      ],
+      "steps": [
+        "Mix the dressing ingredients in a small bowl and season with salt and pepper. Set aside.",
+        "Cook the pasta according to the packet instructions. Add the sugar snap peas for the last minute or so of cooking time.",
+        "Meanwhile, heat the oil in a wok or large frying pan, toss in the garlic and chilli and cook over a fairly gentle heat for about 30 seconds without letting the garlic brown. Tip in the prawns and cook over a high heat, stirring frequently, for about 3 minutes until they turn pink.",
+        "Add the tomatoes and cook, stirring occasionally, for 3 minutes until they just start to soften. Drain the pasta and sugar snaps well, then toss into the prawn mixture. Tear in the basil leaves, stir, and season with salt and pepper.",
+        "Serve with salad leaves drizzled with the lime dressing, and warm crusty unsalted bread."
+      ],
+      "notes": "Swapped Bread for unsalted bread"
+    },
+    {
+      "diet": "low-fat",
+      "ingredients": [
+        {
+          "item": "Linguine Pasta",
+          "amount": "280g"
+        },
+        {
+          "item": "Sugar Snap Peas",
+          "amount": "200g"
+        },
+        {
+          "item": "water",
+          "amount": "2 tblsp"
+        },
+        {
+          "item": "Garlic Clove",
+          "amount": "2 cloves chopped"
+        },
+        {
+          "item": "Red Chilli",
+          "amount": "1 large"
+        },
+        {
+          "item": "King Prawns",
+          "amount": "24 Skinned"
+        },
+        {
+          "item": "Cherry Tomatoes",
+          "amount": "12"
+        },
+        {
+          "item": "Basil Leaves",
+          "amount": "Handful"
+        },
+        {
+          "item": "Lettuce",
+          "amount": "Leaves"
+        },
+        {
+          "item": "Bread",
+          "amount": "to serve"
+        },
+        {
+          "item": "Fromage Frais",
+          "amount": "2 tbsp"
+        },
+        {
+          "item": "Lime",
+          "amount": "Grated Zest of 2"
+        },
+        {
+          "item": "Caster Sugar",
+          "amount": "2 tsp"
+        }
+      ],
+      "steps": [
+        "Mix the dressing ingredients in a small bowl and season with salt and pepper. Set aside.",
+        "Cook the pasta according to the packet instructions. Add the sugar snap peas for the last minute or so of cooking time.",
+        "Meanwhile, heat the oil in a wok or large frying pan, toss in the garlic and chilli and cook over a fairly gentle heat for about 30 seconds without letting the garlic brown. Tip in the prawns and cook over a high heat, stirring frequently, for about 3 minutes until they turn pink.",
+        "Add the tomatoes and cook, stirring occasionally, for 3 minutes until they just start to soften. Drain the pasta and sugar snaps well, then toss into the prawn mixture. Tear in the basil leaves, stir, and season with salt and pepper.",
+        "Serve with salad leaves drizzled with the lime dressing, and warm crusty bread."
+      ],
+      "notes": "Swapped Olive Oil for water"
+    }
+  ],
+  "sourceMealDbId": "52839",
+  "narrativeBody": "I still remember the first time I tried chilli prawn linguine on a rainy afternoon in a tiny trattoria tucked away in the back alleys of Naples. The chef, a wiry man with a grin that never seemed to fade, tossed the shrimp into a pan sizzling with garlic, olive oil, and a generous pinch of red‑pepper flakes. The scent that rose—sharp, briny, and tinged with heat—wrapped around me like a warm hug, and I knew instantly that this was a dish I would chase forever.\n\nBack home, I’ve made it my mission to recreate that moment whenever the weather turns gloomy or I need a little pick‑me‑up. I start by heating a good glug of extra‑virgin olive oil in a wide skillet, letting the garlic turn just golden before the chilli flakes dance in, releasing their smoky perfume. Then the prawns go in, pink and glistening, cooking just until they curl at the edges, releasing their sweet ocean juice into the pan. A splash of white wine deglazes the fond, and a handful of chopped parsley brightens everything up before I toss the al dente linguine through, letting every strand soak up that fiery, garlicky broth.\n\nThere’s something about the way the heat lingers on the tongue, balanced by the sweetness of the shrimp and the silkiness of the pasta, that feels both indulgent and honest. Each bite reminds me of that Napoli alley, the clatter of plates, and the laughter of strangers who became friends over a shared love of spice. Now, whenever I serve this chilli prawn linguine at my own table, I’m not just feeding hungry stomachs—I’m sharing a piece of that rainy‑day memory, hoping it warms you the same way it warmed me."
+}
