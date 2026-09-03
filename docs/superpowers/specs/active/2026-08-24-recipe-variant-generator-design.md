@@ -272,6 +272,32 @@ rather than a static job-history page:
   dependency must be declared in `apps/lhr-office`'s own `package.json`, not just transitively
   available, since Vercel installs each subdirectory project's own dependency closure.
 
+## Implementation Note (added 2026-09-03, one-diet-per-tick finisher budget)
+
+In production the finisher was observed stuck reporting "Filled in 0/7 pending diet(s)" for the
+same draft across every daily tick. Root cause: `finishPendingRecipeVariants` looped over every
+currently-pending diet in one invocation, sharing the single 180s `DIET_PIPELINE_BUDGET_MS`
+deadline across the whole batch. `callOpenRouter`'s free-tier rate-limit backoff
+(`MAX_RATE_LIMIT_ATTEMPTS` retries in `mcp-server/src/openrouter.ts`) means a single ingredient's
+substitution call can, in the worst case, itself take most or all of that budget when the shared
+free-model pool is saturated — and for a recipe with more than a handful of ingredients, that first
+diet's own per-ingredient, per-diet sequential calls were often enough on their own to exhaust the
+deadline. Once the deadline passed, every remaining diet's `generateVariant` call short-circuited
+instantly (`callOpenRouter` skips the network call once past the deadline), so it got flagged
+"couldn't generate — needs manual pass" without a real attempt — indistinguishable, from
+`pendingDiets`'s point of view, from a diet that had genuinely been tried and failed, so the same
+set of diets was retried from scratch (and lost to the same shared-budget problem) on every
+subsequent tick.
+
+Fix: `finishPendingRecipeVariants` now attempts exactly **one** pending diet per invocation, giving
+it the full `DIET_PIPELINE_BUDGET_MS` deadline to itself instead of splitting it across a batch. A
+resolved diet is written back immediately and never revisited; an unresolved one is retried (still
+with a full budget) on the next daily tick. A recipe with all 7 substitutable diets pending now
+takes up to 7 daily ticks to fully resolve instead of one, but each tick makes guaranteed forward
+progress rather than a slow/rate-limited diet starving every other diet in the same run. `/status`
+summaries changed accordingly, from "Filled in X/Y pending diet(s)" to naming the one diet attempted
+this tick and how many remain.
+
 ## Out of Scope
 
 - Nutritional computation (§1) — heuristic substitution only.

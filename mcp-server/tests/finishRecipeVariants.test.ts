@@ -150,7 +150,7 @@ describe('finishPendingRecipeVariants', () => {
     expect(generateVariant).not.toHaveBeenCalled();
   });
 
-  it('fills in every pending diet and writes the completed draft back', async () => {
+  it('processes exactly one pending diet per tick, so a slow/rate-limited diet cannot burn every other diet\'s budget in the same run', async () => {
     seedDraft('recipe1', recipeDraft());
     generateVariant.mockImplementation(async (diet: string) => ({
       diet,
@@ -161,18 +161,49 @@ describe('finishPendingRecipeVariants', () => {
 
     const result = await finishPendingRecipeVariants();
 
-    expect(result.status).toBe('success');
+    expect(generateVariant).toHaveBeenCalledTimes(1);
+    expect(generateVariant).toHaveBeenCalledWith(
+      ALL_SUBSTITUTABLE_DIETS[0],
+      baseIngredients,
+      baseSteps,
+      expect.any(Number),
+    );
+    expect(result.status).toBe('partial');
+    expect(result.summary).toContain(ALL_SUBSTITUTABLE_DIETS[0]);
     expect(result.summary).toContain('Weeknight Casserole');
+    expect(result.summary).toContain(`${ALL_SUBSTITUTABLE_DIETS.length - 1}`);
+
+    const written = JSON.parse(state.files.get('draft/post-recipe1')!.get('.drafts/recipe1.json')!);
+    expect(written.variants).toHaveLength(2);
+    expect(written.variants.map((v: { diet: string }) => v.diet)).toEqual(['original', ALL_SUBSTITUTABLE_DIETS[0]]);
+    const first = written.variants.find((v: { diet: string }) => v.diet === ALL_SUBSTITUTABLE_DIETS[0]);
+    expect(first.ingredients).toEqual([{ item: `${ALL_SUBSTITUTABLE_DIETS[0]} substitute` }]);
+  });
+
+  it('resolves every diet over successive daily ticks and reports success once the draft is fully complete', async () => {
+    seedDraft('recipe1', recipeDraft());
+    generateVariant.mockImplementation(async (diet: string) => ({
+      diet,
+      ingredients: [{ item: `${diet} substitute` }],
+      steps: baseSteps,
+      rejected: false,
+    }));
+
+    let last;
+    for (let i = 0; i < ALL_SUBSTITUTABLE_DIETS.length; i++) {
+      last = await finishPendingRecipeVariants();
+    }
+
     expect(generateVariant).toHaveBeenCalledTimes(ALL_SUBSTITUTABLE_DIETS.length);
+    expect(last?.status).toBe('success');
+    expect(last?.summary).toContain('Weeknight Casserole');
 
     const written = JSON.parse(state.files.get('draft/post-recipe1')!.get('.drafts/recipe1.json')!);
     expect(written.variants).toHaveLength(1 + ALL_SUBSTITUTABLE_DIETS.length);
     expect(written.variants.map((v: { diet: string }) => v.diet)).toEqual(['original', ...ALL_SUBSTITUTABLE_DIETS]);
-    const vegan = written.variants.find((v: { diet: string }) => v.diet === 'vegan');
-    expect(vegan.ingredients).toEqual([{ item: 'vegan substitute' }]);
   });
 
-  it('reports partial when some diets are still flagged after retrying, and preserves already-resolved diets from a prior tick', async () => {
+  it('reports partial when the attempted diet is still flagged after retrying, and preserves already-resolved diets from a prior tick', async () => {
     seedDraft(
       'recipe1',
       recipeDraft({

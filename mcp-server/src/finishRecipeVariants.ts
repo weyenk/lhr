@@ -5,8 +5,14 @@ import { requireEnv } from './blob.js';
 import type { RecipeVariantData } from '@lhr/schemas';
 import type { JobResult } from './generateWeeklyVariantRecipe.js';
 
-// Mirrors dietSubstitutions.ts's own per-run budget: this job attempts every currently-pending
-// diet in one invocation, so it gets the same headroom under Vercel's 300s cap.
+// Budget for the single diet this job attempts per invocation (see the 2026-09-03 amendment in
+// docs/superpowers/specs/active/2026-08-24-recipe-variant-generator-design.md). Earlier this was
+// shared across every currently-pending diet in one run; in practice a single ingredient's worth
+// of OpenRouter free-tier rate-limit retries (openrouter.ts's MAX_RATE_LIMIT_ATTEMPTS backoff)
+// could burn the whole budget, leaving every diet after the first an instant no-op skip — so a
+// recipe with more than a handful of ingredients never made any real progress, run after run.
+// Dedicating the full budget to one diet at a time means a slow/rate-limited diet only costs
+// itself, and whatever resolves is written and kept regardless of how the next diet's tick goes.
 const DIET_PIPELINE_BUDGET_MS = 180_000;
 
 // A diet needs (re)work if it has no variant yet, or its variant was previously flagged as
@@ -57,6 +63,13 @@ function applyResults(existing: RecipeVariantData[], results: RecipeVariantResul
 // the pick from the (expensive) variant generation means a picked recipe is visible on /status
 // before any AI cycles are spent on it, and an incomplete draft gets retried daily instead of
 // being abandoned once its picker run clears the weekly cadence.
+//
+// Processes exactly one pending diet per invocation (2026-09-03 amendment, see the design doc
+// above) rather than looping over every pending diet in one run: a run that attempted all of them
+// shared one deadline across the whole batch, so a single slow/rate-limited diet could exhaust it
+// before any other diet even got a real attempt, and the run would report 0 resolved every day
+// indefinitely. One diet per tick means each tick's full budget goes to a single diet, and a
+// completed diet is written and kept regardless of what happens on later ticks.
 export async function finishPendingRecipeVariants(): Promise<JobResult> {
   const client = createGitHubClient(requireEnv('GITHUB_TOKEN'));
   requireEnv('OPENROUTER_API_KEY');
@@ -67,26 +80,24 @@ export async function finishPendingRecipeVariants(): Promise<JobResult> {
   }
 
   const { id, draft } = found;
-  const diets = pendingDiets(draft.variants);
+  const pending = pendingDiets(draft.variants);
+  const diet = pending[0];
   const deadline = Date.now() + DIET_PIPELINE_BUDGET_MS;
 
-  const results: RecipeVariantResult[] = [];
-  for (const diet of diets) {
-    results.push(await generateVariant(diet, draft.ingredients, draft.steps, deadline));
-  }
+  const result: RecipeVariantResult = await generateVariant(diet, draft.ingredients, draft.steps, deadline);
 
-  const variants = applyResults(draft.variants, results);
-  await writeDraft(client, 'post', id, { ...draft, variants }, `Fill in diet variants for draft ${id}`);
+  const variants = applyResults(draft.variants, [result]);
+  await writeDraft(client, 'post', id, { ...draft, variants }, `Fill in ${diet} diet variant for draft ${id}`);
 
-  const stillFlagged = results.filter((r) => r.rejected).map((r) => r.diet);
-  const resolvedCount = diets.length - stillFlagged.length;
+  const remaining = pending.length - (result.rejected ? 0 : 1);
 
   return {
-    status: stillFlagged.length > 0 ? 'partial' : 'success',
-    summary:
-      stillFlagged.length > 0
-        ? `Filled in ${resolvedCount}/${diets.length} pending diet(s) for "${draft.title}"; still needs a manual pass: ${stillFlagged.join(', ')}.`
+    status: result.rejected || remaining > 0 ? 'partial' : 'success',
+    summary: result.rejected
+      ? `Attempted the "${diet}" variant for "${draft.title}" but it still needs a manual pass; ${pending.length} diet(s) remain pending.`
+      : remaining > 0
+        ? `Filled in the "${diet}" variant for "${draft.title}"; ${remaining} diet(s) still pending.`
         : `Finished all diet variants for "${draft.title}".`,
-    details: { draftId: id, resolvedCount, stillFlagged },
+    details: { draftId: id, diet, resolved: !result.rejected, remaining },
   };
 }
