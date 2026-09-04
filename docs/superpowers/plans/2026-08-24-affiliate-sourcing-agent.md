@@ -2,6 +2,46 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+## Post-merge integration note, 2026-09-04
+
+This plan was written and executed against an `apps/lhr-office` that did not exist yet, and against
+a set of guesses about the shared orchestrator's shape. Both were superseded before this work
+merged: the real shared orchestrator (`packages/jobs`' registry/due-check, `@lhr/db`'s
+`orchestrator_runs` + `getPool()`, and `apps/lhr-office` as a single **Express** app with a
+Basic-Auth-gated `/status` page) landed on `main` first. The feature below was re-homed onto it
+rather than shipped as designed. The task-by-task record is left intact as history; what actually
+exists now is:
+
+- **Tasks 13–17's Astro app and its placeholder auth are gone.** There is no
+  `apps/lhr-office/src/pages/**`, no `src/lib/auth.ts`, no `src/lib/db.ts`, no
+  `astro.config.mjs`, and no `requireSession()` stub. The review UI is a section of the existing
+  `/status` page, gated by `main`'s real `requireStatusAuth` HTTP Basic Auth — so the access-control
+  question the Global Constraints section deferred is settled, not still open.
+  - Approve/deny domain logic: `mcp-server/src/affiliateCandidateOps.ts`
+    (`approveAffiliateCandidate` / `denyAffiliateCandidate`, plain functions taking a `Queryable`).
+  - Routes: `POST /status/affiliate-candidates/:id/approve` and `.../deny` in
+    `apps/lhr-office/src/server.ts`, wired through an injectable `AffiliateCandidateOps`.
+  - Rendering: `renderAffiliateCandidatesSection` in `apps/lhr-office/src/statusPage.ts`.
+- **`@lhr/github` was never needed and does not exist.** `main` never extracted
+  `mcp-server/src/github.ts`; other workspaces import it as
+  `lhr-authoring-mcp-server/dist-lib/github.js` instead.
+- **`@lhr/affiliate-sourcing` does not exist either.** Its five domain modules plus the job entry
+  point live in `mcp-server/src/` (`keepa.ts`, `amazonCommissionRates.ts`, `existingAsins.ts`,
+  `computeCycleId.ts`, `reconcileApprovedCandidates.ts`, `sourceAffiliateCandidates.ts`) and are
+  consumed by other workspaces through `mcp-server`'s `dist-lib` build.
+- **The job is registered**, not cron-invoked locally:
+  `{ name: 'affiliate-sourcing', cadenceDays: 7, run: sourceAffiliateCandidates }` in
+  `packages/jobs/src/registry.ts`. `mcp-server/scripts/source-affiliate-candidates.ts` remains only
+  as a manual local runner.
+- **There is no migration runner.** This plan's `runMigrations()` / `migrate.ts` / `db:migrate`
+  script were dropped; the `candidates` and `decision_history` tables are plain
+  `CREATE TABLE` statements in `packages/db/src/schema.sql`, applied once by hand with
+  `psql "$DATABASE_URL" -f packages/db/src/schema.sql` per `docs/DEPLOYMENT.md` §7.
+- **The job uses `@lhr/db`'s shared `getPool()`**, not its own `new Pool(...)`, and reads
+  `GITHUB_TOKEN` (not `AUTHOR_GITHUB_TOKEN`) to match `main`'s convention.
+- **`docs/affiliate-sourcing-agent-setup.md` was deleted**; its operational content is covered by
+  `docs/DEPLOYMENT.md` §7.
+
 **Goal:** Build a standing weekly pipeline that sources ~20 candidate Amazon products from Keepa, scores them against a learned approve/deny preference model, and presents them on a password-protected review page where approving a candidate immediately commits a new `src/content/affiliate-links` entry to `main` and denying just records the decision.
 
 **Architecture:** Two components split by where they run. A local, cron-invoked script (`mcp-server/scripts/source-affiliate-candidates.ts`) queries Keepa for trending products in seeded categories, filters out ASINs already known, scores and ranks the rest against `decision_history` (reserving ~20% unweighted "wildcard" slots), looks up each candidate's commission rate from a static rate-card, and writes the cycle to a shared Postgres database (Neon). A deployed review UI — a route inside the shared internal `lhr-office` Vercel app (see Global Constraints on hosting) — reads pending candidates from the same database; approving one builds and commits an `affiliate-links/*.json` file via the existing GitHub-as-database commit helper (now extracted to `@lhr/github` so both the local script and the deployed app can use it) and records the decision; denying only records the decision. A new shared `@lhr/db` package holds the Postgres schema/queries, the pure scoring function, and the pure "build an affiliate-link file from a candidate" function, so sourcing-side and review-side code never duplicate this logic.
