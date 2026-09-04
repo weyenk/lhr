@@ -15,6 +15,12 @@ describe('jobs registry', () => {
     expect(job?.run).toBeTypeOf('function');
   });
 
+  it('registers the affiliate-sourcing job on a 7-day cadence', () => {
+    const job = jobs.find((j) => j.name === 'affiliate-sourcing');
+    expect(job).toMatchObject({ cadenceDays: 7 });
+    expect(job?.run).toBeTypeOf('function');
+  });
+
   it('is always shape-valid', () => {
     expect(() => validateJobRegistrations(jobs)).not.toThrow();
   });

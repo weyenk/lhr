@@ -47,6 +47,11 @@ Manual, one-time setup (outside this repo's code):
      `apps/lhr-office` is needed to add a job. Each agent's own plan is also responsible for adding
      whatever env vars its pipeline needs (e.g. `OPENROUTER_API_KEY`, `KEEPA_API_KEY`,
      `SERPAPI_KEY`) to the `apps/lhr-office` Vercel project.
+   - The `affiliate-sourcing` agent specifically needs `KEEPA_API_KEY` (Keepa product-finder API
+     key) and `AMAZON_ASSOCIATES_TAG` (the Amazon Associates tracking tag stamped onto approved
+     product links) set on the `apps/lhr-office` Vercel project, alongside the `GITHUB_TOKEN` the
+     other agents already use. Its weekly candidates are approved or denied from the same `/status`
+     page, under "Affiliate candidates awaiting review".
    - The function is configured with a 300s `maxDuration` in `apps/lhr-office/vercel.json`
      (matching the plan's assumption of one job per invocation, run against Vercel's 300s default
      function timeout). If a job is shown as "in progress" on `/status` for longer than about 10

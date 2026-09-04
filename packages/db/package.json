@@ -6,10 +6,11 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "npm run build --workspace=@lhr/schemas && tsc -p tsconfig.json",
     "test": "vitest run"
   },
   "dependencies": {
+    "@lhr/schemas": "*",
     "pg": "^8.13.0",
     "@types/pg": "^8.11.0"
   },
