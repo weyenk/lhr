@@ -1,4 +1,4 @@
-import type { OrchestratorRun } from '@lhr/db';
+import type { Candidate, OrchestratorRun } from '@lhr/db';
 import type { CandidateSummary } from 'lhr-authoring-mcp-server/dist-lib/recipeCandidates.js';
 
 export interface JobStatusRow {
@@ -36,7 +36,51 @@ function renderCandidateSection(candidate: CandidateSummary | null): string {
     </section>`;
 }
 
-export function renderStatusPage(rows: JobStatusRow[], candidate: CandidateSummary | null = null): string {
+function formatPrice(cents: number): string {
+  return `$${(cents / 100).toFixed(2)}`;
+}
+
+// Every money-ish number here is a projection off a static rate card and Keepa's sales estimate,
+// never a figure Amazon has reported — so each one carries an explicit "Est." label. This must
+// never read as real earnings data (see the affiliate-sourcing spec's estimates-only rule).
+function renderAffiliateCandidate(candidate: Candidate): string {
+  const commission = `${(candidate.commissionRate * 100).toFixed(1)}%`;
+  const fallbackNote = candidate.commissionRateIsFallback ? ' (fallback rate — verify)' : '';
+  const sales =
+    candidate.estimatedMonthlySales === null
+      ? 'No estimate available'
+      : `~${candidate.estimatedMonthlySales.toLocaleString('en-US')}/mo`;
+  return `
+      <li>
+        <p><strong>${escapeHtml(candidate.title)}</strong> — ${escapeHtml(candidate.category)} · ${formatPrice(candidate.priceCents)}${candidate.isWildcard ? ' · wildcard' : ''}</p>
+        <p>Est. commission: ${commission}${fallbackNote}</p>
+        <p>Est. monthly sales: ${escapeHtml(sales)}</p>
+        <form method="post" action="/status/affiliate-candidates/${encodeURIComponent(String(candidate.id))}/approve" style="display:inline">
+          <button type="submit">Approve</button>
+        </form>
+        <form method="post" action="/status/affiliate-candidates/${encodeURIComponent(String(candidate.id))}/deny" style="display:inline">
+          <button type="submit">Deny</button>
+        </form>
+      </li>`;
+}
+
+// The weekly Keepa-sourced affiliate products awaiting a yes/no from the author. Rendered here
+// rather than on a page of its own so every human-in-the-loop decision this orchestrator needs
+// lives behind the one Basic-Auth-gated /status route.
+export function renderAffiliateCandidatesSection(candidates: Candidate[]): string {
+  if (candidates.length === 0) return '';
+  return `
+    <section>
+      <h2>Affiliate candidates awaiting review</h2>
+      <ul>${candidates.map(renderAffiliateCandidate).join('')}</ul>
+    </section>`;
+}
+
+export function renderStatusPage(
+  rows: JobStatusRow[],
+  candidate: CandidateSummary | null = null,
+  affiliateCandidates: Candidate[] = [],
+): string {
   const sections = rows
     .map((row) => {
       const latest = row.history[0];
@@ -65,6 +109,7 @@ export function renderStatusPage(rows: JobStatusRow[], candidate: CandidateSumma
   <body>
     <h1>Orchestrator status</h1>
     ${renderCandidateSection(candidate)}
+    ${renderAffiliateCandidatesSection(affiliateCandidates)}
     ${sections || '<p>No jobs registered yet.</p>'}
   </body>
 </html>`;
