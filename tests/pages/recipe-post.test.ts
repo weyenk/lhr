@@ -27,8 +27,11 @@ describe('recipe post page', () => {
 
   it('stacks ingredients above steps on mobile while preserving desktop column order', () => {
     const html = readFileSync('dist/posts/arancini-a-sicilian-street-food-sensation/index.html', 'utf-8');
-    const stepsWrapper = html.match(/<div class="([^"]*)">\s*<ol class="recipe-post__steps/);
-    const ingredientsWrapper = html.match(/<div class="([^"]*)">\s*<ul class="recipe-post__ingredients/);
+    // The steps div renders an optional recipeMeta <p> between the <h2> and the
+    // <ol> (present whenever the post has yields/prepMinutes/cookMinutes) — match
+    // through the <h2> so this doesn't depend on that paragraph being absent.
+    const stepsWrapper = html.match(/<div class="([^"]*)">\s*<h2[^>]*>Recipe<\/h2>\s*(?:<p[^>]*>[\s\S]*?<\/p>\s*)?<ol class="recipe-post__steps/);
+    const ingredientsWrapper = html.match(/<div class="([^"]*)">\s*<h2[^>]*>Ingredients<\/h2>\s*<ul class="recipe-post__ingredients/);
     expect(stepsWrapper?.[1]).toContain('order-2');
     expect(ingredientsWrapper?.[1]).toContain('order-1');
   }, 60000);

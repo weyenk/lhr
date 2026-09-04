@@ -15,11 +15,13 @@ beforeEach(() => {
 });
 
 describe('readCollection', () => {
-  // The implementation now lives in @lhr/github (covered by packages/github/tests/github.test.ts);
-  // catalog.ts keeps a re-export so existing importers don't have to change.
-  it('re-exports the @lhr/github implementation', async () => {
-    const { readCollection: canonical } = await import('@lhr/github');
-    expect(readCollection).toBe(canonical);
+  it('reads and parses every JSON file in a directory', async () => {
+    github.listFiles.mockResolvedValue(['coastal-blue.json']);
+    github.getFile.mockResolvedValue({ content: JSON.stringify({ name: 'Coastal Blue' }), sha: 's1' });
+
+    const result = await readCollection(client, 'src/content/sets');
+
+    expect(result).toEqual([{ id: 'coastal-blue', data: { name: 'Coastal Blue' } }]);
   });
 });
 

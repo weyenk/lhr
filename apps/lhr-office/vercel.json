@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "installCommand": "cd ../.. && npm install",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/api" }
+  ],
+  "crons": [
+    { "path": "/api/cron/orchestrator", "schedule": "0 13 * * *" }
+  ],
+  "functions": {
+    "api/index.ts": { "maxDuration": 300 }
+  }
+}

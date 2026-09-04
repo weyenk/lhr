@@ -15,6 +15,8 @@ export function buildPostFrontmatter(draft: DraftPost): Record<string, unknown> 
   if (draft.postType === 'recipe') {
     frontmatter.ingredients = draft.ingredients;
     frontmatter.steps = draft.steps;
+    if (draft.variants.length > 0) frontmatter.variants = draft.variants;
+    if (draft.sourceMealDbId) frontmatter.sourceMealDbId = draft.sourceMealDbId;
   } else {
     frontmatter.sections = draft.sections;
   }
@@ -26,6 +28,15 @@ export function renderFrontmatterYaml(frontmatter: Record<string, unknown>): str
   return `---\n${yaml.dump(frontmatter)}---\n`;
 }
 
+// MDX parses the body as JSX-flavored markdown, so raw `{`, `}`, and `<` characters in
+// LLM-generated prose (e.g. "ready in <10 minutes", "add sugar {optional}") would break the
+// build. Escape them before they're interpolated into the .mdx file.
+export function escapeMdxBody(text: string): string {
+  const withEscapedBraces = text.replace(/\{/g, '\\{').replace(/\}/g, '\\}');
+  return withEscapedBraces.replace(/</g, '&lt;');
+}
+
 export function renderPostMdx(draft: DraftPost): string {
-  return renderFrontmatterYaml(buildPostFrontmatter(draft));
+  const frontmatterBlock = renderFrontmatterYaml(buildPostFrontmatter(draft));
+  return draft.narrativeBody ? `${frontmatterBlock}\n${escapeMdxBody(draft.narrativeBody)}\n` : frontmatterBlock;
 }

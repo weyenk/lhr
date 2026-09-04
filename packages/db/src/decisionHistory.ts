@@ -1,4 +1,4 @@
-import type { Pool, QueryResult } from 'pg';
+import type { Queryable } from './client.js';
 
 export interface DecisionHistoryRecord {
   asin: string;
@@ -19,7 +19,9 @@ export interface NewDecisionHistoryRecord {
   decision: 'approved' | 'denied';
 }
 
-interface DecisionHistoryRow {
+// A type alias, not an interface, so it satisfies Queryable's
+// `T extends Record<string, unknown>` constraint (see candidates.ts).
+type DecisionHistoryRow = {
   asin: string;
   category: string;
   price_cents: number;
@@ -27,20 +29,20 @@ interface DecisionHistoryRow {
   estimated_monthly_sales: number | null;
   decision: 'approved' | 'denied';
   decided_at: Date;
-}
+};
 
-export async function insertDecisionHistory(pool: Pool, record: NewDecisionHistoryRecord): Promise<void> {
-  await pool.query(
+export async function insertDecisionHistory(db: Queryable, record: NewDecisionHistoryRecord): Promise<void> {
+  await db.query(
     `INSERT INTO decision_history (asin, category, price_cents, commission_rate, estimated_monthly_sales, decision)
      VALUES ($1,$2,$3,$4,$5,$6)`,
     [record.asin, record.category, record.priceCents, record.commissionRate, record.estimatedMonthlySales, record.decision],
   );
 }
 
-export async function getAllDecisionHistory(pool: Pool): Promise<DecisionHistoryRecord[]> {
-  const res = (await pool.query(
+export async function getAllDecisionHistory(db: Queryable): Promise<DecisionHistoryRecord[]> {
+  const res = await db.query<DecisionHistoryRow>(
     `SELECT asin, category, price_cents, commission_rate, estimated_monthly_sales, decision, decided_at FROM decision_history`,
-  )) as QueryResult<DecisionHistoryRow>;
+  );
   return res.rows.map((row) => ({
     asin: row.asin,
     category: row.category,
@@ -52,7 +54,7 @@ export async function getAllDecisionHistory(pool: Pool): Promise<DecisionHistory
   }));
 }
 
-export async function getDecidedAsins(pool: Pool): Promise<Set<string>> {
-  const res = (await pool.query(`SELECT DISTINCT asin FROM decision_history`)) as QueryResult<{ asin: string }>;
+export async function getDecidedAsins(db: Queryable): Promise<Set<string>> {
+  const res = await db.query<{ asin: string }>(`SELECT DISTINCT asin FROM decision_history`);
   return new Set(res.rows.map((r) => r.asin));
 }

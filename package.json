@@ -5,14 +5,12 @@
   "workspaces": [
     "mcp-server",
     "packages/schemas",
-    "packages/github",
     "packages/jobs",
     "packages/db",
-    "packages/affiliate-sourcing",
     "apps/lhr-office"
   ],
   "scripts": {
-    "postinstall": "npm run build --workspace=@lhr/schemas && npm run build --workspace=@lhr/github && npm run build --workspace=@lhr/jobs && npm run build --workspace=@lhr/db && npm run build --workspace=@lhr/affiliate-sourcing",
+    "postinstall": "npm run build --workspace=@lhr/schemas && npm run build --workspace=mcp-server && npm run build --workspace=@lhr/jobs && npm run build --workspace=@lhr/db",
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",

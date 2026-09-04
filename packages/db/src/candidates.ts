@@ -1,4 +1,4 @@
-import type { Pool, QueryResult } from 'pg';
+import type { Queryable } from './client.js';
 
 export interface Candidate {
   id: number;
@@ -42,7 +42,10 @@ export interface NewCandidate {
   isWildcard: boolean;
 }
 
-interface CandidateRow {
+// A type alias rather than an interface so it satisfies Queryable's
+// `T extends Record<string, unknown>` constraint (interfaces have no implicit
+// index signature) — same shape orchestratorRuns.ts's RawRun uses.
+type CandidateRow = {
   id: number;
   cycle_id: string;
   asin: string;
@@ -63,7 +66,7 @@ interface CandidateRow {
   status: 'pending' | 'approved' | 'denied';
   decided_at: Date | null;
   created_at: Date;
-}
+};
 
 function rowToCandidate(row: CandidateRow): Candidate {
   return {
@@ -96,7 +99,7 @@ const INSERT_COLUMNS = [
   'bsr', 'bsr_category', 'rating', 'review_count', 'score', 'is_wildcard',
 ] as const;
 
-export async function insertCandidates(pool: Pool, candidates: NewCandidate[]): Promise<void> {
+export async function insertCandidates(db: Queryable, candidates: NewCandidate[]): Promise<void> {
   if (candidates.length === 0) return;
 
   const values: unknown[] = [];
@@ -110,7 +113,7 @@ export async function insertCandidates(pool: Pool, candidates: NewCandidate[]): 
     return `(${INSERT_COLUMNS.map((_, j) => `$${base + j + 1}`).join(', ')})`;
   });
 
-  await pool.query(
+  await db.query(
     `INSERT INTO candidates (${INSERT_COLUMNS.join(', ')})
      VALUES ${rowPlaceholders.join(', ')}
      ON CONFLICT (cycle_id, asin) DO NOTHING`,
@@ -118,33 +121,33 @@ export async function insertCandidates(pool: Pool, candidates: NewCandidate[]): 
   );
 }
 
-export async function getPendingCandidates(pool: Pool, cycleId: string): Promise<Candidate[]> {
-  const res = (await pool.query(
+export async function getPendingCandidates(db: Queryable, cycleId: string): Promise<Candidate[]> {
+  const res = await db.query<CandidateRow>(
     `SELECT * FROM candidates WHERE cycle_id = $1 AND status = 'pending' ORDER BY score DESC`,
     [cycleId],
-  )) as QueryResult<CandidateRow>;
+  );
   return res.rows.map(rowToCandidate);
 }
 
-export async function getLatestPendingCycleId(pool: Pool): Promise<string | null> {
-  const res = (await pool.query(
+export async function getLatestPendingCycleId(db: Queryable): Promise<string | null> {
+  const res = await db.query<{ cycle_id: string }>(
     `SELECT DISTINCT cycle_id FROM candidates WHERE status = 'pending' ORDER BY cycle_id DESC LIMIT 1`,
-  )) as QueryResult<{ cycle_id: string }>;
+  );
   return res.rows[0]?.cycle_id ?? null;
 }
 
-export async function getCandidateById(pool: Pool, id: number): Promise<Candidate | null> {
-  const res = (await pool.query(`SELECT * FROM candidates WHERE id = $1`, [id])) as QueryResult<CandidateRow>;
+export async function getCandidateById(db: Queryable, id: number): Promise<Candidate | null> {
+  const res = await db.query<CandidateRow>(`SELECT * FROM candidates WHERE id = $1`, [id]);
   return res.rows[0] ? rowToCandidate(res.rows[0]) : null;
 }
 
-export async function markCandidateStatus(pool: Pool, id: number, status: 'approved' | 'denied'): Promise<void> {
-  await pool.query(`UPDATE candidates SET status = $1, decided_at = now() WHERE id = $2`, [status, id]);
+export async function markCandidateStatus(db: Queryable, id: number, status: 'approved' | 'denied'): Promise<void> {
+  await db.query(`UPDATE candidates SET status = $1, decided_at = now() WHERE id = $2`, [status, id]);
 }
 
-export async function getApprovedCandidates(pool: Pool): Promise<Candidate[]> {
-  const res = (await pool.query(
+export async function getApprovedCandidates(db: Queryable): Promise<Candidate[]> {
+  const res = await db.query<CandidateRow>(
     `SELECT * FROM candidates WHERE status = 'approved' ORDER BY decided_at ASC`,
-  )) as QueryResult<CandidateRow>;
+  );
   return res.rows.map(rowToCandidate);
 }
