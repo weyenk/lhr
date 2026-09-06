@@ -1,4 +1,6 @@
 import type { Candidate, OrchestratorRun } from '@lhr/db';
+import type { TrendsReport, TrendSeedTopic, TrendCategory } from '@lhr/db';
+import { TREND_CATEGORIES } from '@lhr/db';
 import type { CandidateSummary } from 'lhr-authoring-mcp-server/dist-lib/recipeCandidates.js';
 
 export interface JobStatusRow {
@@ -76,10 +78,72 @@ export function renderAffiliateCandidatesSection(candidates: Candidate[]): strin
     </section>`;
 }
 
+function renderTrendsReportRow(report: TrendsReport): string {
+  return `
+      <li>
+        <p>${escapeHtml(report.cycleId)}: ${escapeHtml(report.summary)}</p>
+      </li>`;
+}
+
+// One shared /status view of every category's trends reports, most recent first per category —
+// the same "everything lives on this one Basic-Auth-gated page" posture as the candidate sections
+// above.
+export function renderTrendsSection(reports: TrendsReport[]): string {
+  if (reports.length === 0) return '';
+  const byCategory = new Map<TrendCategory, TrendsReport[]>();
+  for (const category of TREND_CATEGORIES) byCategory.set(category, []);
+  for (const report of reports) {
+    byCategory.get(report.category)?.push(report);
+  }
+  const categoryBlocks = TREND_CATEGORIES.map((category) => {
+    const categoryReports = byCategory.get(category) ?? [];
+    if (categoryReports.length === 0) return '';
+    return `
+      <h3>${escapeHtml(category)}</h3>
+      <ul>${categoryReports.map(renderTrendsReportRow).join('')}</ul>`;
+  }).join('');
+  return `
+    <section>
+      <h2>Trends</h2>
+      ${categoryBlocks}
+    </section>`;
+}
+
+function renderTrendSeedTopic(topic: TrendSeedTopic): string {
+  const nextStatus = topic.status === 'curated' ? 'candidate' : 'curated';
+  const label = topic.status === 'curated' ? 'Demote' : 'Promote';
+  return `
+      <li>
+        <p>${escapeHtml(topic.category)} / ${escapeHtml(topic.topic)} — ${escapeHtml(topic.status)}, seen ${topic.timesSeen}×</p>
+        <form method="post" action="/status/trends/topics/${topic.id}/${nextStatus === 'curated' ? 'promote' : 'demote'}" style="display:inline">
+          <button type="submit">${label}</button>
+        </form>
+      </li>`;
+}
+
+// Manual override sits alongside the automatic promotion mechanism (trendSeedTopics.ts) rather
+// than replacing it — the author can act immediately without waiting three cycles.
+export function renderTrendSeedTopicsSection(topics: TrendSeedTopic[]): string {
+  return `
+    <section>
+      <h2>Trend seed topics</h2>
+      <ul>${topics.map(renderTrendSeedTopic).join('')}</ul>
+      <form method="post" action="/status/trends/topics/add">
+        <select name="category">
+          ${TREND_CATEGORIES.map((c) => `<option value="${c}">${c}</option>`).join('')}
+        </select>
+        <input type="text" name="topic" placeholder="New curated topic" required />
+        <button type="submit">Add curated topic</button>
+      </form>
+    </section>`;
+}
+
 export function renderStatusPage(
   rows: JobStatusRow[],
   candidate: CandidateSummary | null = null,
   affiliateCandidates: Candidate[] = [],
+  trendsReports: TrendsReport[] = [],
+  trendSeedTopics: TrendSeedTopic[] = [],
 ): string {
   const sections = rows
     .map((row) => {
@@ -110,6 +174,8 @@ export function renderStatusPage(
     <h1>Orchestrator status</h1>
     ${renderCandidateSection(candidate)}
     ${renderAffiliateCandidatesSection(affiliateCandidates)}
+    ${renderTrendsSection(trendsReports)}
+    ${renderTrendSeedTopicsSection(trendSeedTopics)}
     ${sections || '<p>No jobs registered yet.</p>'}
   </body>
 </html>`;
