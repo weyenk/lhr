@@ -82,6 +82,10 @@ function renderTrendsReportRow(report: TrendsReport): string {
   return `
       <li>
         <p>${escapeHtml(report.cycleId)}: ${escapeHtml(report.summary)}</p>
+        <details>
+          <summary>Raw findings (${report.topicsUsed.length} topic(s) used)</summary>
+          <pre>${escapeHtml(JSON.stringify(report.rawFindings, null, 2))}</pre>
+        </details>
       </li>`;
 }
 

@@ -84,6 +84,7 @@ describe('setTopicStatus', () => {
     await setTopicStatus(pool as never, 1, 'candidate');
     expect(pool.query).toHaveBeenCalledWith(expect.stringContaining("status = 'candidate'"), [1]);
     expect(pool.query.mock.calls[0][0]).toContain('promoted_at = NULL');
+    expect(pool.query.mock.calls[0][0]).toContain('times_seen = 1');
   });
 });
 
