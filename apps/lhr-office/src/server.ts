@@ -3,7 +3,7 @@ import express from 'express';
 import type { Candidate, Queryable } from '@lhr/db';
 import { getRunHistory, getLatestPendingCycleId, getPendingCandidates } from '@lhr/db';
 import type { JobRegistration } from '@lhr/jobs';
-import { jobs as defaultRegistry } from '@lhr/jobs';
+import { jobs as defaultRegistry } from './registry.js';
 import { createGitHubClient } from 'lhr-authoring-mcp-server/dist-lib/github.js';
 import {
   getPendingCandidate,

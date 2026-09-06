@@ -1,5 +1,5 @@
-import type { JobRegistration } from './types.js';
-import { validateJobRegistrations } from './validateRegistry.js';
+import type { JobRegistration } from '@lhr/jobs';
+import { validateJobRegistrations } from '@lhr/jobs';
 import { generateWeeklyVariantRecipe } from 'lhr-authoring-mcp-server/dist-lib/generateWeeklyVariantRecipe.js';
 import { finishPendingRecipeVariants } from 'lhr-authoring-mcp-server/dist-lib/finishRecipeVariants.js';
 import { sourceAffiliateCandidates } from 'lhr-authoring-mcp-server/dist-lib/sourceAffiliateCandidates.js';
