@@ -208,13 +208,16 @@ New module `apps/lhr-office/src/serpapiTrends.ts` (app-local — nothing else ne
 
 ## 6. Budget Cap
 
-To stay inside SerpApi's ~100 searches/month free tier: curated seeds are expected to settle
-around 4-5 per category; the LLM adds up to 2 candidate suggestions per category per cycle
-(§2 step 2); that's up to ~7 topic calls/category × 3 categories = 21, plus 3 trending-now calls =
-24 calls/week ≈ 104/month at the high end. This is called out explicitly as a cap to watch —
-if the curated lists grow past ~5/category as promotions accumulate, either the LLM-suggestion
-count or the SerpApi tier needs revisiting. Not auto-enforced in this phase; a log line each cycle
-reports the call count so it's visible before it becomes a problem.
+To stay inside SerpApi's 250 searches/month free tier (the author's actual plan): curated seeds
+are expected to settle around 4-5 per category; the LLM adds up to 2 candidate suggestions per
+category per cycle (§2 step 2); that's up to ~7 topic calls/category × 3 categories = 21, plus 3
+trending-now calls = 24 calls/week ≈ 104/month at the high end — comfortably inside the 250/month
+budget, with room for curated lists to grow well past the ~4-5/category estimate before this
+becomes a concern. Still called out explicitly as a cap to watch rather than assumed safe forever:
+if the curated lists grow large enough to push the monthly total past ~250 (roughly 12+/category
+at the current suggestion rate), either the LLM-suggestion count or the SerpApi tier needs
+revisiting. Not auto-enforced in this phase; a log line each cycle reports the call count so
+growth is visible before it becomes a problem.
 
 ## 7. LLM Synthesis & Report Storage
 
