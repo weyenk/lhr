@@ -1,6 +1,6 @@
 // mcp-server/src/dietSubstitutions.ts
 import { normalizeIngredient } from './normalizeIngredient.js';
-import { callOpenRouter } from './openrouter.js';
+import { callLLM } from '@lhr/llm';
 import type { RecipeVariantData } from '@lhr/schemas';
 
 export type SubstitutableDiet = Exclude<RecipeVariantData['diet'], 'original'>;
@@ -80,7 +80,7 @@ export async function substituteIngredient(
     };
   }
 
-  const content = await callOpenRouter(
+  const content = await callLLM(
     [
       {
         role: 'system',
@@ -91,7 +91,7 @@ export async function substituteIngredient(
       },
       { role: 'user', content: `Ingredient: "${normalized}"\nDiet: ${diet}` },
     ],
-    deadline,
+    { deadline },
   );
 
   const suggestion = content.trim();
@@ -115,7 +115,7 @@ export async function rewriteSteps(
   if (changes.length === 0) return originalSteps;
 
   const changeList = changes.map((c) => `- "${c.from}" -> "${c.to}"`).join('\n');
-  const content = await callOpenRouter(
+  const content = await callLLM(
     [
       {
         role: 'system',
@@ -128,7 +128,7 @@ export async function rewriteSteps(
         content: `Diet: ${diet}\nSubstitutions:\n${changeList}\n\nSteps:\n${JSON.stringify(originalSteps)}`,
       },
     ],
-    deadline,
+    { deadline },
   );
 
   let parsed: unknown;
