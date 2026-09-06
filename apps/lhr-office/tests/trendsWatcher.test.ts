@@ -31,6 +31,7 @@ const { sourceWeeklyTrends } = await import('../src/trendsWatcher');
 beforeEach(() => {
   vi.clearAllMocks();
   process.env.GITHUB_TOKEN = 'test-token';
+  process.env.SERPAPI_KEY = 'test-serpapi-key';
   dbMock.getCuratedTopics.mockResolvedValue([]);
   dbMock.upsertSuggestedTopic.mockImplementation(async (_db, category, topic) => ({
     id: 1, category, topic, status: 'candidate', timesSeen: 1,
@@ -113,11 +114,26 @@ describe('sourceWeeklyTrends', () => {
   it('throws before any category is attempted when GITHUB_TOKEN is missing (fail-fast, surfaced as a failure by the caller)', async () => {
     // GITHUB_TOKEN is the actual fail-fast trigger this test exercises: sourceWeeklyTrends's first
     // statement is createGitHubClient(requireEnv('GITHUB_TOKEN')), needed before any category's
-    // docs/CONSTITUTION.md read. SERPAPI_KEY's equivalent fail-fast is already covered by Task 6's
-    // serpapiTrends.test.ts ("throws when SERPAPI_KEY is not set") since that check lives inside
-    // fetchInterestAndRelatedQueries/fetchTrendingNow themselves, not in this orchestration layer.
+    // docs/CONSTITUTION.md read.
     delete process.env.GITHUB_TOKEN;
     await expect(sourceWeeklyTrends()).rejects.toThrow(/GITHUB_TOKEN/);
     expect(dbMock.insertTrendsReport).not.toHaveBeenCalled();
+  });
+
+  it('throws before any category is attempted when SERPAPI_KEY is missing (fail-fast, so a missing key surfaces as a failure rather than a silently-partial/success cycle)', async () => {
+    // sourceWeeklyTrends now also calls requireEnv('SERPAPI_KEY') up front, alongside GITHUB_TOKEN,
+    // so a missing key throws before any category's SerpApi calls are attempted (which would
+    // otherwise be swallowed by the per-topic/per-category try/catch and reported as partial/success).
+    delete process.env.SERPAPI_KEY;
+    await expect(sourceWeeklyTrends()).rejects.toThrow(/SERPAPI_KEY/);
+    expect(dbMock.insertTrendsReport).not.toHaveBeenCalled();
+  });
+
+  it('reports partial when fetchTrendingNow fails for a category even though all topics succeed', async () => {
+    serpapiMock.fetchTrendingNow.mockRejectedValueOnce(new Error('trending now down'));
+
+    const result = await sourceWeeklyTrends();
+
+    expect(result.status).toBe('partial');
   });
 });

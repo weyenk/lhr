@@ -53,7 +53,7 @@ CREATE TABLE decision_history (
   decided_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TABLE trend_seed_topics (
+CREATE TABLE IF NOT EXISTS trend_seed_topics (
   id SERIAL PRIMARY KEY,
   category TEXT NOT NULL,
   topic TEXT NOT NULL,
@@ -65,7 +65,7 @@ CREATE TABLE trend_seed_topics (
   UNIQUE (category, topic)
 );
 
-CREATE TABLE trends_reports (
+CREATE TABLE IF NOT EXISTS trends_reports (
   id SERIAL PRIMARY KEY,
   cycle_id TEXT NOT NULL,
   category TEXT NOT NULL,

@@ -184,6 +184,29 @@ describe('renderTrendsSection', () => {
     expect(html).not.toContain('<script>');
     expect(html).toContain('&lt;script&gt;');
   });
+
+  it('renders the topic count used', () => {
+    const html = renderTrendsSection([trendsReport]);
+    expect(html).toContain('1 topic(s) used');
+  });
+
+  it('renders the raw findings inside a <details> element', () => {
+    const html = renderTrendsSection([trendsReport]);
+    expect(html).toMatch(/<details>[\s\S]*<summary>[\s\S]*<\/summary>[\s\S]*<pre>[\s\S]*<\/pre>[\s\S]*<\/details>/);
+  });
+
+  it('HTML-escapes JSON.stringify\'d raw-findings content so a scraped/LLM-generated string cannot inject markup', () => {
+    const dangerousReport: TrendsReport = {
+      ...trendsReport,
+      rawFindings: {
+        topics: [{ topic: 'x', source: 'curated', interest: { note: '<script>alert(1)</script>' } }],
+        trendingNow: [],
+      },
+    };
+    const html = renderTrendsSection([dangerousReport]);
+    expect(html).not.toContain('<script>');
+    expect(html).toContain('&lt;script&gt;');
+  });
 });
 
 describe('renderTrendSeedTopicsSection', () => {

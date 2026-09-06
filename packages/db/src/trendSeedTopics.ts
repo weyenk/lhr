@@ -91,7 +91,7 @@ export async function setTopicStatus(db: Queryable, id: number, status: 'curated
   if (status === 'curated') {
     await db.query(`UPDATE trend_seed_topics SET status = 'curated', promoted_at = now() WHERE id = $1`, [id]);
   } else {
-    await db.query(`UPDATE trend_seed_topics SET status = 'candidate', promoted_at = NULL WHERE id = $1`, [id]);
+    await db.query(`UPDATE trend_seed_topics SET status = 'candidate', promoted_at = NULL, times_seen = 1 WHERE id = $1`, [id]);
   }
 }
 

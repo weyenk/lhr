@@ -116,6 +116,7 @@ async function synthesizeSummary(params: {
 
 export async function sourceWeeklyTrends(): Promise<JobResult> {
   const client = createGitHubClient(requireEnv('GITHUB_TOKEN'));
+  requireEnv('SERPAPI_KEY');
   const pool = getPool();
 
   const cycleId = new Date().toISOString().slice(0, 10);
@@ -150,7 +151,7 @@ export async function sourceWeeklyTrends(): Promise<JobResult> {
     const topicsUsed: TopicUsed[] = [];
     let hadTopicFailure = false;
     for (const { topic, source } of candidateTopics) {
-      callCount += 1;
+      callCount += 2;
       try {
         const interest = await fetchInterestAndRelatedQueries(topic);
         findings.push({ topic, source, interest });
@@ -168,13 +169,13 @@ export async function sourceWeeklyTrends(): Promise<JobResult> {
     try {
       trendingNow = await fetchTrendingNow(category);
     } catch (err) {
+      hadTopicFailure = true;
       console.warn(`[trends] fetchTrendingNow failed for ${category}: ${err instanceof Error ? err.message : String(err)}`);
     }
 
     for (const topic of suggested) {
       await upsertSuggestedTopic(pool, category, topic);
     }
-    await promoteEligibleCandidates(pool);
 
     const summary = await synthesizeSummary({ category, findings, trendingNow, constitution, recentPostTitles });
     if (summary === SUMMARY_FAILURE_PLACEHOLDER || hadTopicFailure) {
@@ -191,6 +192,8 @@ export async function sourceWeeklyTrends(): Promise<JobResult> {
 
     console.log(`[trends] ${category}: ${callCount} SerpApi call(s) this cycle`);
   }
+
+  await promoteEligibleCandidates(pool);
 
   if (partialCategories.length > 0) {
     return {
