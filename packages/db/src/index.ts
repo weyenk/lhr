@@ -8,3 +8,4 @@ export * from './affiliateLinkFile.js';
 export * from './trendSeedTopics.js';
 export * from './trendsReports.js';
 export * from './competitors.js';
+export * from './competitorSeoKeywords.js';

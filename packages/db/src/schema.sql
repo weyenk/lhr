@@ -83,3 +83,9 @@ CREATE TABLE IF NOT EXISTS competitors (
   discovered_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   approved_at TIMESTAMPTZ
 );
+
+CREATE TABLE IF NOT EXISTS competitor_seo_keywords (
+  id SERIAL PRIMARY KEY,
+  keyword TEXT NOT NULL UNIQUE,
+  added_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
