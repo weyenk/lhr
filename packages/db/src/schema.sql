@@ -52,3 +52,15 @@ CREATE TABLE decision_history (
   decision TEXT NOT NULL,        -- 'approved' | 'denied'
   decided_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+CREATE TABLE trend_seed_topics (
+  id SERIAL PRIMARY KEY,
+  category TEXT NOT NULL,
+  topic TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'candidate',
+  times_seen INTEGER NOT NULL DEFAULT 1,
+  first_seen_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  last_seen_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  promoted_at TIMESTAMPTZ,
+  UNIQUE (category, topic)
+);
