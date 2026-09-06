@@ -74,3 +74,12 @@ CREATE TABLE IF NOT EXISTS trends_reports (
   raw_findings JSONB NOT NULL,
   summary TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS competitors (
+  id SERIAL PRIMARY KEY,
+  domain TEXT NOT NULL UNIQUE,
+  name TEXT,
+  status TEXT NOT NULL DEFAULT 'candidate',  -- 'candidate' | 'tracked' | 'rejected'
+  discovered_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  approved_at TIMESTAMPTZ
+);

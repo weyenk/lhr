@@ -7,3 +7,4 @@ export * from './scoring.js';
 export * from './affiliateLinkFile.js';
 export * from './trendSeedTopics.js';
 export * from './trendsReports.js';
+export * from './competitors.js';
