@@ -4,9 +4,12 @@ import { createApp } from '../src/server.js';
 // Local-only convenience defaults — never used in production (Vercel always sets these as real
 // project env vars; requireStatusAuth 401s if either is missing, so leaving them unset there is
 // intentional). Set STATUS_AUTH_USER/STATUS_AUTH_PASSWORD in .env yourself if you want different
-// local credentials.
-process.env.STATUS_AUTH_USER ??= 'dev';
-process.env.STATUS_AUTH_PASSWORD ??= 'dev';
+// local credentials. Checked with `!value` rather than `??=`: .env.example's style leaves unused
+// vars present-but-empty ("STATUS_AUTH_USER="), and an empty string is not `undefined` — `??=`
+// would silently leave it as '', which requireStatusAuth then treats as "not configured" and
+// 401s on every request no matter what credentials are typed in.
+if (!process.env.STATUS_AUTH_USER) process.env.STATUS_AUTH_USER = 'dev';
+if (!process.env.STATUS_AUTH_PASSWORD) process.env.STATUS_AUTH_PASSWORD = 'dev';
 
 const missing = ['DATABASE_URL'].filter((name) => !process.env[name]);
 if (missing.length > 0) {
