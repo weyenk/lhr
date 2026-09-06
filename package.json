@@ -7,10 +7,11 @@
     "packages/schemas",
     "packages/jobs",
     "packages/db",
+    "packages/llm",
     "apps/lhr-office"
   ],
   "scripts": {
-    "postinstall": "npm run build --workspace=@lhr/schemas && npm run build --workspace=mcp-server && npm run build --workspace=@lhr/jobs && npm run build --workspace=@lhr/db",
+    "postinstall": "npm run build --workspace=@lhr/llm && npm run build --workspace=@lhr/schemas && npm run build --workspace=mcp-server && npm run build --workspace=@lhr/jobs && npm run build --workspace=@lhr/db",
     "dev": "astro dev",
     "dev:office": "cd apps/lhr-office && npm run dev",
     "build": "astro build",
