@@ -10,6 +10,7 @@
   "dependencies": {
     "@lhr/db": "*",
     "@lhr/jobs": "*",
+    "@lhr/llm": "*",
     "express": "^4.21.0",
     "lhr-authoring-mcp-server": "*"
   },
