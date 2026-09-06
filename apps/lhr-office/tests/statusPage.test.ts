@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { renderStatusPage, renderAffiliateCandidatesSection } from '../src/statusPage';
-import type { Candidate, OrchestratorRun } from '@lhr/db';
+import { renderStatusPage, renderAffiliateCandidatesSection, renderTrendsSection, renderTrendSeedTopicsSection } from '../src/statusPage';
+import type { Candidate, OrchestratorRun, TrendsReport, TrendSeedTopic } from '@lhr/db';
 
 const run: OrchestratorRun = {
   id: 1,
@@ -141,6 +141,72 @@ describe('renderAffiliateCandidatesSection', () => {
 
   it('escapes HTML in a candidate title so a scraped product name cannot inject markup', () => {
     const html = renderAffiliateCandidatesSection([{ ...affiliateCandidate, title: '<script>alert(1)</script>' }]);
+    expect(html).not.toContain('<script>');
+    expect(html).toContain('&lt;script&gt;');
+  });
+});
+
+const trendsReport: TrendsReport = {
+  id: 1,
+  cycleId: '2026-09-06',
+  category: 'cooking',
+  generatedAt: new Date('2026-09-06T00:00:00Z'),
+  topicsUsed: [{ topic: 'air fryer recipes', source: 'curated' }],
+  rawFindings: { topics: [], trendingNow: [] },
+  summary: 'Air fryer content is trending; you already cover it well.',
+};
+
+const seedTopic: TrendSeedTopic = {
+  id: 1,
+  category: 'cooking',
+  topic: 'air fryer recipes',
+  status: 'candidate',
+  timesSeen: 2,
+  firstSeenAt: new Date('2026-08-01T00:00:00Z'),
+  lastSeenAt: new Date('2026-08-15T00:00:00Z'),
+  promotedAt: null,
+};
+
+describe('renderTrendsSection', () => {
+  it('renders the category, summary, and cycle date', () => {
+    const html = renderTrendsSection([trendsReport]);
+    expect(html).toContain('cooking');
+    expect(html).toContain('Air fryer content is trending');
+    expect(html).toContain('2026-09-06');
+  });
+
+  it('renders nothing when there are no reports', () => {
+    expect(renderTrendsSection([])).toBe('');
+  });
+
+  it('escapes HTML in a summary', () => {
+    const html = renderTrendsSection([{ ...trendsReport, summary: '<script>alert(1)</script>' }]);
+    expect(html).not.toContain('<script>');
+    expect(html).toContain('&lt;script&gt;');
+  });
+});
+
+describe('renderTrendSeedTopicsSection', () => {
+  it('renders topic, category, status, times seen, and a Promote button for a candidate', () => {
+    const html = renderTrendSeedTopicsSection([seedTopic]);
+    expect(html).toContain('air fryer recipes');
+    expect(html).toContain('cooking');
+    expect(html).toContain('candidate');
+    expect(html).toMatch(/action="\/status\/trends\/topics\/1\/promote"/);
+  });
+
+  it('renders a Demote button for a curated topic', () => {
+    const html = renderTrendSeedTopicsSection([{ ...seedTopic, status: 'curated' }]);
+    expect(html).toMatch(/action="\/status\/trends\/topics\/1\/demote"/);
+  });
+
+  it('always renders the add-curated-topic form, even with no topics yet', () => {
+    const html = renderTrendSeedTopicsSection([]);
+    expect(html).toMatch(/action="\/status\/trends\/topics\/add"/);
+  });
+
+  it('escapes HTML in a topic name', () => {
+    const html = renderTrendSeedTopicsSection([{ ...seedTopic, topic: '<script>alert(1)</script>' }]);
     expect(html).not.toContain('<script>');
     expect(html).toContain('&lt;script&gt;');
   });

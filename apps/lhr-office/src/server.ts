@@ -1,7 +1,16 @@
 import { timingSafeEqual } from 'node:crypto';
 import express from 'express';
 import type { Candidate, Queryable } from '@lhr/db';
-import { getRunHistory, getLatestPendingCycleId, getPendingCandidates } from '@lhr/db';
+import {
+  getRunHistory,
+  getLatestPendingCycleId,
+  getPendingCandidates,
+  setTopicStatus,
+  addCuratedTopic,
+  getAllTopics,
+  listRecentReports,
+  TREND_CATEGORIES,
+} from '@lhr/db';
 import type { JobRegistration } from '@lhr/jobs';
 import { jobs as defaultRegistry } from './registry.js';
 import { createGitHubClient } from 'lhr-authoring-mcp-server/dist-lib/github.js';
@@ -190,7 +199,11 @@ export function createApp(
       );
       const candidate = await candidates.getPending();
       const pendingAffiliateCandidates = await affiliateCandidates.getPending();
-      res.type('html').send(renderStatusPage(rows, candidate, pendingAffiliateCandidates));
+      const trendsReports = (
+        await Promise.all(TREND_CATEGORIES.map((category) => listRecentReports(db, category)))
+      ).flat();
+      const trendSeedTopics = await getAllTopics(db);
+      res.type('html').send(renderStatusPage(rows, candidate, pendingAffiliateCandidates, trendsReports, trendSeedTopics));
     } catch (err) {
       // getRunHistory/candidates.getPending can throw (e.g. a DB or GitHub
       // connectivity failure). Express 4 does not catch rejections from async
@@ -261,6 +274,44 @@ export function createApp(
       res.status(500).send(`Failed to deny affiliate candidate: ${escapeHtml(message)}`);
     }
   });
+
+  app.post('/status/trends/topics/:id/promote', requireStatusAuth, async (req, res) => {
+    try {
+      await setTopicStatus(db, Number(req.params.id), 'curated');
+      res.redirect(303, '/status');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      res.status(500).send(`Failed to promote topic: ${escapeHtml(message)}`);
+    }
+  });
+
+  app.post('/status/trends/topics/:id/demote', requireStatusAuth, async (req, res) => {
+    try {
+      await setTopicStatus(db, Number(req.params.id), 'candidate');
+      res.redirect(303, '/status');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      res.status(500).send(`Failed to demote topic: ${escapeHtml(message)}`);
+    }
+  });
+
+  // Parses both a real browser form submission (no enctype -> urlencoded) and a JSON body
+  // (as sent by supertest's .send({...}) in tests, and by any programmatic caller).
+  app.post(
+    '/status/trends/topics/add',
+    requireStatusAuth,
+    express.urlencoded({ extended: false }),
+    express.json(),
+    async (req, res) => {
+      try {
+        await addCuratedTopic(db, req.body.category, req.body.topic);
+        res.redirect(303, '/status');
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        res.status(500).send(`Failed to add topic: ${escapeHtml(message)}`);
+      }
+    },
+  );
 
   return app;
 }

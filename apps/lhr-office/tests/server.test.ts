@@ -12,10 +12,19 @@ vi.mock('../src/orchestrate', () => ({
 const getRunHistoryMock = vi.fn();
 const getLatestPendingCycleIdMock = vi.fn();
 const getPendingCandidatesMock = vi.fn();
+const setTopicStatusMock = vi.fn();
+const addCuratedTopicMock = vi.fn();
+const getAllTopicsMock = vi.fn();
+const listRecentReportsMock = vi.fn();
 vi.mock('@lhr/db', () => ({
   getRunHistory: (...args: unknown[]) => getRunHistoryMock(...args),
   getLatestPendingCycleId: (...args: unknown[]) => getLatestPendingCycleIdMock(...args),
   getPendingCandidates: (...args: unknown[]) => getPendingCandidatesMock(...args),
+  setTopicStatus: (...args: unknown[]) => setTopicStatusMock(...args),
+  addCuratedTopic: (...args: unknown[]) => addCuratedTopicMock(...args),
+  getAllTopics: (...args: unknown[]) => getAllTopicsMock(...args),
+  listRecentReports: (...args: unknown[]) => listRecentReportsMock(...args),
+  TREND_CATEGORIES: ['web-design', 'cooking', 'nutrition'],
 }));
 
 vi.mock('lhr-authoring-mcp-server/dist-lib/affiliateCandidateOps.js', () => ({
@@ -49,6 +58,8 @@ beforeEach(() => {
   noAffiliateCandidates.getPending.mockResolvedValue([]);
   getLatestPendingCycleIdMock.mockResolvedValue(null);
   getPendingCandidatesMock.mockResolvedValue([]);
+  getAllTopicsMock.mockResolvedValue([]);
+  listRecentReportsMock.mockResolvedValue([]);
 });
 
 afterEach(() => {
@@ -410,5 +421,54 @@ describe('POST /status/affiliate-candidates/:id/deny', () => {
     const res = await request(app).post('/status/affiliate-candidates/7/deny').auth('test-user', 'test-password');
     expect(res.status).toBe(500);
     expect(res.text).toContain('boom');
+  });
+});
+
+describe('trend seed topic routes', () => {
+  it('promotes a topic and redirects to /status', async () => {
+    const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates);
+    const res = await request(app)
+      .post('/status/trends/topics/5/promote')
+      .auth('test-user', 'test-password');
+    expect(setTopicStatusMock).toHaveBeenCalledWith(fakeDb, 5, 'curated');
+    expect(res.status).toBe(303);
+    expect(res.headers.location).toBe('/status');
+  });
+
+  it('demotes a topic and redirects to /status', async () => {
+    const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates);
+    const res = await request(app)
+      .post('/status/trends/topics/5/demote')
+      .auth('test-user', 'test-password');
+    expect(setTopicStatusMock).toHaveBeenCalledWith(fakeDb, 5, 'candidate');
+    expect(res.status).toBe(303);
+  });
+
+  it('adds a curated topic and redirects to /status', async () => {
+    const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates);
+    const res = await request(app)
+      .post('/status/trends/topics/add')
+      .auth('test-user', 'test-password')
+      .send({ category: 'cooking', topic: 'sourdough' });
+    expect(addCuratedTopicMock).toHaveBeenCalledWith(fakeDb, 'cooking', 'sourdough');
+    expect(res.status).toBe(303);
+  });
+
+  it('rejects an unauthenticated promote request', async () => {
+    const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates);
+    const res = await request(app).post('/status/trends/topics/5/promote');
+    expect(res.status).toBe(401);
+    expect(setTopicStatusMock).not.toHaveBeenCalled();
+  });
+
+  it('returns 500 with an escaped error message when the DB call throws', async () => {
+    setTopicStatusMock.mockRejectedValueOnce(new Error('<script>alert(1)</script>'));
+    const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates);
+    const res = await request(app)
+      .post('/status/trends/topics/5/promote')
+      .auth('test-user', 'test-password');
+    expect(res.status).toBe(500);
+    expect(res.text).not.toContain('<script>');
+    expect(res.text).toContain('&lt;script&gt;');
   });
 });
