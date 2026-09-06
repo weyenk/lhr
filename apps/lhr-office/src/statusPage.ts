@@ -1,5 +1,6 @@
 import type { Candidate, OrchestratorRun } from '@lhr/db';
 import type { TrendsReport, TrendSeedTopic, TrendCategory } from '@lhr/db';
+import type { Competitor, CompetitorReport, CompetitorSeoKeyword } from '@lhr/db';
 import { TREND_CATEGORIES } from '@lhr/db';
 import type { CandidateSummary } from 'lhr-authoring-mcp-server/dist-lib/recipeCandidates.js';
 
@@ -142,12 +143,79 @@ export function renderTrendSeedTopicsSection(topics: TrendSeedTopic[]): string {
     </section>`;
 }
 
+function renderCompetitorRow(competitor: Competitor, report: CompetitorReport | undefined): string {
+  return `
+      <li>
+        <p><strong>${escapeHtml(competitor.name ?? competitor.domain)}</strong> (${escapeHtml(competitor.domain)})${report ? ` — cycle ${escapeHtml(report.cycleId)}` : ''}</p>
+        <p>${report ? escapeHtml(report.summary) : 'No report yet — the next weekly cycle will generate one.'}</p>
+      </li>`;
+}
+
+// Mirrors the trend-topics/affiliate-candidates sections above — every human-in-the-loop
+// decision this orchestrator needs lives on this one Basic-Auth-gated page.
+export function renderCompetitorsSection(tracked: Competitor[], latestReportByCompetitorId: Map<number, CompetitorReport>): string {
+  if (tracked.length === 0) return '';
+  return `
+    <section>
+      <h2>Competitors</h2>
+      <ul>${tracked.map((c) => renderCompetitorRow(c, latestReportByCompetitorId.get(c.id))).join('')}</ul>
+    </section>`;
+}
+
+function renderCompetitorCandidate(candidate: Competitor): string {
+  return `
+      <li>
+        <span>${escapeHtml(candidate.domain)}</span>
+        <form method="post" action="/status/competitors/${candidate.id}/approve" style="display:inline">
+          <button type="submit">Track</button>
+        </form>
+        <form method="post" action="/status/competitors/${candidate.id}/reject" style="display:inline">
+          <button type="submit">Reject</button>
+        </form>
+      </li>`;
+}
+
+export function renderCompetitorCandidatesSection(candidates: Competitor[]): string {
+  if (candidates.length === 0) return '';
+  return `
+    <section>
+      <h2>Competitor candidates</h2>
+      <ul>${candidates.map(renderCompetitorCandidate).join('')}</ul>
+    </section>`;
+}
+
+function renderCompetitorSeoKeyword(keyword: CompetitorSeoKeyword): string {
+  return `
+      <li>
+        <span>${escapeHtml(keyword.keyword)}</span>
+        <form method="post" action="/status/competitors/keywords/${keyword.id}/remove" style="display:inline">
+          <button type="submit">Remove</button>
+        </form>
+      </li>`;
+}
+
+export function renderCompetitorKeywordsSection(keywords: CompetitorSeoKeyword[]): string {
+  return `
+    <section>
+      <h2>Competitor SEO keywords</h2>
+      <ul>${keywords.map(renderCompetitorSeoKeyword).join('')}</ul>
+      <form method="post" action="/status/competitors/keywords/add">
+        <input type="text" name="keyword" placeholder="New SEO keyword to track" required />
+        <button type="submit">Add keyword</button>
+      </form>
+    </section>`;
+}
+
 export function renderStatusPage(
   rows: JobStatusRow[],
   candidate: CandidateSummary | null = null,
   affiliateCandidates: Candidate[] = [],
   trendsReports: TrendsReport[] = [],
   trendSeedTopics: TrendSeedTopic[] = [],
+  trackedCompetitors: Competitor[] = [],
+  latestCompetitorReportById: Map<number, CompetitorReport> = new Map(),
+  competitorCandidates: Competitor[] = [],
+  competitorSeoKeywords: CompetitorSeoKeyword[] = [],
 ): string {
   const sections = rows
     .map((row) => {
@@ -180,6 +248,9 @@ export function renderStatusPage(
     ${renderAffiliateCandidatesSection(affiliateCandidates)}
     ${renderTrendsSection(trendsReports)}
     ${renderTrendSeedTopicsSection(trendSeedTopics)}
+    ${renderCompetitorsSection(trackedCompetitors, latestCompetitorReportById)}
+    ${renderCompetitorCandidatesSection(competitorCandidates)}
+    ${renderCompetitorKeywordsSection(competitorSeoKeywords)}
     ${sections || '<p>No jobs registered yet.</p>'}
   </body>
 </html>`;

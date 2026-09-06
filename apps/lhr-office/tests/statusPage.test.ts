@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { renderStatusPage, renderAffiliateCandidatesSection, renderTrendsSection, renderTrendSeedTopicsSection } from '../src/statusPage';
+import { renderStatusPage, renderAffiliateCandidatesSection, renderTrendsSection, renderTrendSeedTopicsSection, renderCompetitorsSection, renderCompetitorCandidatesSection, renderCompetitorKeywordsSection } from '../src/statusPage';
 import type { Candidate, OrchestratorRun, TrendsReport, TrendSeedTopic } from '@lhr/db';
 
 const run: OrchestratorRun = {
@@ -232,5 +232,59 @@ describe('renderTrendSeedTopicsSection', () => {
     const html = renderTrendSeedTopicsSection([{ ...seedTopic, topic: '<script>alert(1)</script>' }]);
     expect(html).not.toContain('<script>');
     expect(html).toContain('&lt;script&gt;');
+  });
+});
+
+describe('renderCompetitorsSection', () => {
+  it('renders nothing when there are no tracked competitors', () => {
+    expect(renderCompetitorsSection([], new Map())).toBe('');
+  });
+
+  it('renders a tracked competitor with its latest report summary', () => {
+    const competitor = { id: 1, domain: 'reliable-recipes.com', name: null, status: 'tracked' as const, discoveredAt: new Date(), approvedAt: new Date() };
+    const report = {
+      id: 1, competitorId: 1, cycleId: '2026-09-06', generatedAt: new Date('2026-09-06T00:00:00Z'),
+      newContent: [], seoPositions: [], monetizationSnapshot: 'x', designSnapshot: 'y',
+      summary: 'Published one new post this week.',
+    };
+    const html = renderCompetitorsSection([competitor], new Map([[1, report]]));
+    expect(html).toContain('reliable-recipes.com');
+    expect(html).toContain('Published one new post this week.');
+  });
+
+  it('shows a placeholder when a tracked competitor has no report yet', () => {
+    const competitor = { id: 2, domain: 'brand-new.com', name: null, status: 'tracked' as const, discoveredAt: new Date(), approvedAt: new Date() };
+    const html = renderCompetitorsSection([competitor], new Map());
+    expect(html).toContain('brand-new.com');
+    expect(html).toContain('No report yet');
+  });
+});
+
+describe('renderCompetitorCandidatesSection', () => {
+  it('renders nothing when there are no pending candidates', () => {
+    expect(renderCompetitorCandidatesSection([])).toBe('');
+  });
+
+  it('renders a pending candidate with approve/reject actions', () => {
+    const candidate = { id: 3, domain: 'new-candidate.com', name: null, status: 'candidate' as const, discoveredAt: new Date(), approvedAt: null };
+    const html = renderCompetitorCandidatesSection([candidate]);
+    expect(html).toContain('new-candidate.com');
+    expect(html).toContain('/status/competitors/3/approve');
+    expect(html).toContain('/status/competitors/3/reject');
+  });
+});
+
+describe('renderCompetitorKeywordsSection', () => {
+  it('renders the keyword list and an add form', () => {
+    const keyword = { id: 1, keyword: 'gluten free dinner recipes', addedAt: new Date() };
+    const html = renderCompetitorKeywordsSection([keyword]);
+    expect(html).toContain('gluten free dinner recipes');
+    expect(html).toContain('/status/competitors/keywords/1/remove');
+    expect(html).toContain('/status/competitors/keywords/add');
+  });
+
+  it('renders an empty list with just the add form when there are no keywords yet', () => {
+    const html = renderCompetitorKeywordsSection([]);
+    expect(html).toContain('/status/competitors/keywords/add');
   });
 });
