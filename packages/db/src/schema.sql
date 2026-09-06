@@ -64,3 +64,13 @@ CREATE TABLE trend_seed_topics (
   promoted_at TIMESTAMPTZ,
   UNIQUE (category, topic)
 );
+
+CREATE TABLE trends_reports (
+  id SERIAL PRIMARY KEY,
+  cycle_id TEXT NOT NULL,
+  category TEXT NOT NULL,
+  generated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  topics_used JSONB NOT NULL,
+  raw_findings JSONB NOT NULL,
+  summary TEXT NOT NULL
+);
