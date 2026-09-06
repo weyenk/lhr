@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { jobs } from '../src/registry';
-import { validateJobRegistrations } from '../src/validateRegistry';
+import { validateJobRegistrations } from '@lhr/jobs';
 
 describe('jobs registry', () => {
   it('registers the recipe-variant-generator job on a 7-day cadence', () => {
