@@ -1,7 +1,7 @@
 import { timingSafeEqual } from 'node:crypto';
 import express from 'express';
-import type { Queryable } from '@lhr/db';
-import { getRunHistory } from '@lhr/db';
+import type { Candidate, Queryable } from '@lhr/db';
+import { getRunHistory, getLatestPendingCycleId, getPendingCandidates } from '@lhr/db';
 import type { JobRegistration } from '@lhr/jobs';
 import { jobs as defaultRegistry } from '@lhr/jobs';
 import { createGitHubClient } from 'lhr-authoring-mcp-server/dist-lib/github.js';
@@ -12,6 +12,12 @@ import {
   type CandidateSummary,
   type ApprovedCandidate,
 } from 'lhr-authoring-mcp-server/dist-lib/recipeCandidates.js';
+import {
+  approveAffiliateCandidate,
+  denyAffiliateCandidate,
+  type ApprovedAffiliateCandidate,
+  type DeniedAffiliateCandidate,
+} from 'lhr-authoring-mcp-server/dist-lib/affiliateCandidateOps.js';
 import { runDueJob, runJobNow } from './orchestrate.js';
 import { renderStatusPage, escapeHtml } from './statusPage.js';
 
@@ -36,6 +42,32 @@ function defaultCandidateOps(): CandidateOps {
     getPending: () => getPendingCandidate(createGitHubClient(requireGitHubToken())),
     approve: (id) => approveCandidate(createGitHubClient(requireGitHubToken()), id),
     reroll: (id) => rerollCandidate(createGitHubClient(requireGitHubToken()), id),
+  };
+}
+
+// The affiliate-sourcing job's weekly product candidates, reviewed on the same /status page as the
+// recipe candidate above. Injectable for the same reason: tests must never need a real
+// GITHUB_TOKEN, an Associates tag, or a database.
+export interface AffiliateCandidateOps {
+  getPending: () => Promise<Candidate[]>;
+  approve: (id: number) => Promise<ApprovedAffiliateCandidate>;
+  deny: (id: number) => Promise<DeniedAffiliateCandidate>;
+}
+
+function requireAssociatesTag(): string {
+  const tag = process.env.AMAZON_ASSOCIATES_TAG;
+  if (!tag) throw new Error('AMAZON_ASSOCIATES_TAG is not set');
+  return tag;
+}
+
+function defaultAffiliateCandidateOps(db: Queryable): AffiliateCandidateOps {
+  return {
+    getPending: async () => {
+      const cycleId = await getLatestPendingCycleId(db);
+      return cycleId ? getPendingCandidates(db, cycleId) : [];
+    },
+    approve: (id) => approveAffiliateCandidate(db, requireGitHubToken(), requireAssociatesTag(), id),
+    deny: (id) => denyAffiliateCandidate(db, id),
   };
 }
 
@@ -109,6 +141,7 @@ export function createApp(
   db: Queryable,
   registry: JobRegistration[] = defaultRegistry,
   candidates: CandidateOps = defaultCandidateOps(),
+  affiliateCandidates: AffiliateCandidateOps = defaultAffiliateCandidateOps(db),
 ): express.Express {
   const app = express();
   app.set('trust proxy', 1);
@@ -156,7 +189,8 @@ export function createApp(
         })),
       );
       const candidate = await candidates.getPending();
-      res.type('html').send(renderStatusPage(rows, candidate));
+      const pendingAffiliateCandidates = await affiliateCandidates.getPending();
+      res.type('html').send(renderStatusPage(rows, candidate, pendingAffiliateCandidates));
     } catch (err) {
       // getRunHistory/candidates.getPending can throw (e.g. a DB or GitHub
       // connectivity failure). Express 4 does not catch rejections from async
@@ -205,6 +239,26 @@ export function createApp(
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       res.status(500).send(`Failed to reroll candidate: ${escapeHtml(message)}`);
+    }
+  });
+
+  app.post('/status/affiliate-candidates/:id/approve', requireStatusAuth, async (req, res) => {
+    try {
+      await affiliateCandidates.approve(Number(req.params.id));
+      res.redirect(303, '/status');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      res.status(500).send(`Failed to approve affiliate candidate: ${escapeHtml(message)}`);
+    }
+  });
+
+  app.post('/status/affiliate-candidates/:id/deny', requireStatusAuth, async (req, res) => {
+    try {
+      await affiliateCandidates.deny(Number(req.params.id));
+      res.redirect(303, '/status');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      res.status(500).send(`Failed to deny affiliate candidate: ${escapeHtml(message)}`);
     }
   });
 

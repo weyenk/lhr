@@ -12,6 +12,7 @@
   "scripts": {
     "postinstall": "npm run build --workspace=@lhr/schemas && npm run build --workspace=mcp-server && npm run build --workspace=@lhr/jobs && npm run build --workspace=@lhr/db",
     "dev": "astro dev",
+    "dev:office": "cd apps/lhr-office && npm run dev",
     "build": "astro build",
     "preview": "astro preview",
     "pretest": "astro sync && mkdir -p .astro && cp node_modules/.astro/data-store.json .astro/data-store.json",
