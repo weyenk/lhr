@@ -1,9 +1,9 @@
 // mcp-server/tests/dietSubstitutions.test.ts
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 
-const callOpenRouter = vi.fn();
-vi.mock('../src/openrouter', () => ({
-  callOpenRouter: (...args: unknown[]) => callOpenRouter(...args),
+const callLLM = vi.fn();
+vi.mock('@lhr/llm', () => ({
+  callLLM: (...args: unknown[]) => callLLM(...args),
 }));
 
 const { substituteIngredient, rewriteSteps, generateVariant } = await import('../src/dietSubstitutions');
@@ -21,7 +21,7 @@ describe('substituteIngredient', () => {
       changed: true,
       note: 'Swapped all-purpose flour for 1:1 gluten-free flour blend',
     });
-    expect(callOpenRouter).not.toHaveBeenCalled();
+    expect(callLLM).not.toHaveBeenCalled();
   });
 
   it('matches the spec examples: butter/vegan, heavy cream/low-fat, soy sauce/low-salt', async () => {
@@ -33,7 +33,7 @@ describe('substituteIngredient', () => {
   });
 
   it('falls back to an LLM call for an ingredient not in the table', async () => {
-    callOpenRouter.mockResolvedValue('roasted beet slices');
+    callLLM.mockResolvedValue('roasted beet slices');
     const result = await substituteIngredient({ item: 'Smoked salmon' }, 'vegan');
     expect(result).toEqual({
       item: 'roasted beet slices',
@@ -41,11 +41,11 @@ describe('substituteIngredient', () => {
       changed: true,
       note: 'Swapped smoked salmon for roasted beet slices',
     });
-    expect(callOpenRouter).toHaveBeenCalledTimes(1);
+    expect(callLLM).toHaveBeenCalledTimes(1);
   });
 
   it('returns the ingredient unchanged when the LLM says no substitution is needed', async () => {
-    callOpenRouter.mockResolvedValue('no substitution needed');
+    callLLM.mockResolvedValue('no substitution needed');
     const result = await substituteIngredient({ item: 'Salt' }, 'vegan');
     expect(result).toEqual({ item: 'Salt', amount: undefined, changed: false });
   });
@@ -53,7 +53,7 @@ describe('substituteIngredient', () => {
 
 describe('rewriteSteps', () => {
   it('parses a valid JSON array response into rewritten steps', async () => {
-    callOpenRouter.mockResolvedValue('["Brown the plant-based meat.", "Simmer for 10 minutes."]');
+    callLLM.mockResolvedValue('["Brown the plant-based meat.", "Simmer for 10 minutes."]');
     const result = await rewriteSteps(
       ['Brown the beef.', 'Simmer for 10 minutes.'],
       [{ from: 'beef', to: 'plant-based meat' }],
@@ -65,18 +65,18 @@ describe('rewriteSteps', () => {
   it('returns the original steps unchanged and skips the LLM call when there are no substitutions', async () => {
     const result = await rewriteSteps(['Bake at 350F.'], [], 'vegan');
     expect(result).toEqual(['Bake at 350F.']);
-    expect(callOpenRouter).not.toHaveBeenCalled();
+    expect(callLLM).not.toHaveBeenCalled();
   });
 
   it('throws when the LLM response is not valid JSON (sanity guard)', async () => {
-    callOpenRouter.mockResolvedValue('not json');
+    callLLM.mockResolvedValue('not json');
     await expect(
       rewriteSteps(['Bake it.'], [{ from: 'a', to: 'b' }], 'vegan'),
     ).rejects.toThrow(/not valid JSON/);
   });
 
   it('throws when the LLM returns an empty array (sanity guard)', async () => {
-    callOpenRouter.mockResolvedValue('[]');
+    callLLM.mockResolvedValue('[]');
     await expect(
       rewriteSteps(['Bake it.'], [{ from: 'a', to: 'b' }], 'vegan'),
     ).rejects.toThrow(/non-empty array/);
@@ -85,7 +85,7 @@ describe('rewriteSteps', () => {
 
 describe('generateVariant', () => {
   it('retries once on an LLM failure and succeeds on the second attempt', async () => {
-    callOpenRouter.mockRejectedValueOnce(new Error('timeout')).mockResolvedValueOnce('["Mix the flour differently."]');
+    callLLM.mockRejectedValueOnce(new Error('timeout')).mockResolvedValueOnce('["Mix the flour differently."]');
 
     const result = await generateVariant(
       'gluten-free',
@@ -95,11 +95,11 @@ describe('generateVariant', () => {
 
     expect(result.rejected).toBe(false);
     expect(result.steps).toEqual(['Mix the flour differently.']);
-    expect(callOpenRouter).toHaveBeenCalledTimes(2);
+    expect(callLLM).toHaveBeenCalledTimes(2);
   });
 
   it('rejects the variant and falls back to the original ingredients/steps after two failed attempts', async () => {
-    callOpenRouter.mockRejectedValue(new Error('timeout'));
+    callLLM.mockRejectedValue(new Error('timeout'));
     const original = [{ item: 'Smoked salmon' }];
     const originalSteps = ['Grill the salmon.'];
 
@@ -114,25 +114,25 @@ describe('generateVariant', () => {
 
 describe('deadline propagation', () => {
   it('substituteIngredient forwards the deadline to the LLM fallback call', async () => {
-    callOpenRouter.mockResolvedValue('roasted beet slices');
+    callLLM.mockResolvedValue('roasted beet slices');
     const deadline = Date.now() + 60_000;
     await substituteIngredient({ item: 'Smoked salmon' }, 'vegan', deadline);
-    expect(callOpenRouter).toHaveBeenCalledWith(expect.anything(), deadline);
+    expect(callLLM).toHaveBeenCalledWith(expect.anything(), { deadline });
   });
 
   it('rewriteSteps forwards the deadline to its LLM call', async () => {
-    callOpenRouter.mockResolvedValue('["Brown the plant-based meat."]');
+    callLLM.mockResolvedValue('["Brown the plant-based meat."]');
     const deadline = Date.now() + 60_000;
     await rewriteSteps(['Brown the beef.'], [{ from: 'beef', to: 'plant-based meat' }], 'vegan', deadline);
-    expect(callOpenRouter).toHaveBeenCalledWith(expect.anything(), deadline);
+    expect(callLLM).toHaveBeenCalledWith(expect.anything(), { deadline });
   });
 
   it('generateVariant forwards the deadline through to every LLM call it makes', async () => {
-    callOpenRouter.mockResolvedValue('no substitution needed');
+    callLLM.mockResolvedValue('no substitution needed');
     const deadline = Date.now() + 60_000;
     await generateVariant('vegan', [{ item: 'Smoked salmon' }], ['Grill the salmon.'], deadline);
-    for (const call of callOpenRouter.mock.calls) {
-      expect(call[1]).toBe(deadline);
+    for (const call of callLLM.mock.calls) {
+      expect(call[1]).toEqual({ deadline });
     }
   });
 });

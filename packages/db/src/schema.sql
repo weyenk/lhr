@@ -52,3 +52,25 @@ CREATE TABLE decision_history (
   decision TEXT NOT NULL,        -- 'approved' | 'denied'
   decided_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+CREATE TABLE IF NOT EXISTS trend_seed_topics (
+  id SERIAL PRIMARY KEY,
+  category TEXT NOT NULL,
+  topic TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'candidate',
+  times_seen INTEGER NOT NULL DEFAULT 1,
+  first_seen_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  last_seen_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  promoted_at TIMESTAMPTZ,
+  UNIQUE (category, topic)
+);
+
+CREATE TABLE IF NOT EXISTS trends_reports (
+  id SERIAL PRIMARY KEY,
+  cycle_id TEXT NOT NULL,
+  category TEXT NOT NULL,
+  generated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  topics_used JSONB NOT NULL,
+  raw_findings JSONB NOT NULL,
+  summary TEXT NOT NULL
+);

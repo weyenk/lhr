@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { callOpenRouter } from '../src/openrouter';
+import { callLLM } from '../src/index';
 
 const originalFetch = global.fetch;
 const originalEnv = { ...process.env };
@@ -14,14 +14,14 @@ afterEach(() => {
   process.env = { ...originalEnv };
 });
 
-describe('callOpenRouter', () => {
+describe('callLLM', () => {
   it('posts the messages to OpenRouter and returns the reply content', async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ choices: [{ message: { content: 'roasted beet slices' } }] }),
     }) as unknown as typeof fetch;
 
-    const result = await callOpenRouter([{ role: 'user', content: 'Substitute: bacon' }]);
+    const result = await callLLM([{ role: 'user', content: 'Substitute: bacon' }]);
 
     expect(result).toBe('roasted beet slices');
     expect(global.fetch).toHaveBeenCalledWith(
@@ -48,7 +48,7 @@ describe('callOpenRouter', () => {
       json: async () => ({ choices: [{ message: { content: 'x' } }] }),
     }) as unknown as typeof fetch;
 
-    await callOpenRouter([{ role: 'user', content: 'hi' }]);
+    await callLLM([{ role: 'user', content: 'hi' }]);
 
     const body = JSON.parse((global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body);
     expect(body.models).toEqual(['some/other-model:free']);
@@ -56,12 +56,12 @@ describe('callOpenRouter', () => {
 
   it('throws when OPENROUTER_API_KEY is not set', async () => {
     delete process.env.OPENROUTER_API_KEY;
-    await expect(callOpenRouter([{ role: 'user', content: 'hi' }])).rejects.toThrow(/OPENROUTER_API_KEY/);
+    await expect(callLLM([{ role: 'user', content: 'hi' }])).rejects.toThrow(/OPENROUTER_API_KEY/);
   });
 
   it('throws immediately when the request fails with a non-429 status', async () => {
     global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 500, text: async () => '' }) as unknown as typeof fetch;
-    await expect(callOpenRouter([{ role: 'user', content: 'hi' }])).rejects.toThrow(/500/);
+    await expect(callLLM([{ role: 'user', content: 'hi' }])).rejects.toThrow(/500/);
     expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 
@@ -71,12 +71,12 @@ describe('callOpenRouter', () => {
       status: 402,
       text: async () => '{"error":{"message":"Insufficient credits for this request","code":402}}',
     }) as unknown as typeof fetch;
-    await expect(callOpenRouter([{ role: 'user', content: 'hi' }])).rejects.toThrow(/Insufficient credits/);
+    await expect(callLLM([{ role: 'user', content: 'hi' }])).rejects.toThrow(/Insufficient credits/);
   });
 
   it('does not crash when the error response has no body/text() available', async () => {
     global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 500 }) as unknown as typeof fetch;
-    await expect(callOpenRouter([{ role: 'user', content: 'hi' }])).rejects.toThrow(/500/);
+    await expect(callLLM([{ role: 'user', content: 'hi' }])).rejects.toThrow(/500/);
   });
 
   it('retries a 429 (honoring Retry-After) and succeeds on a later attempt', async () => {
@@ -93,7 +93,7 @@ describe('callOpenRouter', () => {
       };
     }) as unknown as typeof fetch;
 
-    const result = await callOpenRouter([{ role: 'user', content: 'hi' }]);
+    const result = await callLLM([{ role: 'user', content: 'hi' }]);
 
     expect(result).toBe('ok after retry');
     expect(calls).toBe(3);
@@ -107,7 +107,7 @@ describe('callOpenRouter', () => {
       text: async () => '{"error":{"message":"Rate limit exceeded","code":429}}',
     }) as unknown as typeof fetch;
 
-    await expect(callOpenRouter([{ role: 'user', content: 'hi' }])).rejects.toThrow(/429.*Rate limit exceeded/s);
+    await expect(callLLM([{ role: 'user', content: 'hi' }])).rejects.toThrow(/429.*Rate limit exceeded/s);
     expect(global.fetch).toHaveBeenCalledTimes(4);
   });
 
@@ -116,7 +116,7 @@ describe('callOpenRouter', () => {
       ok: true,
       json: async () => ({ choices: [] }),
     }) as unknown as typeof fetch;
-    await expect(callOpenRouter([{ role: 'user', content: 'hi' }])).rejects.toThrow(/no message content/);
+    await expect(callLLM([{ role: 'user', content: 'hi' }])).rejects.toThrow(/no message content/);
   });
 
   it('bounds the request with an abort signal, so a hung model cannot stall the pipeline forever', async () => {
@@ -125,7 +125,7 @@ describe('callOpenRouter', () => {
       json: async () => ({ choices: [{ message: { content: 'ok' } }] }),
     }) as unknown as typeof fetch;
 
-    await callOpenRouter([{ role: 'user', content: 'hi' }]);
+    await callLLM([{ role: 'user', content: 'hi' }]);
 
     const options = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1];
     expect(options.signal).toBeInstanceOf(AbortSignal);
@@ -133,7 +133,7 @@ describe('callOpenRouter', () => {
 
   it('skips the request and throws immediately once the given deadline has already passed', async () => {
     global.fetch = vi.fn();
-    await expect(callOpenRouter([{ role: 'user', content: 'hi' }], Date.now() - 1)).rejects.toThrow(
+    await expect(callLLM([{ role: 'user', content: 'hi' }], { deadline: Date.now() - 1 })).rejects.toThrow(
       /ran out of time/,
     );
     expect(global.fetch).not.toHaveBeenCalled();
@@ -145,7 +145,7 @@ describe('callOpenRouter', () => {
       json: async () => ({ choices: [{ message: { content: 'ok' } }] }),
     }) as unknown as typeof fetch;
 
-    const result = await callOpenRouter([{ role: 'user', content: 'hi' }], Date.now() + 60_000);
+    const result = await callLLM([{ role: 'user', content: 'hi' }], { deadline: Date.now() + 60_000 });
 
     expect(result).toBe('ok');
     expect(global.fetch).toHaveBeenCalledTimes(1);

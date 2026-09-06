@@ -1,5 +1,3 @@
-import { requireEnv } from './blob.js';
-
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 // Each of these free models routes through a different upstream provider's own shared free
 // pool (Google AI Studio, NVIDIA, Z.ai respectively). OpenRouter tries them in order server-side
@@ -17,15 +15,26 @@ const DEFAULT_MODELS = [
 const MAX_RATE_LIMIT_ATTEMPTS = 4;
 const DEFAULT_RATE_LIMIT_BACKOFF_MS = 5000;
 // A hung free-tier model never throws on its own — without a hard cap a single stuck call can
-// eat the whole pipeline's time budget (this is exactly what took down loveheatrelationship's
-// sibling office app: apps/lhr-office's /status/run/recipe-variant-generator ran past Vercel's
-// 300s maxDuration and got killed mid-request). Bounding every request lets a stuck model fail
-// over (or fail fast) instead of hanging indefinitely.
+// eat the whole pipeline's time budget. Bounding every request lets a stuck model fail over
+// (or fail fast) instead of hanging indefinitely.
 const REQUEST_TIMEOUT_MS = 25_000;
 
-export interface OpenRouterMessage {
+export interface LlmMessage {
   role: 'system' | 'user';
   content: string;
+}
+
+export interface CallLlmOptions {
+  // An epoch-ms cutoff for a whole multi-call pipeline, not just this single request. Once it's
+  // passed, skip the network call entirely rather than spending another REQUEST_TIMEOUT_MS
+  // finding out something already knows: the pipeline is out of time.
+  deadline?: number;
+}
+
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) throw new Error(`${name} is not set`);
+  return value;
 }
 
 function sleep(ms: number): Promise<void> {
@@ -46,11 +55,8 @@ async function safeResponseText(response: Response): Promise<string> {
   }
 }
 
-// `deadline`, when given, is an epoch-ms cutoff for a whole multi-call pipeline (e.g. one diet
-// variant's worth of ingredient substitutions), not just this single request — see
-// dietSubstitutions.ts. Once it's passed, skip the network call entirely rather than spending
-// another REQUEST_TIMEOUT_MS finding out something already knows: the pipeline is out of time.
-export async function callOpenRouter(messages: OpenRouterMessage[], deadline?: number): Promise<string> {
+export async function callLLM(messages: LlmMessage[], options?: CallLlmOptions): Promise<string> {
+  const deadline = options?.deadline;
   if (deadline !== undefined && Date.now() >= deadline) {
     throw new Error('OpenRouter call skipped: ran out of time for this pipeline run');
   }

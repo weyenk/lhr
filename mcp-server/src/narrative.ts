@@ -1,4 +1,4 @@
-import { callOpenRouter } from './openrouter.js';
+import { callLLM } from '@lhr/llm';
 
 export interface NarrativeSource {
   title: string;
@@ -10,7 +10,7 @@ const FALLBACK_NARRATIVE = '[Narrative draft pending — auto-generation failed]
 
 export async function generateNarrative(source: NarrativeSource): Promise<string> {
   try {
-    const content = await callOpenRouter([
+    const content = await callLLM([
       {
         role: 'system',
         content:

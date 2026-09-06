@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { jobs } from '../src/registry';
-import { validateJobRegistrations } from '../src/validateRegistry';
+import { validateJobRegistrations } from '@lhr/jobs';
 
 describe('jobs registry', () => {
   it('registers the recipe-variant-generator job on a 7-day cadence', () => {
@@ -17,6 +17,12 @@ describe('jobs registry', () => {
 
   it('registers the affiliate-sourcing job on a 7-day cadence', () => {
     const job = jobs.find((j) => j.name === 'affiliate-sourcing');
+    expect(job).toMatchObject({ cadenceDays: 7 });
+    expect(job?.run).toBeTypeOf('function');
+  });
+
+  it('registers the trends-watcher job on a 7-day cadence', () => {
+    const job = jobs.find((j) => j.name === 'trends-watcher');
     expect(job).toMatchObject({ cadenceDays: 7 });
     expect(job?.run).toBeTypeOf('function');
   });
