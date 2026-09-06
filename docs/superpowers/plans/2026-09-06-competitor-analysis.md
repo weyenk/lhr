@@ -1131,6 +1131,7 @@ vi.mock('@lhr/llm', () => llmMock);
 const { analyzeCompetitors } = await import('../src/competitorAnalysis');
 
 const originalEnv = { ...process.env };
+const originalFetch = global.fetch;
 
 const trackedCompetitor = {
   id: 1,
@@ -1155,10 +1156,16 @@ beforeEach(() => {
   contentMock.fetchCompetitorPosts.mockResolvedValue({ posts: [], source: 'rss' });
   contentMock.diffNewPosts.mockReturnValue([]);
   llmMock.callLLM.mockResolvedValue('LLM output');
+  // fetchHomepageText (an inline helper in competitorAnalysis.ts, unlike fetchSearchResults/
+  // fetchCompetitorPosts which are mocked module boundaries above) calls the bare global `fetch`
+  // directly — without a default stub here, the "clean cycle" success test below hits a real
+  // network request and fails identically in every environment, not just flakily.
+  global.fetch = vi.fn().mockResolvedValue({ ok: true, text: async () => '<html><body>Shop the Kitchen</body></html>' }) as unknown as typeof fetch;
 });
 
 afterEach(() => {
   process.env = { ...originalEnv };
+  global.fetch = originalFetch;
 });
 
 describe('analyzeCompetitors', () => {
