@@ -208,16 +208,19 @@ New module `apps/lhr-office/src/serpapiTrends.ts` (app-local — nothing else ne
 
 ## 6. Budget Cap
 
-To stay inside SerpApi's 250 searches/month free tier (the author's actual plan): curated seeds
-are expected to settle around 4-5 per category; the LLM adds up to 2 candidate suggestions per
-category per cycle (§2 step 2); that's up to ~7 topic calls/category × 3 categories = 21, plus 3
-trending-now calls = 24 calls/week ≈ 104/month at the high end — comfortably inside the 250/month
-budget, with room for curated lists to grow well past the ~4-5/category estimate before this
-becomes a concern. Still called out explicitly as a cap to watch rather than assumed safe forever:
-if the curated lists grow large enough to push the monthly total past ~250 (roughly 12+/category
-at the current suggestion rate), either the LLM-suggestion count or the SerpApi tier needs
-revisiting. Not auto-enforced in this phase; a log line each cycle reports the call count so
-growth is visible before it becomes a problem.
+To stay inside SerpApi's 250 searches/month free tier (the author's actual plan): each topic
+costs **two** SerpApi requests (`fetchInterestAndRelatedQueries` makes a separate `TIMESERIES`
+call and a `RELATED_QUERIES` call), not one — a correction from this spec's original estimate,
+caught in the implementation plan's final review. Curated seeds are expected to settle around 4-5
+per category; the LLM adds up to 2 candidate suggestions per category per cycle (§2 step 2); at
+~7 topics/category that's (7 × 2) + 1 trending-now = 15 calls/category/week × 3 categories = 45
+calls/week ≈ 195/month at the high end (4.345 weeks/month) — still inside the 250/month budget,
+but with meaningfully less headroom than originally estimated. Still called out explicitly as a
+cap to watch rather than assumed safe forever: the monthly total crosses 250 once curated lists
+settle around **9+ topics/category** (not the "12+" this spec originally stated) at the current
+suggestion rate — at that point either the LLM-suggestion count or the SerpApi tier needs
+revisiting. Not auto-enforced in this phase; a log line each cycle reports the true per-topic call
+count (accounting for both requests per topic) so growth is visible before it becomes a problem.
 
 ## 7. LLM Synthesis & Report Storage
 
