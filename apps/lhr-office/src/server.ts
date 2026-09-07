@@ -10,6 +10,13 @@ import {
   getAllTopics,
   listRecentReports,
   TREND_CATEGORIES,
+  listCompetitorsByStatus,
+  setCompetitorStatus,
+  listRecentCompetitorReports,
+  listKeywords,
+  addKeyword,
+  removeKeyword,
+  type CompetitorReport,
 } from '@lhr/db';
 import type { JobRegistration } from '@lhr/jobs';
 import { jobs as defaultRegistry } from './registry.js';
@@ -203,7 +210,31 @@ export function createApp(
         await Promise.all(TREND_CATEGORIES.map((category) => listRecentReports(db, category)))
       ).flat();
       const trendSeedTopics = await getAllTopics(db);
-      res.type('html').send(renderStatusPage(rows, candidate, pendingAffiliateCandidates, trendsReports, trendSeedTopics));
+      const trackedCompetitors = await listCompetitorsByStatus(db, 'tracked');
+      const competitorCandidates = await listCompetitorsByStatus(db, 'candidate');
+      const latestCompetitorReportEntries = await Promise.all(
+        trackedCompetitors.map(async (c): Promise<readonly [number, CompetitorReport] | null> => {
+          const [latest] = await listRecentCompetitorReports(db, c.id, 1);
+          return latest ? ([c.id, latest] as const) : null;
+        }),
+      );
+      const latestCompetitorReportById = new Map(
+        latestCompetitorReportEntries.filter((entry): entry is readonly [number, CompetitorReport] => entry !== null),
+      );
+      const competitorSeoKeywords = await listKeywords(db);
+      res.type('html').send(
+        renderStatusPage(
+          rows,
+          candidate,
+          pendingAffiliateCandidates,
+          trendsReports,
+          trendSeedTopics,
+          trackedCompetitors,
+          latestCompetitorReportById,
+          competitorCandidates,
+          competitorSeoKeywords,
+        ),
+      );
     } catch (err) {
       // getRunHistory/candidates.getPending can throw (e.g. a DB or GitHub
       // connectivity failure). Express 4 does not catch rejections from async
@@ -312,6 +343,52 @@ export function createApp(
       }
     },
   );
+
+  app.post('/status/competitors/:id/approve', requireStatusAuth, async (req, res) => {
+    try {
+      await setCompetitorStatus(db, Number(req.params.id), 'tracked');
+      res.redirect(303, '/status');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      res.status(500).send(`Failed to approve competitor: ${escapeHtml(message)}`);
+    }
+  });
+
+  app.post('/status/competitors/:id/reject', requireStatusAuth, async (req, res) => {
+    try {
+      await setCompetitorStatus(db, Number(req.params.id), 'rejected');
+      res.redirect(303, '/status');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      res.status(500).send(`Failed to reject competitor: ${escapeHtml(message)}`);
+    }
+  });
+
+  app.post(
+    '/status/competitors/keywords/add',
+    requireStatusAuth,
+    express.urlencoded({ extended: false }),
+    express.json(),
+    async (req, res) => {
+      try {
+        await addKeyword(db, req.body.keyword);
+        res.redirect(303, '/status');
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        res.status(500).send(`Failed to add keyword: ${escapeHtml(message)}`);
+      }
+    },
+  );
+
+  app.post('/status/competitors/keywords/:id/remove', requireStatusAuth, async (req, res) => {
+    try {
+      await removeKeyword(db, Number(req.params.id));
+      res.redirect(303, '/status');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      res.status(500).send(`Failed to remove keyword: ${escapeHtml(message)}`);
+    }
+  });
 
   return app;
 }
