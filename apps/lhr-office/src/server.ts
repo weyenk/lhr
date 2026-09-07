@@ -66,11 +66,15 @@ export function createApp(
 
   app.use(express.static(clientDistDir));
   app.get('*', (req, res, next) => {
-    if (req.path.startsWith('/api/') || req.path === '/health') {
+    if (req.path.startsWith('/api/')) {
       next();
       return;
     }
-    res.sendFile(path.join(clientDistDir, 'index.html'));
+    res.sendFile(path.join(clientDistDir, 'index.html'), (err) => {
+      if (err) {
+        console.error('[server] failed to send SPA index.html:', err);
+      }
+    });
   });
 
   return app;
