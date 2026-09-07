@@ -2,8 +2,23 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
-    environment: 'node',
-    environmentMatchGlobs: [['client/**', 'jsdom']],
-    setupFiles: ['./client/vitest.setup.ts'],
+    projects: [
+      {
+        name: 'node',
+        test: {
+          environment: 'node',
+          include: ['**/*.test.ts', '**/*.test.tsx'],
+          exclude: ['client/**/!(theme).test.ts', 'client/**/!(theme).test.tsx'],
+        },
+      },
+      {
+        name: 'jsdom',
+        test: {
+          environment: 'jsdom',
+          include: ['client/**/!(theme).test.ts', 'client/**/!(theme).test.tsx'],
+          setupFiles: ['./client/vitest.setup.ts'],
+        },
+      },
+    ],
   },
 });
