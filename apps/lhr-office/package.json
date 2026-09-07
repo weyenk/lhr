@@ -3,9 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "npm run build --workspace=@lhr/db && npm run build --workspace=@lhr/jobs && npm run build --workspace=@lhr/llm && tsc --noEmit -p tsconfig.json && node scripts/bundle.mjs",
+    "build": "npm run build --workspace=@lhr/db && npm run build --workspace=@lhr/jobs && npm run build --workspace=@lhr/llm && tsc --noEmit -p tsconfig.json && tsc --noEmit -p client/tsconfig.json && node scripts/bundle.mjs",
     "test": "vitest run",
-    "dev": "npm run build --workspace=lhr-authoring-mcp-server && npm run build --workspace=@lhr/db && npm run build --workspace=@lhr/jobs && npm run build --workspace=@lhr/llm && tsx watch --env-file-if-exists=../../.env scripts/dev.ts"
+    "dev": "npm run build --workspace=lhr-authoring-mcp-server && npm run build --workspace=@lhr/db && npm run build --workspace=@lhr/jobs && npm run build --workspace=@lhr/llm && vite build client && tsx watch --env-file-if-exists=../../.env scripts/dev.ts"
   },
   "dependencies": {
     "@lhr/db": "*",
