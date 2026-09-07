@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
+import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import express from 'express';
 import request from 'supertest';
 import jwt from 'jsonwebtoken';
@@ -39,20 +39,34 @@ describe('requireSupabaseAuth', () => {
   });
 
   it('rejects an expired token', async () => {
-    const token = jwt.sign({ sub: 'user-1' }, 'test-secret', { algorithm: 'HS256', expiresIn: -10 });
+    const token = jwt.sign({ sub: 'user-1', role: 'authenticated' }, 'test-secret', { algorithm: 'HS256', expiresIn: -10 });
     const res = await request(buildApp()).get('/protected').set('Authorization', `Bearer ${token}`);
     expect(res.status).toBe(401);
   });
 
   it('rejects every request when SUPABASE_JWT_SECRET is unset, even with a well-formed token', async () => {
-    const token = jwt.sign({ sub: 'user-1' }, 'test-secret', { algorithm: 'HS256' });
+    const token = jwt.sign({ sub: 'user-1', role: 'authenticated' }, 'test-secret', { algorithm: 'HS256' });
     delete process.env.SUPABASE_JWT_SECRET;
     const res = await request(buildApp()).get('/protected').set('Authorization', `Bearer ${token}`);
     expect(res.status).toBe(401);
   });
 
+  it('rejects a validly-signed token with role "anon" (Supabase public anon key)', async () => {
+    const token = jwt.sign({ role: 'anon', iss: 'supabase' }, 'test-secret', { algorithm: 'HS256' });
+    const res = await request(buildApp()).get('/protected').set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(401);
+    expect(res.body).toEqual({ error: 'unauthorized' });
+  });
+
+  it('rejects a token with role "authenticated" but no sub claim', async () => {
+    const token = jwt.sign({ role: 'authenticated' }, 'test-secret', { algorithm: 'HS256' });
+    const res = await request(buildApp()).get('/protected').set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(401);
+    expect(res.body).toEqual({ error: 'unauthorized' });
+  });
+
   it('calls next() and allows the request through for a valid token', async () => {
-    const token = jwt.sign({ sub: 'user-1' }, 'test-secret', { algorithm: 'HS256' });
+    const token = jwt.sign({ sub: 'user-1', role: 'authenticated' }, 'test-secret', { algorithm: 'HS256' });
     const res = await request(buildApp()).get('/protected').set('Authorization', `Bearer ${token}`);
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ ok: true });

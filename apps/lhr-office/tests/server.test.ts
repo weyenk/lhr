@@ -66,7 +66,7 @@ const noAffiliateCandidates = {
 };
 
 function validToken() {
-  return jwt.sign({ sub: 'user-1' }, 'test-jwt-secret', { algorithm: 'HS256' });
+  return jwt.sign({ sub: 'user-1', role: 'authenticated' }, 'test-jwt-secret', { algorithm: 'HS256' });
 }
 
 beforeEach(() => {
