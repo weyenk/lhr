@@ -1,13 +1,24 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 
 const apiFetchMock = vi.fn();
 vi.mock('../lib/api', () => ({ apiFetch: (...args: unknown[]) => apiFetchMock(...args) }));
+
+// Passes through to the real hook by default; individual tests can override
+// the implementation to force a resource into an error state without
+// fighting useApiResource's 3-consecutive-failure threshold (see
+// useApiResource.test.ts for that threshold's own coverage).
+const useApiResourceMock = vi.fn();
+vi.mock('../hooks/useApiResource', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../hooks/useApiResource')>();
+  return { useApiResource: (path: string) => useApiResourceMock(path, actual.useApiResource) };
+});
 
 const { Overview } = await import('./Overview');
 
 beforeEach(() => {
   vi.clearAllMocks();
+  useApiResourceMock.mockImplementation((path: string, actualHook: typeof import('../hooks/useApiResource').useApiResource) => actualHook(path));
   apiFetchMock.mockImplementation(async (path: string) => {
     if (path === '/api/jobs') {
       return [
@@ -37,5 +48,16 @@ describe('Overview', () => {
     render(<Overview />);
     // 1 pending recipe candidate + 2 affiliate + 1 competitor candidate = 4
     expect(await screen.findByText('4 item(s) awaiting a decision')).toBeInTheDocument();
+  });
+
+  it('shows an alert when a resource fails to load', async () => {
+    useApiResourceMock.mockImplementation((path: string, actualHook: typeof import('../hooks/useApiResource').useApiResource) => {
+      if (path === '/api/candidates/affiliate') {
+        return { data: null, error: 'failed to load affiliate candidates', loading: false, refetch: vi.fn() };
+      }
+      return actualHook(path);
+    });
+    render(<Overview />);
+    expect(await screen.findByRole('alert')).toHaveTextContent('failed to load affiliate candidates');
   });
 });

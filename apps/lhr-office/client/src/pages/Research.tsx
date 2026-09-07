@@ -14,29 +14,31 @@ export function Research() {
   const [newKeyword, setNewKeyword] = useState('');
   const [actionError, setActionError] = useState<string | null>(null);
 
-  async function runAction(action: () => Promise<unknown>, refetch: () => void) {
+  async function runAction(action: () => Promise<unknown>, refetch: () => void): Promise<boolean> {
     setActionError(null);
     try {
       await action();
       refetch();
+      return true;
     } catch (err) {
       setActionError(err instanceof Error ? err.message : String(err));
+      return false;
     }
   }
 
   async function handleAddTopic(e: FormEvent) {
     e.preventDefault();
-    await runAction(
+    const succeeded = await runAction(
       () => apiFetch('/api/trends/topics', { method: 'POST', body: JSON.stringify({ category: newTopicCategory, topic: newTopic }) }),
       trends.refetch,
     );
-    setNewTopic('');
+    if (succeeded) setNewTopic('');
   }
 
   async function handleAddKeyword(e: FormEvent) {
     e.preventDefault();
-    await runAction(() => apiFetch('/api/competitors/keywords', { method: 'POST', body: JSON.stringify({ keyword: newKeyword }) }), keywords.refetch);
-    setNewKeyword('');
+    const succeeded = await runAction(() => apiFetch('/api/competitors/keywords', { method: 'POST', body: JSON.stringify({ keyword: newKeyword }) }), keywords.refetch);
+    if (succeeded) setNewKeyword('');
   }
 
   return (
@@ -46,6 +48,7 @@ export function Research() {
 
       <section>
         <h2>Trend topics</h2>
+        {trends.error && <p role="alert">{trends.error}</p>}
         <ul>
           {(trends.data?.topics ?? []).map((topic) => (
             <li key={topic.id}>
@@ -87,6 +90,7 @@ export function Research() {
 
       <section>
         <h2>Tracked competitors</h2>
+        {competitors.error && <p role="alert">{competitors.error}</p>}
         <ul>
           {(competitors.data?.tracked ?? []).map((c) => (
             <li key={c.id}>
@@ -99,6 +103,7 @@ export function Research() {
 
       <section>
         <h2>SEO keywords</h2>
+        {keywords.error && <p role="alert">{keywords.error}</p>}
         <ul>
           {(keywords.data ?? []).map((k) => (
             <li key={k.id}>

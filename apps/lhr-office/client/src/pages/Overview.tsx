@@ -14,7 +14,7 @@ export function Overview() {
     (recipeCandidate.data ? 1 : 0) + (affiliateCandidates.data?.length ?? 0) + (competitors.data?.candidates.length ?? 0);
 
   const activity = (jobs.data ?? [])
-    .flatMap((job) => job.history.map((run) => ({ jobName: job.name, ...run })))
+    .flatMap((job) => job.history)
     .sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())
     .slice(0, 10);
 
@@ -23,6 +23,9 @@ export function Overview() {
       <h1>Overview</h1>
       {jobs.error && <p role="alert">{jobs.error}</p>}
       <p>{pendingCount} item(s) awaiting a decision</p>
+      {recipeCandidate.error && <p role="alert">{recipeCandidate.error}</p>}
+      {affiliateCandidates.error && <p role="alert">{affiliateCandidates.error}</p>}
+      {competitors.error && <p role="alert">{competitors.error}</p>}
       <section className="job-health-strip">
         {(jobs.data ?? []).map((job) => {
           const latest = job.history[0];

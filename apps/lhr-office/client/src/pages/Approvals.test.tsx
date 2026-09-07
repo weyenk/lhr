@@ -4,6 +4,16 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 const apiFetchMock = vi.fn();
 vi.mock('../lib/api', () => ({ apiFetch: (...args: unknown[]) => apiFetchMock(...args) }));
 
+// Passes through to the real hook by default; individual tests can override
+// the implementation to force a resource into an error state without
+// fighting useApiResource's 3-consecutive-failure threshold (see
+// useApiResource.test.ts for that threshold's own coverage).
+const useApiResourceMock = vi.fn();
+vi.mock('../hooks/useApiResource', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../hooks/useApiResource')>();
+  return { useApiResource: (path: string) => useApiResourceMock(path, actual.useApiResource) };
+});
+
 const { Approvals } = await import('./Approvals');
 
 function mockData() {
@@ -18,6 +28,7 @@ function mockData() {
 beforeEach(() => {
   vi.clearAllMocks();
   mockData();
+  useApiResourceMock.mockImplementation((path: string, actualHook: typeof import('../hooks/useApiResource').useApiResource) => actualHook(path));
 });
 
 describe('Approvals', () => {
@@ -37,5 +48,16 @@ describe('Approvals', () => {
     const approveButtons = await screen.findAllByRole('button', { name: 'Approve' });
     fireEvent.click(approveButtons[0]);
     expect(await screen.findByRole('alert')).toHaveTextContent('boom');
+  });
+
+  it('shows an alert when a resource fails to load', async () => {
+    useApiResourceMock.mockImplementation((path: string, actualHook: typeof import('../hooks/useApiResource').useApiResource) => {
+      if (path === '/api/candidates/affiliate') {
+        return { data: null, error: 'failed to load affiliate candidates', loading: false, refetch: vi.fn() };
+      }
+      return actualHook(path);
+    });
+    render(<Approvals />);
+    expect(await screen.findByRole('alert')).toHaveTextContent('failed to load affiliate candidates');
   });
 });

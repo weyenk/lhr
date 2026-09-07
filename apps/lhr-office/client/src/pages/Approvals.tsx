@@ -28,6 +28,7 @@ export function Approvals() {
 
       <section>
         <h2>Recipe candidate</h2>
+        {recipeCandidate.error && <p role="alert">{recipeCandidate.error}</p>}
         {candidate ? (
           <div>
             <p>
@@ -47,6 +48,7 @@ export function Approvals() {
 
       <section>
         <h2>Affiliate candidates</h2>
+        {affiliateCandidates.error && <p role="alert">{affiliateCandidates.error}</p>}
         <ul>
           {(affiliateCandidates.data ?? []).map((c) => (
             <li key={c.id}>
@@ -64,6 +66,7 @@ export function Approvals() {
 
       <section>
         <h2>Competitor candidates</h2>
+        {competitors.error && <p role="alert">{competitors.error}</p>}
         <ul>
           {(competitors.data?.candidates ?? []).map((c) => (
             <li key={c.id}>
