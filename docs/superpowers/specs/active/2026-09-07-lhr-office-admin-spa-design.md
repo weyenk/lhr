@@ -44,13 +44,21 @@ keeping every existing piece of business logic (`orchestrate.ts`, `competitorAna
 
 ## 2. Information Architecture
 
-A sidebar with four views, replacing the single scrolling page:
+A sidebar of panels, replacing the single scrolling page. The site already adds new automation
+agents regularly (recipe generator, affiliate sourcing, trends watcher, competitor analysis — with
+a 5th agent's admin surface being built as of this spec, and more expected), so the sidebar is
+driven by a **panel registry** rather than a fixed, hardcoded set of views: a single ordered list of
+`{ id, label, icon, route, component }` entries that both the sidebar nav and the client router are
+generated from. Adding a new panel means adding one entry to that list and writing its page
+component — no changes to the sidebar, router, or layout code itself.
+
+**Initial panels:**
 
 - **Overview** — landing view: one status card per registered job (last run status, when it ran,
-  next due), badge counts for anything awaiting a decision across the other views, and a recent-run
+  next due), badge counts for anything awaiting a decision across the other panels, and a recent-run
   activity feed. No dedicated endpoint: this view fetches the same `/api/jobs`,
   `/api/candidates/recipe`, `/api/candidates/affiliate`, and `/api/competitors` responses the other
-  views use, and derives its counts/feed client-side (job run history is already timestamped, so
+  panels use, and derives its counts/feed client-side (job run history is already timestamped, so
   the activity feed is that history merged across jobs and sorted).
 - **Approvals** — the human-in-the-loop inbox: pending recipe candidate (approve/reroll), affiliate
   candidates (approve/deny), competitor candidates (approve/reject). One queue for everything
@@ -60,6 +68,15 @@ A sidebar with four views, replacing the single scrolling page:
 - **Research** — trend reports and seed-topic promote/demote, tracked competitors and their latest
   reports, SEO keyword add/remove. Lower-urgency browsing/management, kept separate from the
   Approvals inbox.
+
+**Adding a panel or a source, going forward:** a new agent whose human-in-the-loop surface is just
+another kind of yes/no decision (like the three candidate types already sharing Approvals today)
+should extend the existing **Approvals** panel with a new candidate-card type, not create a new
+sidebar entry — that's the same pattern the current three candidate types already follow. A new
+panel is only warranted when the new agent's data doesn't fit any existing panel's shape (as
+Overview/Approvals/Agents & Jobs/Research don't today) — in that case it's a new registry entry plus
+its own `GET`/mutation routes (see §4's routing note), following the same shape as any panel here.
+Either path is additive: no existing panel, route, or component needs to change to accommodate it.
 
 ## 3. Visual Design — "Slate Console"
 
@@ -83,14 +100,18 @@ from).
 apps/lhr-office/
   client/                 — new: Vite + React + TypeScript SPA
     src/
-      main.tsx, App.tsx   — router + auth gate
+      main.tsx, App.tsx   — router + auth gate; both generated from panels/index.ts
+      panels/index.ts     — the panel registry ({ id, label, icon, route, component }[])
       lib/supabase.ts     — Supabase client (anon key)
       lib/api.ts          — typed fetch wrapper, attaches bearer token
-      pages/              — Overview, Approvals, AgentsAndJobs, Research
+      pages/              — Overview, Approvals, AgentsAndJobs, Research — one per panel
       components/         — Sidebar, StatusBadge, etc.
       hooks/usePolling.ts — interval-based refresh for job status
   src/
-    server.ts             — existing Express app; route handlers now return JSON
+    server.ts             — existing Express app; mounts one router per resource area
+    routes/                — new: jobs.ts, candidates.ts, trends.ts, competitors.ts — one
+                              Express Router module per resource area, each mounted in server.ts
+                              under its own path prefix (e.g. app.use('/api/jobs', jobsRouter))
     authMiddleware.ts      — new: requireSupabaseAuth (replaces requireStatusAuth)
     statusPage.ts          — deleted; HTML rendering no longer needed
 ```
@@ -128,6 +149,12 @@ server-side in one pass; each view now fetches only what it needs.
 | `POST /status/competitors/:id/reject` | `POST /api/competitors/:id/reject` |
 | `POST /status/competitors/keywords/add` | `POST /api/competitors/keywords` |
 | `POST /status/competitors/keywords/:id/remove` | `DELETE /api/competitors/keywords/:id` |
+
+Each resource area's routes (jobs, candidates, trends, competitors) live in their own router module
+under `src/routes/`, mounted onto the app under a path prefix in `server.ts`, rather than as inline
+handlers in one growing file as today. Adding a new source's endpoints later — whether it's a new
+candidate type folded into the existing `/api/candidates` router or a wholly new resource area — is
+then one new (or extended) router module plus one `app.use(...)` line, not an edit to a monolith.
 
 Every mutation returns the updated resource (or `{ ok: true }`) as JSON with a 2xx status instead
 of a 303 redirect; every failure returns `{ error: string }` with the same status codes the current
