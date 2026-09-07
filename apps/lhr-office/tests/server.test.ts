@@ -1,6 +1,10 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import request from 'supertest';
 import type { Queryable } from '@lhr/db';
+import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import jwt from 'jsonwebtoken';
 
 const runDueJobMock = vi.fn();
 const runJobNowMock = vi.fn();
@@ -61,11 +65,13 @@ const noAffiliateCandidates = {
   deny: vi.fn(),
 };
 
+function validToken() {
+  return jwt.sign({ sub: 'user-1' }, 'test-jwt-secret', { algorithm: 'HS256' });
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   process.env.CRON_SECRET = 'test-secret';
-  process.env.STATUS_AUTH_USER = 'test-user';
-  process.env.STATUS_AUTH_PASSWORD = 'test-password';
   noCandidates.getPending.mockResolvedValue(null);
   noAffiliateCandidates.getPending.mockResolvedValue([]);
   getLatestPendingCycleIdMock.mockResolvedValue(null);
@@ -138,425 +144,56 @@ describe('cron endpoint auth', () => {
   });
 });
 
-describe('status endpoints auth', () => {
-  it('GET /status rejects a request with no Authorization header', async () => {
+describe('/api/* auth', () => {
+  beforeEach(() => {
+    process.env.SUPABASE_JWT_SECRET = 'test-jwt-secret';
+  });
+
+  it('rejects GET /api/jobs with no Authorization header', async () => {
     const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates);
-    const res = await request(app).get('/status');
+    const res = await request(app).get('/api/jobs');
     expect(res.status).toBe(401);
-    expect(res.headers['www-authenticate']).toContain('Basic');
   });
 
-  it('GET /status rejects a request with the wrong credentials', async () => {
+  it('allows GET /api/jobs with a valid bearer token', async () => {
+    getRunHistoryMock.mockResolvedValue([]);
     const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates);
-    const res = await request(app).get('/status').auth('test-user', 'wrong-password');
-    expect(res.status).toBe(401);
-  });
-
-  it('GET /status rejects a request with the wrong username', async () => {
-    const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates);
-    const res = await request(app).get('/status').auth('wrong-user', 'test-password');
-    expect(res.status).toBe(401);
-  });
-
-  it('GET /status is unauthorized when STATUS_AUTH_USER/PASSWORD are unset, even with a header', async () => {
-    delete process.env.STATUS_AUTH_USER;
-    delete process.env.STATUS_AUTH_PASSWORD;
-    const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates);
-    const res = await request(app).get('/status').auth('test-user', 'test-password');
-    expect(res.status).toBe(401);
-  });
-
-  it('POST /status/run/:jobName rejects a request with no Authorization header, and does not invoke the job', async () => {
-    const app = createApp(fakeDb, [{ name: 'recipe-variant-generator', cadenceDays: 7, run: vi.fn() }], noCandidates, noAffiliateCandidates);
-    const res = await request(app).post('/status/run/recipe-variant-generator');
-    expect(res.status).toBe(401);
-    expect(runJobNowMock).not.toHaveBeenCalled();
-  });
-
-  it('POST /status/run/:jobName rejects wrong credentials, and does not invoke the job', async () => {
-    const app = createApp(fakeDb, [{ name: 'recipe-variant-generator', cadenceDays: 7, run: vi.fn() }], noCandidates, noAffiliateCandidates);
-    const res = await request(app).post('/status/run/recipe-variant-generator').auth('test-user', 'wrong-password');
-    expect(res.status).toBe(401);
-    expect(runJobNowMock).not.toHaveBeenCalled();
-  });
-});
-
-describe('GET /status', () => {
-  it("renders each registered job's name and latest run", async () => {
-    getRunHistoryMock.mockResolvedValue([
-      {
-        id: 1,
-        jobName: 'recipe-variant-generator',
-        status: 'success',
-        summary: 'generated 1 variant',
-        errorMessage: null,
-        startedAt: new Date('2026-08-20T00:00:00Z'),
-        finishedAt: new Date('2026-08-20T00:05:00Z'),
-      },
-    ]);
-    const app = createApp(fakeDb, [{ name: 'recipe-variant-generator', cadenceDays: 7, run: vi.fn() }], noCandidates, noAffiliateCandidates);
-    const res = await request(app).get('/status').auth('test-user', 'test-password');
+    const res = await request(app).get('/api/jobs').set('Authorization', `Bearer ${validToken()}`);
     expect(res.status).toBe(200);
-    expect(res.text).toContain('recipe-variant-generator');
-    expect(res.text).toContain('generated 1 variant');
   });
 
-  it('renders a placeholder when no jobs are registered', async () => {
+  it('rejects GET /api/candidates/recipe, /api/trends, and /api/competitors with no token', async () => {
     const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates);
-    const res = await request(app).get('/status').auth('test-user', 'test-password');
-    expect(res.text).toContain('No jobs registered yet');
-  });
-
-  it('returns 500 (not a hang) when getRunHistory rejects', async () => {
-    getRunHistoryMock.mockRejectedValue(new Error('db down'));
-    const app = createApp(fakeDb, [{ name: 'recipe-variant-generator', cadenceDays: 7, run: vi.fn() }], noCandidates, noAffiliateCandidates);
-    const res = await request(app).get('/status').auth('test-user', 'test-password');
-    expect(res.status).toBe(500);
-    expect(res.text).toContain('db down');
-  });
-
-  it('renders the pending recipe candidate with approve/reroll actions, before any diet variants are generated', async () => {
-    const candidates = {
-      getPending: vi.fn().mockResolvedValue({
-        id: 'cand1',
-        record: {
-          status: 'pending',
-          source: { idMeal: '52772', title: 'Teriyaki Chicken Casserole', cuisine: 'Japanese', category: 'Chicken' },
-        },
-      }),
-      approve: vi.fn(),
-      reroll: vi.fn(),
-    };
-    const app = createApp(fakeDb, [], candidates, noAffiliateCandidates);
-    const res = await request(app).get('/status').auth('test-user', 'test-password');
-    expect(res.status).toBe(200);
-    expect(res.text).toContain('Teriyaki Chicken Casserole');
-    expect(res.text).toContain('/status/candidate/cand1/approve');
-    expect(res.text).toContain('/status/candidate/cand1/reroll');
-  });
-
-  it('renders no pending-candidate section when nothing is awaiting approval', async () => {
-    const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates);
-    const res = await request(app).get('/status').auth('test-user', 'test-password');
-    expect(res.text).not.toContain('/status/candidate/');
+    for (const path of ['/api/candidates/recipe', '/api/trends', '/api/competitors']) {
+      const res = await request(app).get(path);
+      expect(res.status).toBe(401);
+    }
   });
 });
 
-describe('POST /status/candidate/:id/approve', () => {
-  it('rejects a request with no Authorization header, and does not approve', async () => {
-    const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates);
-    const res = await request(app).post('/status/candidate/cand1/approve');
-    expect(res.status).toBe(401);
-    expect(noCandidates.approve).not.toHaveBeenCalled();
+describe('static SPA serving', () => {
+  it('serves the built index.html for a non-API GET route', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'lhr-office-dist-'));
+    writeFileSync(join(dir, 'index.html'), '<!doctype html><title>lhr office</title>');
+    try {
+      const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates, dir);
+      const res = await request(app).get('/agents-jobs');
+      expect(res.status).toBe(200);
+      expect(res.text).toContain('lhr office');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
-  it('approves the candidate and redirects back to /status', async () => {
-    const candidates = {
-      getPending: vi.fn(),
-      approve: vi.fn().mockResolvedValue({ draftId: 'draft1', title: 'Teriyaki Chicken Casserole', sourceMealDbId: '52772' }),
-      reroll: vi.fn(),
-    };
-    const app = createApp(fakeDb, [], candidates, noAffiliateCandidates);
-    const res = await request(app).post('/status/candidate/cand1/approve').auth('test-user', 'test-password');
-    expect(res.status).toBe(303);
-    expect(res.headers.location).toBe('/status');
-    expect(candidates.approve).toHaveBeenCalledWith('cand1');
-  });
-
-  it('returns 500 (not a hang) when approve rejects', async () => {
-    const candidates = { getPending: vi.fn(), approve: vi.fn().mockRejectedValue(new Error('boom')), reroll: vi.fn() };
-    const app = createApp(fakeDb, [], candidates, noAffiliateCandidates);
-    const res = await request(app).post('/status/candidate/cand1/approve').auth('test-user', 'test-password');
-    expect(res.status).toBe(500);
-    expect(res.text).toContain('boom');
-  });
-});
-
-describe('POST /status/candidate/:id/reroll', () => {
-  it('rejects a request with no Authorization header, and does not reroll', async () => {
-    const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates);
-    const res = await request(app).post('/status/candidate/cand1/reroll');
-    expect(res.status).toBe(401);
-    expect(noCandidates.reroll).not.toHaveBeenCalled();
-  });
-
-  it('rerolls the candidate and redirects back to /status', async () => {
-    const candidates = { getPending: vi.fn(), approve: vi.fn(), reroll: vi.fn().mockResolvedValue(null) };
-    const app = createApp(fakeDb, [], candidates, noAffiliateCandidates);
-    const res = await request(app).post('/status/candidate/cand1/reroll').auth('test-user', 'test-password');
-    expect(res.status).toBe(303);
-    expect(res.headers.location).toBe('/status');
-    expect(candidates.reroll).toHaveBeenCalledWith('cand1');
-  });
-
-  it('returns 500 (not a hang) when reroll rejects', async () => {
-    const candidates = { getPending: vi.fn(), approve: vi.fn(), reroll: vi.fn().mockRejectedValue(new Error('boom')) };
-    const app = createApp(fakeDb, [], candidates, noAffiliateCandidates);
-    const res = await request(app).post('/status/candidate/cand1/reroll').auth('test-user', 'test-password');
-    expect(res.status).toBe(500);
-    expect(res.text).toContain('boom');
-  });
-});
-
-describe('POST /status/run/:jobName', () => {
-  it('runs the named job and redirects back to /status', async () => {
-    runJobNowMock.mockResolvedValue({ outcome: 'ran', job: 'recipe-variant-generator', status: 'success', summary: 'ok' });
-    const app = createApp(fakeDb, [{ name: 'recipe-variant-generator', cadenceDays: 7, run: vi.fn() }], noCandidates, noAffiliateCandidates);
-    const res = await request(app).post('/status/run/recipe-variant-generator').auth('test-user', 'test-password');
-    expect(res.status).toBe(303);
-    expect(res.headers.location).toBe('/status');
-    expect(runJobNowMock).toHaveBeenCalledWith(fakeDb, expect.any(Array), 'recipe-variant-generator');
-  });
-
-  it('returns 404 for an unknown job name', async () => {
-    runJobNowMock.mockResolvedValue(null);
-    const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates);
-    const res = await request(app).post('/status/run/nope').auth('test-user', 'test-password');
-    expect(res.status).toBe(404);
-  });
-
-  it('returns 500 (not a hang) when runJobNow rejects', async () => {
-    runJobNowMock.mockRejectedValue(new Error('boom'));
-    const app = createApp(fakeDb, [{ name: 'recipe-variant-generator', cadenceDays: 7, run: vi.fn() }], noCandidates, noAffiliateCandidates);
-    const res = await request(app).post('/status/run/recipe-variant-generator').auth('test-user', 'test-password');
-    expect(res.status).toBe(500);
-    expect(res.text).toContain('boom');
-  });
-});
-
-const affiliateCandidate = {
-  id: 7,
-  cycleId: '2026-W35',
-  asin: 'B0EXAMPLE1',
-  title: 'Ceramic Mixing Bowl Set',
-  category: 'Kitchen',
-  priceCents: 2999,
-  imageUrl: 'https://example.com/bowl.jpg',
-  productUrl: 'https://www.amazon.com/dp/B0EXAMPLE1',
-  commissionRate: 0.03,
-  commissionRateIsFallback: false,
-  estimatedMonthlySales: 450,
-  bsr: 1200,
-  bsrCategory: 'Kitchen',
-  rating: 4.6,
-  reviewCount: 812,
-  score: 0.71,
-  isWildcard: false,
-  status: 'pending' as const,
-  decidedAt: null,
-  createdAt: new Date('2026-08-24T00:00:00Z'),
-};
-
-describe('GET /status affiliate candidates', () => {
-  it('renders each pending affiliate candidate with approve/deny actions', async () => {
-    const affiliates = {
-      getPending: vi.fn().mockResolvedValue([affiliateCandidate]),
-      approve: vi.fn(),
-      deny: vi.fn(),
-    };
-    const app = createApp(fakeDb, [], noCandidates, affiliates);
-    const res = await request(app).get('/status').auth('test-user', 'test-password');
-    expect(res.status).toBe(200);
-    expect(res.text).toContain('Ceramic Mixing Bowl Set');
-    expect(res.text).toContain('/status/affiliate-candidates/7/approve');
-    expect(res.text).toContain('/status/affiliate-candidates/7/deny');
-  });
-
-  it('renders no affiliate-candidate section when none are pending', async () => {
-    const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates);
-    const res = await request(app).get('/status').auth('test-user', 'test-password');
-    expect(res.text).not.toContain('/status/affiliate-candidates/');
-  });
-
-  it('returns 500 (not a hang) when the affiliate getPending rejects', async () => {
-    const affiliates = { getPending: vi.fn().mockRejectedValue(new Error('db down')), approve: vi.fn(), deny: vi.fn() };
-    const app = createApp(fakeDb, [], noCandidates, affiliates);
-    const res = await request(app).get('/status').auth('test-user', 'test-password');
-    expect(res.status).toBe(500);
-    expect(res.text).toContain('db down');
-  });
-});
-
-describe('POST /status/affiliate-candidates/:id/approve', () => {
-  it('rejects a request with no Authorization header, and does not approve', async () => {
-    const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates);
-    const res = await request(app).post('/status/affiliate-candidates/7/approve');
-    expect(res.status).toBe(401);
-    expect(noAffiliateCandidates.approve).not.toHaveBeenCalled();
-  });
-
-  it('approves the candidate by numeric id and redirects back to /status', async () => {
-    const affiliates = {
-      getPending: vi.fn(),
-      approve: vi
-        .fn()
-        .mockResolvedValue({ asin: 'B0EXAMPLE1', title: 'Ceramic Mixing Bowl Set', path: 'src/content/affiliate-links/x.json' }),
-      deny: vi.fn(),
-    };
-    const app = createApp(fakeDb, [], noCandidates, affiliates);
-    const res = await request(app).post('/status/affiliate-candidates/7/approve').auth('test-user', 'test-password');
-    expect(res.status).toBe(303);
-    expect(res.headers.location).toBe('/status');
-    expect(affiliates.approve).toHaveBeenCalledWith(7);
-  });
-
-  it('returns 500 (not a hang) when approve rejects', async () => {
-    const affiliates = { getPending: vi.fn(), approve: vi.fn().mockRejectedValue(new Error('boom')), deny: vi.fn() };
-    const app = createApp(fakeDb, [], noCandidates, affiliates);
-    const res = await request(app).post('/status/affiliate-candidates/7/approve').auth('test-user', 'test-password');
-    expect(res.status).toBe(500);
-    expect(res.text).toContain('boom');
-  });
-});
-
-describe('POST /status/affiliate-candidates/:id/deny', () => {
-  it('rejects a request with no Authorization header, and does not deny', async () => {
-    const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates);
-    const res = await request(app).post('/status/affiliate-candidates/7/deny');
-    expect(res.status).toBe(401);
-    expect(noAffiliateCandidates.deny).not.toHaveBeenCalled();
-  });
-
-  it('denies the candidate by numeric id and redirects back to /status', async () => {
-    const affiliates = {
-      getPending: vi.fn(),
-      approve: vi.fn(),
-      deny: vi.fn().mockResolvedValue({ asin: 'B0EXAMPLE1', title: 'Ceramic Mixing Bowl Set' }),
-    };
-    const app = createApp(fakeDb, [], noCandidates, affiliates);
-    const res = await request(app).post('/status/affiliate-candidates/7/deny').auth('test-user', 'test-password');
-    expect(res.status).toBe(303);
-    expect(res.headers.location).toBe('/status');
-    expect(affiliates.deny).toHaveBeenCalledWith(7);
-  });
-
-  it('returns 500 (not a hang) when deny rejects', async () => {
-    const affiliates = { getPending: vi.fn(), approve: vi.fn(), deny: vi.fn().mockRejectedValue(new Error('boom')) };
-    const app = createApp(fakeDb, [], noCandidates, affiliates);
-    const res = await request(app).post('/status/affiliate-candidates/7/deny').auth('test-user', 'test-password');
-    expect(res.status).toBe(500);
-    expect(res.text).toContain('boom');
-  });
-});
-
-describe('trend seed topic routes', () => {
-  it('promotes a topic and redirects to /status', async () => {
-    const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates);
-    const res = await request(app)
-      .post('/status/trends/topics/5/promote')
-      .auth('test-user', 'test-password');
-    expect(setTopicStatusMock).toHaveBeenCalledWith(fakeDb, 5, 'curated');
-    expect(res.status).toBe(303);
-    expect(res.headers.location).toBe('/status');
-  });
-
-  it('demotes a topic and redirects to /status', async () => {
-    const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates);
-    const res = await request(app)
-      .post('/status/trends/topics/5/demote')
-      .auth('test-user', 'test-password');
-    expect(setTopicStatusMock).toHaveBeenCalledWith(fakeDb, 5, 'candidate');
-    expect(res.status).toBe(303);
-  });
-
-  it('adds a curated topic and redirects to /status', async () => {
-    const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates);
-    const res = await request(app)
-      .post('/status/trends/topics/add')
-      .auth('test-user', 'test-password')
-      .send({ category: 'cooking', topic: 'sourdough' });
-    expect(addCuratedTopicMock).toHaveBeenCalledWith(fakeDb, 'cooking', 'sourdough');
-    expect(res.status).toBe(303);
-  });
-
-  it('rejects an unauthenticated promote request', async () => {
-    const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates);
-    const res = await request(app).post('/status/trends/topics/5/promote');
-    expect(res.status).toBe(401);
-    expect(setTopicStatusMock).not.toHaveBeenCalled();
-  });
-
-  it('returns 500 with an escaped error message when the DB call throws', async () => {
-    setTopicStatusMock.mockRejectedValueOnce(new Error('<script>alert(1)</script>'));
-    const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates);
-    const res = await request(app)
-      .post('/status/trends/topics/5/promote')
-      .auth('test-user', 'test-password');
-    expect(res.status).toBe(500);
-    expect(res.text).not.toContain('<script>');
-    expect(res.text).toContain('&lt;script&gt;');
-  });
-});
-
-describe('POST /status/competitors/:id/approve', () => {
-  it('tracks the competitor and redirects to /status', async () => {
-    const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates);
-    const res = await request(app)
-      .post('/status/competitors/5/approve')
-      .auth('test-user', 'test-password');
-    expect(setCompetitorStatusMock).toHaveBeenCalledWith(fakeDb, 5, 'tracked');
-    expect(res.status).toBe(303);
-    expect(res.headers.location).toBe('/status');
-  });
-
-  it('rejects without valid Basic Auth and does not mutate anything', async () => {
-    const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates);
-    const res = await request(app).post('/status/competitors/5/approve');
-    expect(res.status).toBe(401);
-    expect(setCompetitorStatusMock).not.toHaveBeenCalled();
-  });
-});
-
-describe('POST /status/competitors/:id/reject', () => {
-  it('rejects the competitor and redirects to /status', async () => {
-    const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates);
-    const res = await request(app)
-      .post('/status/competitors/5/reject')
-      .auth('test-user', 'test-password');
-    expect(setCompetitorStatusMock).toHaveBeenCalledWith(fakeDb, 5, 'rejected');
-    expect(res.status).toBe(303);
-  });
-});
-
-describe('POST /status/competitors/keywords/add', () => {
-  it('adds a keyword and redirects to /status', async () => {
-    addKeywordMock.mockResolvedValue({ id: 1, keyword: 'gluten free dinner recipes', addedAt: new Date() });
-    const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates);
-    const res = await request(app)
-      .post('/status/competitors/keywords/add')
-      .auth('test-user', 'test-password')
-      .send({ keyword: 'gluten free dinner recipes' });
-    expect(addKeywordMock).toHaveBeenCalledWith(fakeDb, 'gluten free dinner recipes');
-    expect(res.status).toBe(303);
-  });
-});
-
-describe('POST /status/competitors/keywords/:id/remove', () => {
-  it('removes a keyword and redirects to /status', async () => {
-    const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates);
-    const res = await request(app)
-      .post('/status/competitors/keywords/1/remove')
-      .auth('test-user', 'test-password');
-    expect(removeKeywordMock).toHaveBeenCalledWith(fakeDb, 1);
-    expect(res.status).toBe(303);
-  });
-});
-
-describe('GET /status with competitor data', () => {
-  it('renders the tracked competitors, candidates, and keywords sections', async () => {
-    listCompetitorsByStatusMock.mockImplementation(async (_db: unknown, status: string) =>
-      status === 'tracked'
-        ? [{ id: 1, domain: 'reliable-recipes.com', name: null, status: 'tracked', discoveredAt: new Date(), approvedAt: new Date() }]
-        : [{ id: 2, domain: 'new-candidate.com', name: null, status: 'candidate', discoveredAt: new Date(), approvedAt: null }],
-    );
-    listKeywordsMock.mockResolvedValue([{ id: 1, keyword: 'gluten free dinner recipes', addedAt: new Date() }]);
-
-    const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates);
-    const res = await request(app).get('/status').auth('test-user', 'test-password');
-
-    expect(res.status).toBe(200);
-    expect(res.text).toContain('reliable-recipes.com');
-    expect(res.text).toContain('new-candidate.com');
-    expect(res.text).toContain('gluten free dinner recipes');
+  it('does not shadow a real 404 from an /api/* route', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'lhr-office-dist-'));
+    writeFileSync(join(dir, 'index.html'), '<!doctype html>');
+    try {
+      const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates, dir);
+      const res = await request(app).get('/api/does-not-exist').set('Authorization', `Bearer ${validToken()}`);
+      expect(res.status).toBe(404);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
