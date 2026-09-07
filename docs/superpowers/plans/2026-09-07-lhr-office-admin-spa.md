@@ -1016,6 +1016,11 @@ import { render, screen } from '@testing-library/react';
 
 const useSessionMock = vi.fn();
 vi.mock('./lib/auth', () => ({ useSession: () => useSessionMock() }));
+// Isolates this shell/routing test from each panel's real data-fetching (added in Tasks
+// 13-16, after this test is written) — without this, rendering a real panel would exercise
+// the real lib/api.ts -> lib/supabaseClient.ts chain, which throws when VITE_SUPABASE_URL /
+// VITE_SUPABASE_ANON_KEY aren't set in the test environment.
+vi.mock('./lib/api', () => ({ apiFetch: vi.fn().mockResolvedValue(null) }));
 
 const { App } = await import('./App');
 
