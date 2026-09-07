@@ -214,6 +214,46 @@ describe('analyzeCompetitors', () => {
     expect(report.newContent).toEqual([]);
   });
 
+  it('uses the most recent REAL snapshot as the diff baseline, not the "unreachable this cycle" sentinel from a failed prior cycle', async () => {
+    dbMock.listCompetitorsByStatus.mockResolvedValue([trackedCompetitor]);
+    dbMock.listRecentCompetitorReports.mockResolvedValue([
+      {
+        id: 2, competitorId: 1, cycleId: '2026-08-30', generatedAt: new Date(),
+        newContent: [], seoPositions: [],
+        monetizationSnapshot: 'unreachable this cycle', designSnapshot: 'unreachable this cycle', summary: 's',
+      },
+      {
+        id: 1, competitorId: 1, cycleId: '2026-08-23', generatedAt: new Date(),
+        newContent: [], seoPositions: [],
+        monetizationSnapshot: 'Sells a $40 cast-iron pan.', designSnapshot: 'Grid homepage with a shop CTA.', summary: 's',
+      },
+    ]);
+    global.fetch = vi.fn().mockResolvedValue({ ok: true, text: async () => '<html><body>Shop the Kitchen</body></html>' }) as unknown as typeof fetch;
+    llmMock.callLLM.mockImplementation(async (messages: { role: string; content: string }[]) => {
+      const systemContent = messages[0].content;
+      const userContent = messages[messages.length - 1].content;
+      if (systemContent.includes('monetization and product strategy')) return 'Sells a $55 stand mixer.';
+      if (systemContent.includes('layout, prominent calls-to-action')) return 'Minimalist homepage with a shop CTA.';
+      if (systemContent.includes('describe what substantively changed')) return 'Diff output text.';
+      if (userContent.includes('New content')) return 'Weekly summary text.';
+      return 'unused';
+    });
+
+    await analyzeCompetitors();
+
+    // Find the diff call for the monetization dimension specifically (it's the one whose
+    // "Current snapshot:" half matches what summarizeMonetization returned above), then assert
+    // its "Previous snapshot:" half is the OLDER real snapshot, not the sentinel from the more
+    // recent (but unreachable) report.
+    const diffCalls = llmMock.callLLM.mock.calls.filter((c) =>
+      c[0][0].content.includes('describe what substantively changed'),
+    );
+    const monetizationDiffCall = diffCalls.find((c) => c[0][1].content.includes('Sells a $55 stand mixer.'));
+    expect(monetizationDiffCall).toBeDefined();
+    expect(monetizationDiffCall![0][1].content).toContain('Previous snapshot:\nSells a $40 cast-iron pan.');
+    expect(monetizationDiffCall![0][1].content).not.toContain('unreachable this cycle');
+  });
+
   it('writes the placeholder summary when the synthesis LLM call fails, but keeps the report', async () => {
     dbMock.listCompetitorsByStatus.mockResolvedValue([trackedCompetitor]);
     llmMock.callLLM.mockImplementation(async (messages: { content: string }[]) => {

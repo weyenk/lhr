@@ -143,7 +143,13 @@ async function buildCompetitorReport(
   seoPositions: SeoPositionEntry[],
 ): Promise<{ report: NewCompetitorReport; hadIssue: boolean }> {
   const recentReports = await listRecentCompetitorReports(db, competitor.id, CONTENT_BASELINE_CYCLES);
-  const priorReport = recentReports[0] ?? null;
+
+  // Search back through recent history for the most recent REAL snapshot per dimension — using
+  // recentReports[0] unconditionally would hand the LLM 'unreachable this cycle' as a "previous
+  // snapshot" whenever last cycle's homepage fetch failed, and it will fabricate a plausible-but-
+  // meaningless "what changed" description between a status sentinel and a real snapshot.
+  const monetizationBaseline = recentReports.find((r) => r.monetizationSnapshot !== UNREACHABLE_NOTE)?.monetizationSnapshot ?? null;
+  const designBaseline = recentReports.find((r) => r.designSnapshot !== UNREACHABLE_NOTE)?.designSnapshot ?? null;
 
   let hadIssue = false;
   let newContent: CompetitorPost[] = [];
@@ -183,8 +189,8 @@ async function buildCompetitorReport(
     monetizationSnapshot = monetization;
     designSnapshot = design;
     [monetizationChange, designChange] = await Promise.all([
-      diffSnapshot(priorReport?.monetizationSnapshot ?? null, monetization),
-      diffSnapshot(priorReport?.designSnapshot ?? null, design),
+      diffSnapshot(monetizationBaseline, monetization),
+      diffSnapshot(designBaseline, design),
     ]);
   } catch (err) {
     console.warn(`[competitors] homepage snapshot failed for ${competitor.domain}; marking unreachable this cycle.`, err);
