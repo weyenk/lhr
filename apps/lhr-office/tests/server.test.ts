@@ -16,6 +16,12 @@ const setTopicStatusMock = vi.fn();
 const addCuratedTopicMock = vi.fn();
 const getAllTopicsMock = vi.fn();
 const listRecentReportsMock = vi.fn();
+const listCompetitorsByStatusMock = vi.fn();
+const setCompetitorStatusMock = vi.fn();
+const listRecentCompetitorReportsMock = vi.fn();
+const listKeywordsMock = vi.fn();
+const addKeywordMock = vi.fn();
+const removeKeywordMock = vi.fn();
 vi.mock('@lhr/db', () => ({
   getRunHistory: (...args: unknown[]) => getRunHistoryMock(...args),
   getLatestPendingCycleId: (...args: unknown[]) => getLatestPendingCycleIdMock(...args),
@@ -25,6 +31,12 @@ vi.mock('@lhr/db', () => ({
   getAllTopics: (...args: unknown[]) => getAllTopicsMock(...args),
   listRecentReports: (...args: unknown[]) => listRecentReportsMock(...args),
   TREND_CATEGORIES: ['web-design', 'cooking', 'nutrition'],
+  listCompetitorsByStatus: (...args: unknown[]) => listCompetitorsByStatusMock(...args),
+  setCompetitorStatus: (...args: unknown[]) => setCompetitorStatusMock(...args),
+  listRecentCompetitorReports: (...args: unknown[]) => listRecentCompetitorReportsMock(...args),
+  listKeywords: (...args: unknown[]) => listKeywordsMock(...args),
+  addKeyword: (...args: unknown[]) => addKeywordMock(...args),
+  removeKeyword: (...args: unknown[]) => removeKeywordMock(...args),
 }));
 
 vi.mock('lhr-authoring-mcp-server/dist-lib/affiliateCandidateOps.js', () => ({
@@ -60,6 +72,9 @@ beforeEach(() => {
   getPendingCandidatesMock.mockResolvedValue([]);
   getAllTopicsMock.mockResolvedValue([]);
   listRecentReportsMock.mockResolvedValue([]);
+  listCompetitorsByStatusMock.mockResolvedValue([]);
+  listRecentCompetitorReportsMock.mockResolvedValue([]);
+  listKeywordsMock.mockResolvedValue([]);
 });
 
 afterEach(() => {
@@ -470,5 +485,78 @@ describe('trend seed topic routes', () => {
     expect(res.status).toBe(500);
     expect(res.text).not.toContain('<script>');
     expect(res.text).toContain('&lt;script&gt;');
+  });
+});
+
+describe('POST /status/competitors/:id/approve', () => {
+  it('tracks the competitor and redirects to /status', async () => {
+    const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates);
+    const res = await request(app)
+      .post('/status/competitors/5/approve')
+      .auth('test-user', 'test-password');
+    expect(setCompetitorStatusMock).toHaveBeenCalledWith(fakeDb, 5, 'tracked');
+    expect(res.status).toBe(303);
+    expect(res.headers.location).toBe('/status');
+  });
+
+  it('rejects without valid Basic Auth and does not mutate anything', async () => {
+    const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates);
+    const res = await request(app).post('/status/competitors/5/approve');
+    expect(res.status).toBe(401);
+    expect(setCompetitorStatusMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('POST /status/competitors/:id/reject', () => {
+  it('rejects the competitor and redirects to /status', async () => {
+    const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates);
+    const res = await request(app)
+      .post('/status/competitors/5/reject')
+      .auth('test-user', 'test-password');
+    expect(setCompetitorStatusMock).toHaveBeenCalledWith(fakeDb, 5, 'rejected');
+    expect(res.status).toBe(303);
+  });
+});
+
+describe('POST /status/competitors/keywords/add', () => {
+  it('adds a keyword and redirects to /status', async () => {
+    addKeywordMock.mockResolvedValue({ id: 1, keyword: 'gluten free dinner recipes', addedAt: new Date() });
+    const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates);
+    const res = await request(app)
+      .post('/status/competitors/keywords/add')
+      .auth('test-user', 'test-password')
+      .send({ keyword: 'gluten free dinner recipes' });
+    expect(addKeywordMock).toHaveBeenCalledWith(fakeDb, 'gluten free dinner recipes');
+    expect(res.status).toBe(303);
+  });
+});
+
+describe('POST /status/competitors/keywords/:id/remove', () => {
+  it('removes a keyword and redirects to /status', async () => {
+    const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates);
+    const res = await request(app)
+      .post('/status/competitors/keywords/1/remove')
+      .auth('test-user', 'test-password');
+    expect(removeKeywordMock).toHaveBeenCalledWith(fakeDb, 1);
+    expect(res.status).toBe(303);
+  });
+});
+
+describe('GET /status with competitor data', () => {
+  it('renders the tracked competitors, candidates, and keywords sections', async () => {
+    listCompetitorsByStatusMock.mockImplementation(async (_db: unknown, status: string) =>
+      status === 'tracked'
+        ? [{ id: 1, domain: 'reliable-recipes.com', name: null, status: 'tracked', discoveredAt: new Date(), approvedAt: new Date() }]
+        : [{ id: 2, domain: 'new-candidate.com', name: null, status: 'candidate', discoveredAt: new Date(), approvedAt: null }],
+    );
+    listKeywordsMock.mockResolvedValue([{ id: 1, keyword: 'gluten free dinner recipes', addedAt: new Date() }]);
+
+    const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates);
+    const res = await request(app).get('/status').auth('test-user', 'test-password');
+
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('reliable-recipes.com');
+    expect(res.text).toContain('new-candidate.com');
+    expect(res.text).toContain('gluten free dinner recipes');
   });
 });
