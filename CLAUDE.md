@@ -29,7 +29,7 @@ Run from repo root unless noted.
 - `npm run dev` — Astro dev server.
 - `npm run build` — `astro build` (site only).
 - `npm run preview` — preview the built site.
-- `npm test` — runs `pretest` (`astro sync` + copies `node_modules/.astro/data-store.json` into `.astro/`, required for `astro:content` to resolve in tests) then `vitest run`. This only covers the **site** — `mcp-server/**` is explicitly excluded from the root vitest config.
+- `npm test` — runs `pretest` (`astro sync` + copies `node_modules/.astro/data-store.json` into `.astro/`, required for `astro:content` to resolve in tests) then `vitest run`. This only covers the **site** — `mcp-server/**` and `apps/lhr-office/**` are explicitly excluded from the root vitest config (each is a separate workspace with its own vitest config/major and its own `--workspace` test command).
 - Single test file: `npx vitest run tests/path/to/file.test.ts` — if you haven't run `npm test` (or otherwise populated `.astro/data-store.json`) since content changed, run `npx astro sync && mkdir -p .astro && cp node_modules/.astro/data-store.json .astro/data-store.json` first, or content-collection-backed tests will fail to resolve `astro:content`.
 - Root vitest runs test files **sequentially** (`fileParallelism: false`) because several test files shell out to `npm run build`, all writing to the shared `dist/` — don't undo this.
 
