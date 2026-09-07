@@ -1,17 +1,7 @@
 import { getPool } from '@lhr/db';
 import { createApp } from '../src/server.js';
 
-// Local-only convenience defaults — never used in production (Vercel always sets these as real
-// project env vars; requireStatusAuth 401s if either is missing, so leaving them unset there is
-// intentional). Set STATUS_AUTH_USER/STATUS_AUTH_PASSWORD in .env yourself if you want different
-// local credentials. Checked with `!value` rather than `??=`: .env.example's style leaves unused
-// vars present-but-empty ("STATUS_AUTH_USER="), and an empty string is not `undefined` — `??=`
-// would silently leave it as '', which requireStatusAuth then treats as "not configured" and
-// 401s on every request no matter what credentials are typed in.
-if (!process.env.STATUS_AUTH_USER) process.env.STATUS_AUTH_USER = 'dev';
-if (!process.env.STATUS_AUTH_PASSWORD) process.env.STATUS_AUTH_PASSWORD = 'dev';
-
-const missing = ['DATABASE_URL'].filter((name) => !process.env[name]);
+const missing = ['DATABASE_URL', 'SUPABASE_JWT_SECRET'].filter((name) => !process.env[name]);
 if (missing.length > 0) {
   console.error(`Missing required env var(s): ${missing.join(', ')}`);
   console.error('Add them to a .env file at the repo root (copy .env.example) and re-run.');
@@ -21,9 +11,9 @@ if (missing.length > 0) {
 if (!process.env.GITHUB_TOKEN) {
   console.warn(
     '[dev] GITHUB_TOKEN is not set. The recipe-candidate ops and "Approve" on affiliate ' +
-      'candidates will fail with a clear error instead of writing anywhere. "Deny" and viewing ' +
-      '/status both work fine without it. Add GITHUB_TOKEN to .env only once you actually want ' +
-      'to test a real commit — see the warning printed below for what that means.',
+      'candidates will fail with a clear error instead of writing anywhere. "Deny" and browsing ' +
+      'the dashboard both work fine without it. Add GITHUB_TOKEN to .env only once you actually ' +
+      'want to test a real commit — see the warning printed below for what that means.',
   );
 }
 if (!process.env.KEEPA_API_KEY || !process.env.AMAZON_ASSOCIATES_TAG) {
@@ -37,8 +27,8 @@ if (!process.env.KEEPA_API_KEY || !process.env.AMAZON_ASSOCIATES_TAG) {
 const port = Number(process.env.PORT ?? 3001);
 
 createApp(getPool()).listen(port, () => {
-  console.log(`\nlhr-office running locally: http://localhost:${port}/status`);
-  console.log(`Log in with STATUS_AUTH_USER=${process.env.STATUS_AUTH_USER} / STATUS_AUTH_PASSWORD=${process.env.STATUS_AUTH_PASSWORD}`);
+  console.log(`\nlhr-office running locally: http://localhost:${port}/`);
+  console.log('Sign in with a Supabase Auth user for this project (create one in the Supabase dashboard if needed).');
   if (process.env.GITHUB_TOKEN) {
     console.log(
       '\n⚠️  GITHUB_TOKEN is set — clicking "Approve" (on either the recipe candidate or an ' +
