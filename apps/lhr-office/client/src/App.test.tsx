@@ -74,4 +74,12 @@ describe('App', () => {
     render(<App />);
     expect(screen.getByRole('heading', { name: 'lhr office' })).toBeInTheDocument();
   });
+
+  it('shows a clear message on Login when the recovery/invite link has expired or was already used', () => {
+    window.location.hash = '#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired';
+    useSessionMock.mockReturnValue({ session: null, loading: false });
+    render(<App />);
+    expect(screen.getByRole('heading', { name: 'lhr office' })).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent('Email link is invalid or has expired');
+  });
 });

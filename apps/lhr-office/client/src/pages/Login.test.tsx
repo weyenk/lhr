@@ -70,4 +70,9 @@ describe('Login', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Send reset link' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('Too many requests');
   });
+
+  it('shows an initialError immediately, e.g. for an expired reset link', () => {
+    render(<Login initialError="Email link is invalid or has expired" />);
+    expect(screen.getByRole('alert')).toHaveTextContent('Email link is invalid or has expired');
+  });
 });

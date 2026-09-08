@@ -1,11 +1,15 @@
 import { useState, type FormEvent } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
-export function Login() {
+interface LoginProps {
+  initialError?: string | null;
+}
+
+export function Login({ initialError = null }: LoginProps = {}) {
   const [mode, setMode] = useState<'sign-in' | 'forgot-password'>('sign-in');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(initialError);
   const [submitting, setSubmitting] = useState(false);
   const [resetSent, setResetSent] = useState(false);
 
