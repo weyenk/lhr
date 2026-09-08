@@ -6,14 +6,13 @@ import { SetPassword } from './pages/SetPassword';
 import { Sidebar } from './components/Sidebar';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { panels } from './panels';
-import { getAuthFlowTypeFromHash, getAuthErrorFromHash, type AuthFlowType } from './lib/authFlow';
+import { getAuthFlowTypeFromHash, getAuthErrorFromHash, getInitialAuthHash, type AuthFlowType } from './lib/authFlow';
 
 export function App() {
   const { session, loading } = useSession();
-  const [authFlowType, setAuthFlowType] = useState<AuthFlowType | null>(() =>
-    getAuthFlowTypeFromHash(window.location.hash),
-  );
-  const [authError] = useState<string | null>(() => getAuthErrorFromHash(window.location.hash));
+  const [initialHash] = useState<string>(getInitialAuthHash);
+  const [authFlowType, setAuthFlowType] = useState<AuthFlowType | null>(() => getAuthFlowTypeFromHash(initialHash));
+  const [authError] = useState<string | null>(() => getAuthErrorFromHash(initialHash));
 
   if (loading) return <div className="app-loading">Loading…</div>;
   if (authFlowType && session) return <SetPassword onDone={() => setAuthFlowType(null)} />;

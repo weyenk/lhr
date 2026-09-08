@@ -27,6 +27,7 @@ const { App } = await import('./App');
 beforeEach(() => {
   vi.clearAllMocks();
   window.location.hash = '';
+  delete (window as { __initialAuthHash?: string }).__initialAuthHash;
 });
 
 describe('App', () => {
@@ -81,5 +82,16 @@ describe('App', () => {
     render(<App />);
     expect(screen.getByRole('heading', { name: 'lhr office' })).toBeInTheDocument();
     expect(screen.getByRole('alert')).toHaveTextContent('Email link is invalid or has expired');
+  });
+
+  it('detects a recovery redirect via window.__initialAuthHash even when location.hash has already been cleared', () => {
+    // Reproduces a real production bug: supabase-js's client clears window.location.hash as
+    // part of its own session setup, sometimes before App's own code gets to read it — so
+    // location.hash is empty by the time this runs, exactly like it would be for real.
+    window.location.hash = '';
+    (window as { __initialAuthHash?: string }).__initialAuthHash = '#access_token=abc&type=recovery';
+    useSessionMock.mockReturnValue({ session: { access_token: 'tok' }, loading: false });
+    render(<App />);
+    expect(screen.getByRole('heading', { name: 'Set your password' })).toBeInTheDocument();
   });
 });

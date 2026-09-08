@@ -20,3 +20,16 @@ export function getAuthErrorFromHash(hash: string): string | null {
   if (!error) return null;
   return params.get('error_description') ?? params.get('error_code') ?? error;
 }
+
+// supabase-js's client parses and clears window.location.hash as part of its own
+// session setup — by the time app code gets around to reading location.hash
+// directly, the recovery/invite params it needs may already be gone (observed in
+// production: a real recovery link redirected fine, but the app only ever saw a
+// bare "#" with no content). client/index.html captures the raw hash into
+// window.__initialAuthHash via an inline script that runs before any bundled JS
+// (including the Supabase client) even starts, so nothing can consume it first.
+// Falls back to window.location.hash directly when that capture never ran (e.g.
+// in tests).
+export function getInitialAuthHash(): string {
+  return (window as { __initialAuthHash?: string }).__initialAuthHash ?? window.location.hash;
+}

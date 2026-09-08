@@ -4,6 +4,15 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>lhr office</title>
+    <!--
+      Captures the raw redirect hash (e.g. #access_token=...&type=recovery) before any
+      bundled JS runs, including the Supabase client — which parses and clears
+      window.location.hash as part of its own session setup, sometimes fast enough to beat
+      app code that tries to read it directly. See client/src/lib/authFlow.ts.
+    -->
+    <script>
+      window.__initialAuthHash = window.location.hash;
+    </script>
   </head>
   <body>
     <div id="root"></div>
