@@ -2,9 +2,15 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 
 const signInWithPasswordMock = vi.fn();
+const resetPasswordForEmailMock = vi.fn();
 
 vi.mock('../lib/supabaseClient', () => ({
-  supabase: { auth: { signInWithPassword: (...args: unknown[]) => signInWithPasswordMock(...args) } },
+  supabase: {
+    auth: {
+      signInWithPassword: (...args: unknown[]) => signInWithPasswordMock(...args),
+      resetPasswordForEmail: (...args: unknown[]) => resetPasswordForEmailMock(...args),
+    },
+  },
 }));
 
 const { Login } = await import('./Login');
@@ -30,5 +36,38 @@ describe('Login', () => {
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'wrong' } });
     fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('Invalid credentials');
+  });
+
+  it('switches to the forgot-password form and back', () => {
+    render(<Login />);
+    fireEvent.click(screen.getByRole('button', { name: 'Forgot password?' }));
+    expect(screen.queryByLabelText('Password')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Send reset link' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back to sign in' }));
+    expect(screen.getByLabelText('Password')).toBeInTheDocument();
+  });
+
+  it('sends a reset email and shows a confirmation', async () => {
+    resetPasswordForEmailMock.mockResolvedValue({ error: null });
+    render(<Login />);
+    fireEvent.click(screen.getByRole('button', { name: 'Forgot password?' }));
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'a@example.com' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send reset link' }));
+    await waitFor(() =>
+      expect(resetPasswordForEmailMock).toHaveBeenCalledWith('a@example.com', {
+        redirectTo: window.location.origin,
+      }),
+    );
+    expect(await screen.findByText(/check your email/i)).toBeInTheDocument();
+  });
+
+  it('shows an error when the reset request fails', async () => {
+    resetPasswordForEmailMock.mockResolvedValue({ error: { message: 'Too many requests' } });
+    render(<Login />);
+    fireEvent.click(screen.getByRole('button', { name: 'Forgot password?' }));
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'a@example.com' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send reset link' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Too many requests');
   });
 });

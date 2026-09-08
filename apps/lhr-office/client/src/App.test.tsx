@@ -24,7 +24,10 @@ vi.mock('./lib/supabaseClient', () => ({
 
 const { App } = await import('./App');
 
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => {
+  vi.clearAllMocks();
+  window.location.hash = '';
+});
 
 describe('App', () => {
   it('shows nothing but a loading state while the session is resolving', () => {
@@ -48,5 +51,27 @@ describe('App', () => {
     expect(screen.getByRole('link', { name: 'Agents & Jobs' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Research' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Overview' })).toBeInTheDocument();
+  });
+
+  it('shows the set-password screen instead of the dashboard when the URL is a recovery redirect', () => {
+    window.location.hash = '#access_token=abc&type=recovery';
+    useSessionMock.mockReturnValue({ session: { access_token: 'tok' }, loading: false });
+    render(<App />);
+    expect(screen.getByRole('heading', { name: 'Set your password' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Overview' })).not.toBeInTheDocument();
+  });
+
+  it('shows the set-password screen for an invite redirect too', () => {
+    window.location.hash = '#access_token=abc&type=invite';
+    useSessionMock.mockReturnValue({ session: { access_token: 'tok' }, loading: false });
+    render(<App />);
+    expect(screen.getByRole('heading', { name: 'Set your password' })).toBeInTheDocument();
+  });
+
+  it('still shows Login when the URL is a recovery redirect but no session is established yet', () => {
+    window.location.hash = '#access_token=abc&type=recovery';
+    useSessionMock.mockReturnValue({ session: null, loading: false });
+    render(<App />);
+    expect(screen.getByRole('heading', { name: 'lhr office' })).toBeInTheDocument();
   });
 });
