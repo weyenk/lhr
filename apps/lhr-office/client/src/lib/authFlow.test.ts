@@ -1,5 +1,5 @@
 import { describe, expect, it, afterEach } from 'vitest';
-import { getAuthFlowTypeFromHash, getAuthErrorFromHash, getInitialAuthHash } from './authFlow';
+import { getAuthFlowTypeFromHash, getAuthErrorFromHash, getInitialAuthHash, getAuthTokensFromHash } from './authFlow';
 
 describe('getAuthFlowTypeFromHash', () => {
   it('returns "recovery" for a password-recovery redirect hash', () => {
@@ -53,5 +53,24 @@ describe('getInitialAuthHash', () => {
   it('falls back to window.location.hash when __initialAuthHash was never set (e.g. in tests, or if index.html\'s capture script did not run)', () => {
     window.location.hash = '#access_token=abc&type=invite';
     expect(getInitialAuthHash()).toBe('#access_token=abc&type=invite');
+  });
+});
+
+describe('getAuthTokensFromHash', () => {
+  it('returns access_token and refresh_token when both are present', () => {
+    const hash = '#access_token=abc.def&refresh_token=xyz&expires_at=123&type=recovery';
+    expect(getAuthTokensFromHash(hash)).toEqual({ access_token: 'abc.def', refresh_token: 'xyz' });
+  });
+
+  it('returns null when access_token is missing', () => {
+    expect(getAuthTokensFromHash('#refresh_token=xyz&type=recovery')).toBeNull();
+  });
+
+  it('returns null when refresh_token is missing', () => {
+    expect(getAuthTokensFromHash('#access_token=abc.def&type=recovery')).toBeNull();
+  });
+
+  it('returns null for a plain sign-in with no hash', () => {
+    expect(getAuthTokensFromHash('')).toBeNull();
   });
 });

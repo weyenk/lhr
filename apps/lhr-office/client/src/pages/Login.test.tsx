@@ -75,4 +75,11 @@ describe('Login', () => {
     render(<Login initialError="Email link is invalid or has expired" />);
     expect(screen.getByRole('alert')).toHaveTextContent('Email link is invalid or has expired');
   });
+
+  it('shows initialError even when it arrives after the initial render, e.g. an async session-establishment failure', () => {
+    const { rerender } = render(<Login initialError={null} />);
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    rerender(<Login initialError="Network error" />);
+    expect(screen.getByRole('alert')).toHaveTextContent('Network error');
+  });
 });

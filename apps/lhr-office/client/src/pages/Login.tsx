@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
 interface LoginProps {
@@ -12,6 +12,12 @@ export function Login({ initialError = null }: LoginProps = {}) {
   const [error, setError] = useState<string | null>(initialError);
   const [submitting, setSubmitting] = useState(false);
   const [resetSent, setResetSent] = useState(false);
+
+  // initialError can arrive after the first render — e.g. App.tsx establishes a recovery
+  // session asynchronously and only learns of a failure once that call resolves.
+  useEffect(() => {
+    if (initialError) setError(initialError);
+  }, [initialError]);
 
   async function handleSignIn(e: FormEvent) {
     e.preventDefault();

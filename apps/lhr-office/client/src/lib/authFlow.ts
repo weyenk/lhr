@@ -33,3 +33,21 @@ export function getAuthErrorFromHash(hash: string): string | null {
 export function getInitialAuthHash(): string {
   return (window as { __initialAuthHash?: string }).__initialAuthHash ?? window.location.hash;
 }
+
+// The default automatic session detection (detectSessionInUrl) fails silently on any error —
+// no #error= hash, no session, nothing the app can react to (traced into
+// @supabase/auth-js's GoTrueClient: a failed internal /auth/v1/user call inside
+// _getSessionFromURL() is swallowed with just a debug log). Parsing the tokens ourselves and
+// calling supabase.auth.setSession() directly (see App.tsx) makes that failure visible instead.
+export interface AuthTokens {
+  access_token: string;
+  refresh_token: string;
+}
+
+export function getAuthTokensFromHash(hash: string): AuthTokens | null {
+  const params = new URLSearchParams(hash.replace(/^#/, ''));
+  const access_token = params.get('access_token');
+  const refresh_token = params.get('refresh_token');
+  if (!access_token || !refresh_token) return null;
+  return { access_token, refresh_token };
+}

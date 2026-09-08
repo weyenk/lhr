@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 
 const useSessionMock = vi.fn();
 vi.mock('./lib/auth', () => ({ useSession: () => useSessionMock() }));
@@ -12,12 +12,14 @@ vi.mock('./lib/api', () => ({ apiFetch: vi.fn().mockResolvedValue(null) }));
 // scope (independent of lib/api) — that module throws at import time without
 // VITE_SUPABASE_URL/VITE_SUPABASE_ANON_KEY set, so it needs the same isolation Login.test.tsx
 // already applies, or importing `./App` below throws regardless of which branch is rendered.
+const setSessionMock = vi.fn().mockResolvedValue({ data: { session: null }, error: null });
 vi.mock('./lib/supabaseClient', () => ({
   supabase: {
     auth: {
       signInWithPassword: vi.fn(),
       getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
       onAuthStateChange: vi.fn(() => ({ data: { subscription: { unsubscribe: vi.fn() } } })),
+      setSession: (...args: unknown[]) => setSessionMock(...args),
     },
   },
 }));
@@ -26,6 +28,7 @@ const { App } = await import('./App');
 
 beforeEach(() => {
   vi.clearAllMocks();
+  setSessionMock.mockResolvedValue({ data: { session: null }, error: null });
   window.location.hash = '';
   delete (window as { __initialAuthHash?: string }).__initialAuthHash;
 });
@@ -93,5 +96,42 @@ describe('App', () => {
     useSessionMock.mockReturnValue({ session: { access_token: 'tok' }, loading: false });
     render(<App />);
     expect(screen.getByRole('heading', { name: 'Set your password' })).toBeInTheDocument();
+  });
+
+  it('establishes the session itself from a recovery hash instead of relying on automatic detection', () => {
+    // detectSessionInUrl is disabled on the real client (see supabaseClient.ts) because its
+    // automatic detection swallows failures silently — App calls setSession() directly so a
+    // failure is visible instead. This test only checks the call is made correctly; the
+    // resulting session update happens through the real onAuthStateChange plumbing (mocked away
+    // here via useSessionMock, exercised by the other tests in this file).
+    window.location.hash = '#access_token=abc&refresh_token=def&type=recovery';
+    useSessionMock.mockReturnValue({ session: null, loading: false });
+    render(<App />);
+    expect(setSessionMock).toHaveBeenCalledWith({ access_token: 'abc', refresh_token: 'def' });
+  });
+
+  it('does not call setSession when the hash has no refresh_token (e.g. an unrelated access_token param)', () => {
+    window.location.hash = '#access_token=abc&type=recovery';
+    useSessionMock.mockReturnValue({ session: null, loading: false });
+    render(<App />);
+    expect(setSessionMock).not.toHaveBeenCalled();
+  });
+
+  it('shows a clear message on Login when establishing the session from a recovery hash fails', async () => {
+    setSessionMock.mockResolvedValue({ data: { session: null }, error: { message: 'Network error' } });
+    window.location.hash = '#access_token=abc&refresh_token=def&type=recovery';
+    useSessionMock.mockReturnValue({ session: null, loading: false });
+    render(<App />);
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent('Network error');
+    });
+    expect(screen.getByRole('heading', { name: 'lhr office' })).toBeInTheDocument();
+  });
+
+  it('clears the token hash from the URL bar once tokens have been captured for setSession', () => {
+    window.location.hash = '#access_token=abc&refresh_token=def&type=recovery';
+    useSessionMock.mockReturnValue({ session: null, loading: false });
+    render(<App />);
+    expect(window.location.hash).toBe('');
   });
 });
