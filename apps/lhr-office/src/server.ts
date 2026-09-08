@@ -70,9 +70,16 @@ export function createApp(
       next();
       return;
     }
+    // A callback here means Express will NOT auto-respond on error (that only
+    // happens when sendFile is called with no callback at all) — so failing to
+    // call next(err) ourselves leaves the request hanging with no response
+    // until the platform's function timeout. next(err) restores Express's
+    // default error-response behavior (respects err.status, e.g. 404 for a
+    // missing file) while still getting the error logged.
     res.sendFile(path.join(clientDistDir, 'index.html'), (err) => {
       if (err) {
         console.error('[server] failed to send SPA index.html:', err);
+        next(err);
       }
     });
   });

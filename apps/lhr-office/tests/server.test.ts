@@ -196,4 +196,20 @@ describe('static SPA serving', () => {
       rmSync(dir, { recursive: true, force: true });
     }
   });
+
+  it('responds (does not hang) when index.html is missing from clientDistDir', async () => {
+    // Regression test: a prior version passed a callback to res.sendFile that only
+    // logged the error and never sent a response, which left the request hanging
+    // until the platform's function timeout (a real production incident — 504
+    // GATEWAY_TIMEOUT on every page load once client/dist/index.html wasn't found).
+    const dir = mkdtempSync(join(tmpdir(), 'lhr-office-dist-'));
+    // Deliberately do not write index.html into `dir`.
+    try {
+      const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates, dir);
+      const res = await request(app).get('/agents-jobs');
+      expect(res.status).toBe(404);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
 });
