@@ -1,4 +1,3 @@
-import path from 'node:path';
 import express from 'express';
 import type { Queryable } from '@lhr/db';
 import type { JobRegistration } from '@lhr/jobs';
@@ -15,23 +14,17 @@ import {
 } from './routes/candidates.js';
 import { createTrendsRouter } from './routes/trends.js';
 import { createCompetitorsRouter } from './routes/competitors.js';
+import { clientAssets as defaultClientAssets, type ClientAsset } from './clientAssets.generated.js';
 
 export type { CandidateOps, AffiliateCandidateOps };
-
-// Resolved from process.cwd() (apps/lhr-office both locally — see scripts/dev.ts's cwd-relative
-// env file path — and on Vercel, where this project's root directory is apps/lhr-office) rather
-// than import.meta.url: esbuild bundles this file into a single dist/api/index.js or
-// dist/src/server.js output, at which point import.meta.url resolves to that bundle's own
-// location, not this source file's — a relative URL computed from it would point outside the
-// package entirely.
-const defaultClientDistDir = path.resolve(process.cwd(), 'client/dist');
+export type { ClientAsset };
 
 export function createApp(
   db: Queryable,
   registry: JobRegistration[] = defaultRegistry,
   candidates: CandidateOps = defaultCandidateOps(),
   affiliateCandidates: AffiliateCandidateOps = defaultAffiliateCandidateOps(db),
-  clientDistDir: string = defaultClientDistDir,
+  clientAssets: Record<string, ClientAsset> = defaultClientAssets,
 ): express.Express {
   const app = express();
   app.set('trust proxy', 1);
@@ -64,24 +57,30 @@ export function createApp(
   app.use('/api/trends', requireSupabaseAuth, createTrendsRouter(db));
   app.use('/api/competitors', requireSupabaseAuth, createCompetitorsRouter(db));
 
-  app.use(express.static(clientDistDir));
+  // Client assets are inlined into this bundle at build time (scripts/bundle.mjs
+  // generates clientAssets.generated.ts from the Vite build's output) rather than
+  // read from disk at runtime. Vercel's file-tracing did not reliably package
+  // client/dist into the deployed function — verified in production: the
+  // directory was missing from /var/task at runtime despite the build producing
+  // it, so every page load 404'd. Serving from an in-memory map that esbuild
+  // bundled directly into this same file has no such dependency on Vercel's
+  // packaging heuristics.
   app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api/')) {
       next();
       return;
     }
-    // A callback here means Express will NOT auto-respond on error (that only
-    // happens when sendFile is called with no callback at all) — so failing to
-    // call next(err) ourselves leaves the request hanging with no response
-    // until the platform's function timeout. next(err) restores Express's
-    // default error-response behavior (respects err.status, e.g. 404 for a
-    // missing file) while still getting the error logged.
-    res.sendFile(path.join(clientDistDir, 'index.html'), (err) => {
-      if (err) {
-        console.error('[server] failed to send SPA index.html:', err);
-        next(err);
-      }
-    });
+    const exactMatch = clientAssets[req.path];
+    const asset = exactMatch ?? clientAssets['/index.html'];
+    if (!asset) {
+      res.status(404).send('Not found');
+      return;
+    }
+    if (exactMatch && req.path !== '/index.html') {
+      // Vite content-hashes these filenames, so they're safe to cache indefinitely.
+      res.set('Cache-Control', 'public, max-age=31536000, immutable');
+    }
+    res.type(asset.contentType).send(Buffer.from(asset.base64, 'base64'));
   });
 
   return app;

@@ -1,9 +1,6 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import request from 'supertest';
 import type { Queryable } from '@lhr/db';
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import jwt from 'jsonwebtoken';
 
 const runDueJobMock = vi.fn();
@@ -172,44 +169,50 @@ describe('/api/* auth', () => {
 });
 
 describe('static SPA serving', () => {
-  it('serves the built index.html for a non-API GET route', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'lhr-office-dist-'));
-    writeFileSync(join(dir, 'index.html'), '<!doctype html><title>lhr office</title>');
-    try {
-      const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates, dir);
-      const res = await request(app).get('/agents-jobs');
-      expect(res.status).toBe(200);
-      expect(res.text).toContain('lhr office');
-    } finally {
-      rmSync(dir, { recursive: true, force: true });
-    }
+  // Client assets are inlined into the server bundle at build time (see
+  // scripts/bundle.mjs and clientAssets.generated.ts) rather than read from disk —
+  // Vercel's file-tracing did not reliably package a runtime-read client/dist
+  // directory into the deployed function (a real production incident: every page
+  // load 404'd because /var/task/client/dist was missing despite the build
+  // producing it). createApp's 5th parameter injects a fake asset map for tests.
+  const html = Buffer.from('<!doctype html><title>lhr office</title>').toString('base64');
+  const js = Buffer.from('console.log("hi")').toString('base64');
+  const fakeAssets = {
+    '/index.html': { contentType: 'text/html; charset=utf-8', base64: html },
+    '/assets/index-abc123.js': { contentType: 'text/javascript; charset=utf-8', base64: js },
+  };
+
+  it('serves index.html for a non-API GET route (SPA fallback)', async () => {
+    const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates, fakeAssets);
+    const res = await request(app).get('/agents-jobs');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('lhr office');
+    expect(res.headers['content-type']).toContain('text/html');
+  });
+
+  it('serves an exact asset match with its own content type and a long-lived cache header', async () => {
+    const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates, fakeAssets);
+    const res = await request(app).get('/assets/index-abc123.js');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('console.log');
+    expect(res.headers['content-type']).toContain('text/javascript');
+    expect(res.headers['cache-control']).toContain('immutable');
   });
 
   it('does not shadow a real 404 from an /api/* route', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'lhr-office-dist-'));
-    writeFileSync(join(dir, 'index.html'), '<!doctype html>');
-    try {
-      const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates, dir);
-      const res = await request(app).get('/api/does-not-exist').set('Authorization', `Bearer ${validToken()}`);
-      expect(res.status).toBe(404);
-    } finally {
-      rmSync(dir, { recursive: true, force: true });
-    }
+    const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates, fakeAssets);
+    const res = await request(app).get('/api/does-not-exist').set('Authorization', `Bearer ${validToken()}`);
+    expect(res.status).toBe(404);
   });
 
-  it('responds (does not hang) when index.html is missing from clientDistDir', async () => {
+  it('responds (does not hang) when index.html is missing from the asset map', async () => {
     // Regression test: a prior version passed a callback to res.sendFile that only
     // logged the error and never sent a response, which left the request hanging
-    // until the platform's function timeout (a real production incident — 504
-    // GATEWAY_TIMEOUT on every page load once client/dist/index.html wasn't found).
-    const dir = mkdtempSync(join(tmpdir(), 'lhr-office-dist-'));
-    // Deliberately do not write index.html into `dir`.
-    try {
-      const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates, dir);
-      const res = await request(app).get('/agents-jobs');
-      expect(res.status).toBe(404);
-    } finally {
-      rmSync(dir, { recursive: true, force: true });
-    }
+    // until the platform's function timeout (the same production incident
+    // referenced above). The in-memory lookup here can't hang the way a disk read
+    // could, but this still guards the "no fallback available" path.
+    const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates, {});
+    const res = await request(app).get('/agents-jobs');
+    expect(res.status).toBe(404);
   });
 });
