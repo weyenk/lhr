@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import request from 'supertest';
 import type { Queryable } from '@lhr/db';
-import jwt from 'jsonwebtoken';
+import { generateKeyPair, SignJWT, exportJWK } from 'jose';
 
 const runDueJobMock = vi.fn();
 const runJobNowMock = vi.fn();
@@ -62,8 +62,18 @@ const noAffiliateCandidates = {
   deny: vi.fn(),
 };
 
+// Supabase signs real session tokens with ES256 (asymmetric JWT signing keys), verified via the
+// project's JWKS endpoint rather than a shared secret — see src/authMiddleware.ts.
+const JWKS_KID = 'test-kid';
+const { publicKey, privateKey } = await generateKeyPair('ES256');
+const publicJwk = { ...(await exportJWK(publicKey)), kid: JWKS_KID, alg: 'ES256', use: 'sig' };
+
 function validToken() {
-  return jwt.sign({ sub: 'user-1', role: 'authenticated' }, 'test-jwt-secret', { algorithm: 'HS256' });
+  return new SignJWT({ sub: 'user-1', role: 'authenticated' })
+    .setProtectedHeader({ alg: 'ES256', kid: JWKS_KID })
+    .setIssuedAt()
+    .setExpirationTime('1h')
+    .sign(privateKey);
 }
 
 beforeEach(() => {
@@ -143,7 +153,23 @@ describe('cron endpoint auth', () => {
 
 describe('/api/* auth', () => {
   beforeEach(() => {
-    process.env.SUPABASE_JWT_SECRET = 'test-jwt-secret';
+    process.env.SUPABASE_URL = 'https://test.supabase.co';
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string | URL) => {
+        if (String(url) === 'https://test.supabase.co/auth/v1/.well-known/jwks.json') {
+          return new Response(JSON.stringify({ keys: [publicJwk] }), {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          });
+        }
+        throw new Error(`Unexpected fetch to ${String(url)}`);
+      }),
+    );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it('rejects GET /api/jobs with no Authorization header', async () => {
@@ -155,7 +181,7 @@ describe('/api/* auth', () => {
   it('allows GET /api/jobs with a valid bearer token', async () => {
     getRunHistoryMock.mockResolvedValue([]);
     const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates);
-    const res = await request(app).get('/api/jobs').set('Authorization', `Bearer ${validToken()}`);
+    const res = await request(app).get('/api/jobs').set('Authorization', `Bearer ${await validToken()}`);
     expect(res.status).toBe(200);
   });
 
@@ -201,7 +227,7 @@ describe('static SPA serving', () => {
 
   it('does not shadow a real 404 from an /api/* route', async () => {
     const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates, fakeAssets);
-    const res = await request(app).get('/api/does-not-exist').set('Authorization', `Bearer ${validToken()}`);
+    const res = await request(app).get('/api/does-not-exist').set('Authorization', `Bearer ${await validToken()}`);
     expect(res.status).toBe(404);
   });
 
