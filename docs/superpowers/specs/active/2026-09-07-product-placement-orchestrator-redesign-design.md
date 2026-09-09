@@ -133,13 +133,15 @@ module-per-table convention (one file per table, re-exported from
 singleton rather than a passed-in `Pool`, and — like every sibling module —
 never calls `.end()`; the pool is a small bounded connection pool reused for
 the process's lifetime, not one connection held open forever. Exports:
-`createProposal`, `getPendingProposals` (status IN `pending`,
-`edit_failed` — the fix from the original branch that makes `edit_failed`
-proposals visible/rejectable instead of silently re-proposed every cycle),
-`getApprovedProposals`, `markProposalStatus`, `getProposalById`. The table
-schema (columns, status enum values including `edit_failed` and `stale`)
-carries over unchanged from the original design — those aren't
-orchestrator-specific.
+`insertProductPlacementProposal`, `getReviewableProposals` (status IN
+`pending`, `edit_failed` — the fix from the original branch that makes
+`edit_failed` proposals visible/rejectable instead of silently re-proposed
+every cycle), `getApprovedProposals`, `markProposalStatus`,
+`getProposalById`, `getPendingAffiliateLinkIds` — naming matches the
+sibling `insertCandidates`/`getPendingCandidates` convention rather than
+generic names. The table schema (columns, status enum values including
+`edit_failed` and `stale`) carries over unchanged from the original design
+— those aren't orchestrator-specific.
 
 ## LLM matching
 
