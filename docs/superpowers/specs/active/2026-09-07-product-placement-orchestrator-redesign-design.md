@@ -17,6 +17,17 @@ placement to fit that established architecture. PR #52 will be closed once
 the branch built from this spec is ready; `claude/product-placement-design-hyis83`
 will be reset to a fresh branch off current `main`.
 
+**Update (2026-09-09):** while this spec was awaiting review, `apps/lhr-office`
+was rebuilt again on `main` — from the Basic-Auth-gated server-rendered
+`/status` HTML page described below into a Vite/React SPA (`client/`) served
+as static assets from the same Express app, talking to a JSON REST API under
+`/api/*`, authenticated with Supabase session JWTs (`requireSupabaseAuth`,
+verified against Supabase's JWKS) instead of HTTP Basic Auth. The Job
+registration, Data model, and `callLLM` overload sections below are
+unaffected. The **Review UI** section has been rewritten in place to match
+this second shift — the server-rendered `/status`-page version it replaces
+is no longer the plan.
+
 ## Purpose (unchanged from original spec)
 
 Recipes and articles get photographed with kitchenware and ingredients that
@@ -73,9 +84,10 @@ processing will likely replace it, and registering the job now would start
 running an image-edit path due for replacement. The feature ships
 functionally complete — matching, editing, proposal storage, and the full
 review UI all work end-to-end when invoked manually (via
-`/status/run/matchProductsToRecipes` once registered, or by direct
-invocation in a one-off script/test) — but stays dormant in the due-check
-rotation until a one-line registry addition turns it on:
+`POST /api/jobs/product-placement/run` once registered (see
+`routes/jobs.ts`), or by direct invocation in a one-off script/test) — but
+stays dormant in the due-check rotation until a one-line registry addition
+turns it on:
 
 ```ts
 { name: 'product-placement', cadenceDays: 7, run: matchProductsToRecipes },
@@ -187,33 +199,54 @@ finding.
 
 ## Review UI
 
-Mirrors the affiliate-candidates feature exactly (`apps/lhr-office`'s
-Express `/status` page pattern):
+Mirrors the affiliate-candidates feature exactly, against the current
+SPA/JSON-API shape of `apps/lhr-office` (Express serves the Vite-built
+`client/` bundle as static assets plus a `/api/*` JSON API gated by
+`requireSupabaseAuth`; there is no server-rendered HTML page anymore):
 
-- **`apps/lhr-office/src/statusPage.ts`**: new
-  `renderProductPlacementsSection(proposals: ProductPlacementProposal[])`,
-  same shape as `renderAffiliateCandidatesSection` — returns `''` when there
-  are no pending/`edit_failed` proposals, otherwise a `<section>` listing
-  each proposal (before/after thumbnail, matched product, post slug,
-  approve/reject buttons posting to the routes below).
-- **`apps/lhr-office/src/server.ts`**: a `ProductPlacementOps` interface —
-  `{ getPending: () => Promise<ProductPlacementProposal[]>, approve: (id: number) => Promise<...>, reject: (id: number) => Promise<...> }`
-  — plus `defaultProductPlacementOps(db)`, constructed and passed as a
-  `createApp(...)` parameter exactly like `AffiliateCandidateOps` /
-  `defaultAffiliateCandidateOps`. Two new routes,
-  `POST /status/product-placements/:id/approve` and
-  `POST /status/product-placements/:id/reject`, both behind
-  `requireStatusAuth`, following the exact try/catch → redirect(303,
-  '/status') / 500-with-escaped-message pattern of the affiliate routes.
 - **`mcp-server/src/productPlacementOps.ts`**: plain functions
   `approveProductPlacement(db, githubToken, id)` and
   `rejectProductPlacement(db, id)`, mirroring
+  `mcp-server/src/affiliateCandidateOps.ts`'s
   `approveAffiliateCandidate`/`denyAffiliateCandidate` — approve commits the
   edited photo + frontmatter update to the post via
-  `commitFilesToMain`/`createGitHubClient` from `./github.js` and then marks
-  the proposal `approved`; reject marks it `rejected` with no GitHub write.
-  A `ProposalNotFoundError` / `ProposalAlreadyDecidedError` pair mirrors
-  `CandidateNotFoundError`/`CandidateAlreadyDecidedError`.
+  `commitFilesToMain`/`createGitHubClient` from `./github.js` (both already
+  in `mcp-server/src/github.ts`) and then marks the proposal `approved`;
+  reject marks it `rejected` with no GitHub write. A
+  `ProposalNotFoundError` / `ProposalAlreadyDecidedError` pair mirrors
+  `CandidateNotFoundError`/`CandidateAlreadyDecidedError`. Built into the
+  `lhr-authoring-mcp-server` package's `dist-lib` build like every other ops
+  module, so `apps/lhr-office` consumes it as
+  `lhr-authoring-mcp-server/dist-lib/productPlacementOps.js`.
+- **`apps/lhr-office/src/routes/productPlacements.ts`**: new Express
+  router file mirroring `routes/candidates.ts` exactly — defines a
+  `ProductPlacementOps` interface
+  (`{ getPending: () => Promise<ProductPlacementProposal[]>, approve: (id: number) => Promise<ApprovedProductPlacement>, reject: (id: number) => Promise<RejectedProductPlacement> }`),
+  a `defaultProductPlacementOps(db)` factory that wires the mcp-server ops
+  functions above to `requireGitHubToken()`, and
+  `createProductPlacementsRouter(ops)` exposing `GET /` (pending +
+  `edit_failed` proposals), `POST /:id/approve`, `POST /:id/reject` — same
+  try/catch → `res.json(...)` / `res.status(500).json({error})` pattern as
+  every other router in that file.
+- **`apps/lhr-office/src/server.ts`**: mount the new router the same way
+  `candidates`/`trends`/`competitors` are mounted —
+  `app.use('/api/product-placements', requireSupabaseAuth, createProductPlacementsRouter(productPlacements))`,
+  with `productPlacements: ProductPlacementOps = defaultProductPlacementOps(db)`
+  added as a new `createApp(...)` parameter (same position/pattern as the
+  existing `candidates`/`affiliateCandidates` parameters). No feature-specific
+  auth work is needed — Supabase JWT verification is already shared
+  infrastructure that every `/api/*` router rides on.
+- **Client**: add a `ProductPlacementProposal` interface to
+  `client/src/lib/types.ts` (id, post slug, matched product, `beforeImageUrl`,
+  `afterImageUrl`, status). Add a "Product placements" section to
+  `client/src/pages/Approvals.tsx`, following the file's existing
+  per-resource pattern — `useApiResource<ProductPlacementProposal[]>('/api/product-placements')`,
+  a `<section>` with a `<ul>` of proposals, Approve/Reject buttons calling
+  `apiFetch` through the same `runAction` helper already used by the
+  recipe/affiliate/competitor sections in that file. Unlike those sections
+  (plain text lists), each list item also renders a before/after `<img>`
+  thumbnail pair — the one genuinely new UI element this feature needs,
+  since nothing else on that page reviews an edited image.
 
 ## Testing approach
 
@@ -225,10 +258,16 @@ Matches sibling convention exactly, split by layer:
   file, the same style as `sourceAffiliateCandidates.spec.ts` — no
   dependency injection for the job entry point itself.
 - **Review-UI ops and routes** (`productPlacementOps.ts`,
-  `server.ts`'s new routes): keep the existing DI-style ops-interface
-  testing — `server.spec.ts` constructs `createApp(db, registry, ...,
-  fakeProductPlacementOps)` with an injected fake, exactly as it already
-  does for `AffiliateCandidateOps`, so route tests never need a real GitHub
+  `routes/productPlacements.ts`): keep the existing DI-style ops-interface
+  testing at two layers, both already established by the sibling
+  candidates feature —
+  `apps/lhr-office/tests/routes/productPlacements.test.ts` builds a bare
+  Express app with `createProductPlacementsRouter(fakeOps)` and drives it
+  with `supertest`, exactly like `tests/routes/candidates.test.ts`; and
+  `client/src/pages/Approvals.test.tsx` gets new assertions that mock
+  `apiFetch('/api/product-placements')` the same way it already mocks the
+  recipe/affiliate/competitor endpoints, so the client test never needs a
+  real Supabase session or backend. Neither layer needs a real GitHub
   token or database.
 - **`@lhr/llm` image overload**: unit tests cover the new response-shape
   branch (`responseFormat: 'image'` → `{imageBase64, contentType}`) with
