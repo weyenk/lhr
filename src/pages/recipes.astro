@@ -1,0 +1,22 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ArticleCard from '../components/ArticleCard.astro';
+import { getCollection } from 'astro:content';
+
+const recipes = (await getCollection('posts', (post) => post.data.type === 'recipe')).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
+);
+---
+<BaseLayout title="Recipes — Love Heat Relationship">
+  <div class="recipes-page mx-auto max-w-[1200px] px-4 py-8">
+    <h1 class="mb-2 font-heading text-2xl font-bold text-text">Recipes</h1>
+    <p class="mb-6 max-w-[640px] text-sm leading-relaxed text-accent-secondary">
+      Every recipe cooked, photographed, and written up in this kitchen — newest first.
+    </p>
+    <div class="recipes-page__cards flex flex-col gap-6">
+      {recipes.map((post) => (
+        <ArticleCard post={post} />
+      ))}
+    </div>
+  </div>
+</BaseLayout>
