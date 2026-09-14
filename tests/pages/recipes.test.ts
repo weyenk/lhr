@@ -15,7 +15,7 @@ describe('recipes page', () => {
   it('lists every recipe post, newest first', () => {
     const html = readFileSync('dist/recipes/index.html', 'utf-8');
     const hrefs = [...html.matchAll(/<a href="\/posts\/([^"]+)\/" class="article-card/g)].map((m) => m[1]);
-    expect(hrefs[0]).toBe('southwest-burros-with-southwest-ranch-dipping-sauce');
+    expect(hrefs[0]).toBe('southwest-burritos-with-southwest-ranch-dipping-sauce');
     expect(hrefs).toContain('arancini-a-sicilian-street-food-sensation');
     expect(hrefs.length).toBe(25);
   });
