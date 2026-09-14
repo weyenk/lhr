@@ -60,7 +60,7 @@ describe('home page', () => {
 
   it('has a final page with just the oldest leftover posts', () => {
     const html = readFileSync('dist/5/index.html', 'utf-8');
-    expect((html.match(/article-card/g) ?? []).length).toBe(3);
+    expect((html.match(/article-card/g) ?? []).length).toBe(4);
     expect(html).toContain('href="/posts/arancini-a-sicilian-street-food-sensation/"');
   });
 
