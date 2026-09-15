@@ -60,7 +60,7 @@ describe('home page', () => {
 
   it('has a final page with just the oldest leftover posts', () => {
     const html = readFileSync('dist/5/index.html', 'utf-8');
-    expect((html.match(/article-card/g) ?? []).length).toBe(4);
+    expect((html.match(/article-card/g) ?? []).length).toBe(5);
     expect(html).toContain('href="/posts/arancini-a-sicilian-street-food-sensation/"');
   });
 
@@ -102,7 +102,7 @@ describe('home page', () => {
     const sidebarHtml = sidebarMatch![0];
 
     expect(sidebarHtml).toContain('<img');
-    expect(sidebarHtml).toContain('A taste of Sicily in every bite: Pistachio granita with buttery brioche con tuppo—because summer mornings deserve a little magic.');
+    expect(sidebarHtml).toContain('When a canceled journey to Oaxaca leaves a void, the only remedy is to embrace the kitchen as a sanctuary. This is the story of crafting Chicken Mole Negro at home—a velvety, slow-simmered Oaxacan masterpiece that demands respect, patience, and a willingness to embrace the char.');
     expect(sidebarHtml).not.toContain('bg-white');
     expect(sidebarHtml).not.toContain('shadow-md');
 
