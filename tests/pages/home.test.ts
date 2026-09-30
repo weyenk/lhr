@@ -15,8 +15,8 @@ describe('home page', () => {
   it('shows the most recent post as the hero, only on page 1', () => {
     const page1 = readFileSync('dist/index.html', 'utf-8');
     expect(page1).toContain('home__featured');
-    expect(page1).toContain('href="/posts/when-gray-skies-call-for-warm-spice-an-apple-cinnamon-muffin-story/"');
-    expect(page1).toContain('When Gray Skies Call for Warm Spice: An Apple Cinnamon Muffin Story');
+    expect(page1).toContain('href="/posts/smothered-in-green-a-30-minute-burrito-for-long-day-nights/"');
+    expect(page1).toContain('Smothered in Green: A 30-Minute Burrito for Long-Day Nights');
 
     const page2 = readFileSync('dist/2/index.html', 'utf-8');
     expect(page2).not.toContain('home__featured');
@@ -29,11 +29,11 @@ describe('home page', () => {
     // appear elsewhere on the page (e.g. via a future feature), and this
     // assertion is only about how many article-cards render on page 1.
     expect((html.match(/article-card/g) ?? []).length).toBe(5);
-    expect(html).toContain('href="/posts/date-night-chicken-crust-pizza-with-whiskey-caramelized-onions-amp-bacon/"');
-    expect(html).toContain('href="/posts/oaxacan-velvet-the-grounding-ritual-of-chicken-mole-negro/"');
-    expect(html).toContain('href="/posts/the-pursuit-of-wok-hei-sesame-chicken-at-home/"');
-    expect(html).toContain('href="/posts/suan-la-fen-a-journey-to-the-heart-of-sichuan-from-my-own-kitchen/"');
-    expect(html).toContain('href="/posts/lemon-pepper-wet-an-atlanta-homecoming/"');
+    expect(html).toContain('href="/posts/egg-roll-in-a-bowl/"');
+    expect(html).toContain('href="/posts/southwest-burritos-with-southwest-ranch-dipping-sauce/"');
+    expect(html).toContain('href="/posts/corn-dogs-under-the-grandstand-lights-a-wisconsin-state-fair-summer/"');
+    expect(html).toContain('href="/posts/hugo-spritz/"');
+    expect(html).toContain('href="/posts/when-gray-skies-call-for-warm-spice-an-apple-cinnamon-muffin-story/"');
   });
 
   it('renders a truncated excerpt on each article card', () => {
@@ -59,8 +59,8 @@ describe('home page', () => {
   });
 
   it('has a final page with just the oldest leftover posts', () => {
-    const html = readFileSync('dist/5/index.html', 'utf-8');
-    expect((html.match(/article-card/g) ?? []).length).toBe(5);
+    const html = readFileSync('dist/6/index.html', 'utf-8');
+    expect((html.match(/article-card/g) ?? []).length).toBe(1);
     expect(html).toContain('href="/posts/arancini-a-sicilian-street-food-sensation/"');
   });
 
@@ -87,12 +87,16 @@ describe('home page', () => {
     const page2 = readFileSync('dist/2/index.html', 'utf-8');
     expect(countItems(page2)).toBe(3);
 
-    // Page 5 (last): no hero, 3 leftover cards = 600px -> round(600 / 380) = 2
-    // would-be items, but the sidebar starts right after this page's own last
+    // Page 5: no hero, 5 cards = 1000px -> 3 would-be items, but only one
+    // post (the lone card on page 6) is left in the pool past this page.
+    const page5 = readFileSync('dist/5/index.html', 'utf-8');
+    expect(countItems(page5)).toBe(1);
+
+    // Page 6 (last): the sidebar starts right after this page's own last
     // card (sidebarOffset) and there are no posts left in the pool past that
     // point, so the sidebar is empty here.
-    const page5 = readFileSync('dist/5/index.html', 'utf-8');
-    expect(countItems(page5)).toBe(0);
+    const page6 = readFileSync('dist/6/index.html', 'utf-8');
+    expect(countItems(page6)).toBe(0);
   });
 
   it('renders sidebar items as borderless image cards with a subheadline', () => {
