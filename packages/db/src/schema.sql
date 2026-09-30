@@ -101,3 +101,19 @@ CREATE TABLE IF NOT EXISTS competitor_reports (
   design_snapshot TEXT NOT NULL,
   summary TEXT NOT NULL
 );
+
+-- apps/lhr-office never queries these tables through Supabase's auto-generated PostgREST API
+-- (its Express server talks to Postgres directly via DATABASE_URL, and the SPA only uses
+-- Supabase for login) — but that public API is exposed for every table by default regardless
+-- of whether an app uses it, and the anon key that unlocks it ships inside the client bundle.
+-- Enabling RLS with no policies denies the anon/authenticated PostgREST roles outright while
+-- leaving the table owner's direct connection (what DATABASE_URL uses) unaffected, since RLS
+-- only restricts non-owner roles unless FORCE ROW LEVEL SECURITY is also set.
+ALTER TABLE orchestrator_runs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE candidates ENABLE ROW LEVEL SECURITY;
+ALTER TABLE decision_history ENABLE ROW LEVEL SECURITY;
+ALTER TABLE trend_seed_topics ENABLE ROW LEVEL SECURITY;
+ALTER TABLE trends_reports ENABLE ROW LEVEL SECURITY;
+ALTER TABLE competitors ENABLE ROW LEVEL SECURITY;
+ALTER TABLE competitor_seo_keywords ENABLE ROW LEVEL SECURITY;
+ALTER TABLE competitor_reports ENABLE ROW LEVEL SECURITY;
