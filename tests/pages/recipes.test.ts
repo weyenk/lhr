@@ -15,14 +15,14 @@ describe('recipes page', () => {
   it('lists every recipe post, newest first', () => {
     const html = readFileSync('dist/recipes/index.html', 'utf-8');
     const hrefs = [...html.matchAll(/<a href="\/posts\/([^"]+)\/" class="article-card/g)].map((m) => m[1]);
-    expect(hrefs[0]).toBe('smothered-in-green-a-30-minute-burrito-for-long-day-nights');
+    expect(hrefs[0]).toBe('pollo-alla-cacciatora');
     expect(hrefs).toContain('arancini-a-sicilian-street-food-sensation');
-    expect(hrefs.length).toBe(27);
+    expect(hrefs.length).toBe(28);
   });
 
   it('tags each card as a recipe', () => {
     const html = readFileSync('dist/recipes/index.html', 'utf-8');
-    expect((html.match(/>Recipe</g) ?? []).length).toBe(27);
+    expect((html.match(/>Recipe</g) ?? []).length).toBe(28);
   });
 
   it('links to the recipes page from the header nav', () => {
