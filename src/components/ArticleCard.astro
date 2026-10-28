@@ -1,9 +1,9 @@
 ---
-import type { CollectionEntry } from 'astro:content';
 import PostTag from './PostTag.astro';
+import type { PostView } from '../lib/postView';
 
 interface Props {
-  post: CollectionEntry<'posts'>;
+  post: PostView;
 }
 
 const { post } = Astro.props;

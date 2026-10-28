@@ -83,9 +83,50 @@ export const setSchema = z.object({
   endDate: z.coerce.date(),
 });
 
+export const draftPostSchema = z.object({
+  kind: z.literal('post'),
+  postType: z.enum(['recipe', 'article']),
+  title: z.string().default(''),
+  ingredients: z.array(z.object({ item: z.string(), amount: z.string().optional() })).default([]),
+  steps: z.array(z.string()).default([]),
+  sections: z.array(z.object({ heading: z.string(), body: z.string() })).default([]),
+  photos: z.array(z.object({ url: z.string().url(), caption: z.string().optional() })).default([]),
+  kitchenwareIds: z.array(z.string()).default([]),
+  affiliateLinkIds: z.array(z.string()).default([]),
+  pendingAffiliateLinks: z
+    .array(z.object({ id: z.string(), label: z.string(), url: z.string().url(), tag: z.string() }))
+    .default([]),
+  pendingIngredientLinks: z.array(z.object({ ingredient: z.string(), affiliateLinkId: z.string() })).default([]),
+  variants: z.array(recipeVariantSchema).default([]),
+  sourceMealDbId: z.string().optional(),
+  narrativeBody: z.string().optional(),
+});
+
+export const draftSetSchema = z.object({
+  kind: z.literal('set'),
+  name: z.string().default(''),
+  startDate: z.string().optional(),
+  products: z
+    .array(
+      z.object({
+        name: z.string(),
+        priceCents: z.number().int().positive(),
+        image: z.string().url(),
+        imageAlt: z.string(),
+        vendorUrl: z.string().url(),
+      }),
+    )
+    .default([]),
+});
+
+export const draftSchema = z.discriminatedUnion('kind', [draftPostSchema, draftSetSchema]);
+
 export type PostData = z.infer<typeof postSchema>;
 export type ProductData = z.infer<typeof productSchema>;
 export type AffiliateLinkData = z.infer<typeof affiliateLinkSchema>;
 export type IngredientLinkData = z.infer<typeof ingredientLinkSchema>;
 export type SetData = z.infer<typeof setSchema>;
 export type RecipeVariantData = z.infer<typeof recipeVariantSchema>;
+export type DraftPost = z.infer<typeof draftPostSchema>;
+export type DraftSet = z.infer<typeof draftSetSchema>;
+export type Draft = z.infer<typeof draftSchema>;

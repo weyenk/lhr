@@ -51,5 +51,6 @@ export async function requireSupabaseAuth(
     return;
   }
 
+  req.authorSub = payload.sub;
   next();
 }

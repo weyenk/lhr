@@ -5,11 +5,12 @@ import ProductCard from '../components/ProductCard.astro';
 import AffiliateLink from '../components/AffiliateLink.astro';
 import AffiliateDisclosureBanner from '../components/AffiliateDisclosureBanner.astro';
 import RecipeVariantTabs from '../components/RecipeVariantTabs.astro';
-import { render, type CollectionEntry } from 'astro:content';
+import type { CollectionEntry } from 'astro:content';
 import { getEntriesByIds } from '../lib/content';
+import type { PostView } from '../lib/postView';
 
 interface Props {
-  post: CollectionEntry<'posts'>;
+  post: PostView;
   products: CollectionEntry<'products'>[];
   affiliateLinks: CollectionEntry<'affiliateLinks'>[];
 }
@@ -23,7 +24,6 @@ if (data.type !== 'recipe') {
 
 const linkedProducts = getEntriesByIds(data.kitchenwareIds, products);
 const linkedAffiliateLinks = getEntriesByIds(data.affiliateLinkIds, affiliateLinks);
-const { Content } = await render(post);
 
 function formatMinutes(minutes: number): string {
   if (minutes < 60) return `${minutes} minutes`;
@@ -51,9 +51,9 @@ const recipeMeta = [
     <PostTag type="recipe" />
     <h1 class="mt-1 mb-4 font-heading text-2xl font-bold text-text">{data.title}</h1>
     {(linkedProducts.length > 0 || linkedAffiliateLinks.length > 0) && <AffiliateDisclosureBanner />}
-    <div class="recipe-post__content space-y-3 text-sm leading-relaxed">
-      <Content />
-    </div>
+    {post.bodyHtml && (
+      <div class="recipe-post__content space-y-3 text-sm leading-relaxed" set:html={post.bodyHtml}></div>
+    )}
     {(linkedProducts.length > 0 || linkedAffiliateLinks.length > 0) && (
       <div class="recipe-post__strip mt-8 grid grid-cols-1 gap-4 md:grid-cols-2">
         {linkedProducts.length > 0 && (
@@ -74,7 +74,7 @@ const recipeMeta = [
         )}
       </div>
     )}
-    </br>
+    <br />
     {data.variants && data.variants.length > 0 ? (
       <RecipeVariantTabs variants={data.variants} recipeMeta={recipeMeta} />
     ) : (

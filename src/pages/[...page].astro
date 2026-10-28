@@ -3,36 +3,49 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import PostTag from '../components/PostTag.astro';
 import ArticleCard from '../components/ArticleCard.astro';
 import SidebarPostCard from '../components/SidebarPostCard.astro';
-import { getCollection } from 'astro:content';
+import { countPublished, getPublishedPostsPage } from '../lib/posts';
+
+export const prerender = false;
 
 const HERO_HEIGHT_PX = 655;
 const CARD_HEIGHT_PX = 200;
 const SIDEBAR_ITEM_HEIGHT_PX = 380;
+const CARDS_PER_PAGE = 5;
 
-export async function getStaticPaths({ paginate }) {
-  const CARDS_PER_PAGE = 5;
-  const posts = (await getCollection('posts')).sort(
-    (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
-  );
-  const [hero, ...cardPosts] = posts;
-  return paginate(cardPosts, {
-    pageSize: CARDS_PER_PAGE,
-    props: { hero, sidebarPool: cardPosts },
-  });
+const totalPublished = await countPublished();
+const allPosts = totalPublished > 0 ? await getPublishedPostsPage(0, totalPublished) : [];
+const [hero, ...cardPosts] = allPosts;
+
+const lastPage = Math.max(1, Math.ceil(cardPosts.length / CARDS_PER_PAGE));
+
+const rawPage = Astro.params.page;
+let currentPage = 1;
+if (rawPage) {
+  const segment = rawPage.replace(/\/$/, '');
+  if (!/^\d+$/.test(segment)) {
+    return new Response(null, { status: 404, statusText: 'Not Found' });
+  }
+  currentPage = Number.parseInt(segment, 10);
 }
 
-const { page, hero, sidebarPool } = Astro.props;
-const isFirstPage = page.currentPage === 1;
-const mainColumnHeight = (isFirstPage ? HERO_HEIGHT_PX : 0) + page.data.length * CARD_HEIGHT_PX;
+if (currentPage < 1 || currentPage > lastPage) {
+  return new Response(null, { status: 404, statusText: 'Not Found' });
+}
+
+const offset = (currentPage - 1) * CARDS_PER_PAGE;
+const pageData = cardPosts.slice(offset, offset + CARDS_PER_PAGE);
+
+const isFirstPage = currentPage === 1;
+const mainColumnHeight = (isFirstPage ? HERO_HEIGHT_PX : 0) + pageData.length * CARD_HEIGHT_PX;
 const sidebarCount = Math.max(1, Math.round(mainColumnHeight / SIDEBAR_ITEM_HEIGHT_PX));
-const sidebarOffset = page.end + 1;
-const sidebarPosts = sidebarPool.slice(sidebarOffset, sidebarOffset + sidebarCount);
-const pageNumbers = Array.from({ length: page.lastPage }, (_, i) => i + 1);
+const sidebarOffset = offset + pageData.length;
+const sidebarPosts = cardPosts.slice(sidebarOffset, sidebarOffset + sidebarCount);
+const pageNumbers = Array.from({ length: lastPage }, (_, i) => i + 1);
 const pageHref = (n: number) => (n === 1 ? '/' : `/${n}/`);
-const prevPage = page.currentPage > 1 ? page.currentPage - 1 : null;
-const nextPage = page.currentPage < page.lastPage ? page.currentPage + 1 : null;
+const prevPage = currentPage > 1 ? currentPage - 1 : null;
+const nextPage = currentPage < lastPage ? currentPage + 1 : null;
 ---
-<BaseLayout title={isFirstPage ? 'Love Heat Relationship' : `Love Heat Relationship — Page ${page.currentPage}`}>
+<BaseLayout title={isFirstPage ? 'Love Heat Relationship' : `Love Heat Relationship — Page ${currentPage}`}>
   <div class="mx-auto max-w-[1200px] px-4 py-8">
     <h1 class="sr-only">Love Heat Relationship</h1>
     <div class="grid grid-cols-1 gap-6 md:grid-cols-12">
@@ -52,7 +65,7 @@ const nextPage = page.currentPage < page.lastPage ? page.currentPage + 1 : null;
           </a>
         )}
         <div class="home__cards flex flex-col gap-6">
-          {page.data.map((post) => (
+          {pageData.map((post) => (
             <ArticleCard post={post} />
           ))}
         </div>
@@ -67,8 +80,8 @@ const nextPage = page.currentPage < page.lastPage ? page.currentPage + 1 : null;
               <li>
                 <a
                   href={pageHref(n)}
-                  aria-current={n === page.currentPage ? 'page' : undefined}
-                  class={n === page.currentPage ? 'font-bold text-accent' : 'text-text hover:text-accent'}
+                  aria-current={n === currentPage ? 'page' : undefined}
+                  class={n === currentPage ? 'font-bold text-accent' : 'text-text hover:text-accent'}
                 >{n}</a>
               </li>
             ))}

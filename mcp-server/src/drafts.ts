@@ -1,48 +1,16 @@
 import { randomBytes } from 'node:crypto';
-import { z } from 'zod';
-import { recipeVariantSchema } from '@lhr/schemas';
+import {
+  draftPostSchema,
+  draftSetSchema,
+  draftSchema,
+  type Draft,
+  type DraftPost,
+  type DraftSet,
+} from '@lhr/schemas';
 import { createBranch, deleteBranch, getFile, listBranches, putFile, type GitHubClient } from './github.js';
 
-export const draftPostSchema = z.object({
-  kind: z.literal('post'),
-  postType: z.enum(['recipe', 'article']),
-  title: z.string().default(''),
-  ingredients: z.array(z.object({ item: z.string(), amount: z.string().optional() })).default([]),
-  steps: z.array(z.string()).default([]),
-  sections: z.array(z.object({ heading: z.string(), body: z.string() })).default([]),
-  photos: z.array(z.object({ url: z.string().url(), caption: z.string().optional() })).default([]),
-  kitchenwareIds: z.array(z.string()).default([]),
-  affiliateLinkIds: z.array(z.string()).default([]),
-  pendingAffiliateLinks: z
-    .array(z.object({ id: z.string(), label: z.string(), url: z.string().url(), tag: z.string() }))
-    .default([]),
-  pendingIngredientLinks: z.array(z.object({ ingredient: z.string(), affiliateLinkId: z.string() })).default([]),
-  variants: z.array(recipeVariantSchema).default([]),
-  sourceMealDbId: z.string().optional(),
-  narrativeBody: z.string().optional(),
-});
-
-export const draftSetSchema = z.object({
-  kind: z.literal('set'),
-  name: z.string().default(''),
-  startDate: z.string().optional(),
-  products: z
-    .array(
-      z.object({
-        name: z.string(),
-        priceCents: z.number().int().positive(),
-        image: z.string().url(),
-        imageAlt: z.string(),
-        vendorUrl: z.string().url(),
-      }),
-    )
-    .default([]),
-});
-
-export const draftSchema = z.discriminatedUnion('kind', [draftPostSchema, draftSetSchema]);
-export type DraftPost = z.infer<typeof draftPostSchema>;
-export type DraftSet = z.infer<typeof draftSetSchema>;
-export type Draft = z.infer<typeof draftSchema>;
+export { draftPostSchema, draftSetSchema, draftSchema };
+export type { DraftPost, DraftSet, Draft };
 
 export interface DraftSummary {
   id: string;
