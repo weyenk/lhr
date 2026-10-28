@@ -14,6 +14,7 @@ import {
 } from './routes/candidates.js';
 import { createTrendsRouter } from './routes/trends.js';
 import { createCompetitorsRouter } from './routes/competitors.js';
+import { createAuthoringRouter } from './routes/authoring.js';
 import { clientAssets as defaultClientAssets, type ClientAsset } from './clientAssets.generated.js';
 
 export type { CandidateOps, AffiliateCandidateOps };
@@ -56,6 +57,7 @@ export function createApp(
   app.use('/api/candidates', requireSupabaseAuth, createCandidatesRouter(candidates, affiliateCandidates));
   app.use('/api/trends', requireSupabaseAuth, createTrendsRouter(db));
   app.use('/api/competitors', requireSupabaseAuth, createCompetitorsRouter(db));
+  app.use('/api/authoring', requireSupabaseAuth, createAuthoringRouter(db));
 
   // Client assets are inlined into this bundle at build time (scripts/bundle.mjs
   // generates clientAssets.generated.ts from the Vite build's output) rather than

@@ -117,3 +117,38 @@ ALTER TABLE trends_reports ENABLE ROW LEVEL SECURITY;
 ALTER TABLE competitors ENABLE ROW LEVEL SECURITY;
 ALTER TABLE competitor_seo_keywords ENABLE ROW LEVEL SECURITY;
 ALTER TABLE competitor_reports ENABLE ROW LEVEL SECURITY;
+
+-- Published posts served by on-demand Astro routes (ISR). `data` holds the full validated postSchema object.
+CREATE TABLE IF NOT EXISTS posts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  slug TEXT NOT NULL UNIQUE,
+  type TEXT NOT NULL CHECK (type IN ('recipe', 'article')),
+  title TEXT,
+  data JSONB NOT NULL,
+  body_html TEXT,
+  status TEXT NOT NULL DEFAULT 'published',
+  published_at TIMESTAMPTZ,
+  revision INTEGER NOT NULL DEFAULT 1,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS posts_published_at_idx ON posts (published_at DESC NULLS LAST);
+
+-- In-progress authoring copies; `draft` mirrors draftPostSchema from @lhr/schemas.
+CREATE TABLE IF NOT EXISTS post_drafts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  post_id UUID REFERENCES posts(id),
+  author_sub TEXT NOT NULL,
+  type TEXT CHECK (type IN ('recipe', 'article')),
+  draft JSONB NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS post_drafts_author_sub_updated_at_idx
+  ON post_drafts (author_sub, updated_at DESC);
+
+ALTER TABLE posts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE post_drafts ENABLE ROW LEVEL SECURITY;
+

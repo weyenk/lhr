@@ -1,0 +1,35 @@
+---
+import { getCollection } from 'astro:content';
+import RecipeLayout from '../../layouts/RecipeLayout.astro';
+import ArticleLayout from '../../layouts/ArticleLayout.astro';
+import { getDraftPostView } from '../../lib/draftPreview';
+import { verifyPreviewToken } from '../../lib/previewToken';
+
+export const prerender = false;
+
+const draftId = Astro.params.id;
+if (!draftId) {
+  return new Response(null, { status: 404, statusText: 'Not Found' });
+}
+
+const token = Astro.url.searchParams.get('token') ?? '';
+const expiresAtRaw = Astro.url.searchParams.get('expiresAt');
+const expiresAt = expiresAtRaw ? Number(expiresAtRaw) : NaN;
+
+if (!verifyPreviewToken(draftId, expiresAt, token)) {
+  return new Response('Preview link expired or invalid', { status: 403 });
+}
+
+const post = await getDraftPostView(draftId);
+if (!post) {
+  return new Response(null, { status: 404, statusText: 'Not Found' });
+}
+
+const products = await getCollection('products');
+const affiliateLinks = await getCollection('affiliateLinks');
+---
+{post.data.type === 'recipe' ? (
+  <RecipeLayout post={post} products={products} affiliateLinks={affiliateLinks} />
+) : (
+  <ArticleLayout post={post} products={products} affiliateLinks={affiliateLinks} />
+)}

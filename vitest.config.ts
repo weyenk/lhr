@@ -17,6 +17,6 @@ export default getViteConfig({
     // setup file) and its own `npm test --workspace=lhr-office` command —
     // running its React Testing Library tests under this root config's
     // node environment fails with `document is not defined`.
-    exclude: ['**/node_modules/**', 'mcp-server/**', 'apps/lhr-office/**'],
+    exclude: ['**/node_modules/**', 'mcp-server/**', 'apps/lhr-office/**', '.claude/**'],
   },
 });

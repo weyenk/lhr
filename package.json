@@ -15,19 +15,30 @@
     "dev": "astro dev",
     "dev:office": "cd apps/lhr-office && npm run dev",
     "build": "astro build",
+    "import:posts": "tsx --env-file-if-exists=.env scripts/import-posts-to-db.ts",
     "preview": "astro preview",
     "pretest": "astro sync && mkdir -p .astro && cp node_modules/.astro/data-store.json .astro/data-store.json",
     "test": "vitest run"
   },
   "dependencies": {
     "@astrojs/mdx": "^4.0.0",
+    "@astrojs/vercel": "^8.2.11",
+    "@lhr/db": "^0.0.0",
     "@lhr/schemas": "*",
     "astro": "^5.0.0",
+    "js-yaml": "^5.5.0",
+    "lhr-authoring-mcp-server": "*",
+    "marked": "^18.1.2",
+    "sanitize-html": "^2.18.1",
     "zod": "^3.24.0"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.9.12",
     "@tailwindcss/vite": "^4.3.3",
+    "@types/js-yaml": "^4.0.9",
+    "@types/sanitize-html": "^2.16.2",
     "tailwindcss": "^4.3.3",
+    "tsx": "^4.23.15",
     "typescript": "^5.7.0",
     "vitest": "^3.0.0"
   }

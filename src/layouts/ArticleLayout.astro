@@ -6,9 +6,10 @@ import AffiliateLink from '../components/AffiliateLink.astro';
 import AffiliateDisclosureBanner from '../components/AffiliateDisclosureBanner.astro';
 import type { CollectionEntry } from 'astro:content';
 import { getEntriesByIds } from '../lib/content';
+import type { PostView } from '../lib/postView';
 
 interface Props {
-  post: CollectionEntry<'posts'>;
+  post: PostView;
   products: CollectionEntry<'products'>[];
   affiliateLinks: CollectionEntry<'affiliateLinks'>[];
 }
