@@ -59,3 +59,18 @@ Manual, one-time setup (outside this repo's code):
      partway through rather than that it's still genuinely running — the overlap guard already
      ignores `running` rows older than that 10-minute window, so the job will naturally retry on
      the next due-check. No manual intervention (e.g. editing the database row) is needed.
+
+## Airlie Job Bus (`lhr-office`)
+
+Agents & Jobs → Studio enqueues work on the shared Airlie hub via the office BFF. See the
+Airlie repo [`docs/integrations/bridge-clients.md`](https://github.com/weyenk/airlie/blob/main/docs/integrations/bridge-clients.md)
+(“Connecting a product to the Airlie Job Bus”).
+
+On the **`apps/lhr-office`** Vercel project (and in gitignored local `.env` for `npm run dev`),
+set these **server-only** variables — never `VITE_*` or other client-exposed names:
+
+- `AIRLIE_HUB_URL` — e.g. `https://airlie-hub.vercel.app/api/v1`
+- `AIRLIE_HUB_TENANT_KEY` — the `lhr` value from hub `TENANT_SERVICE_KEYS`
+
+Redeploy after changing hub keys. Mac-side `task serve` + `task bridge` (see the Airlie guide)
+are required for jobs to reach `done`.

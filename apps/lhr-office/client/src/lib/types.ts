@@ -78,3 +78,15 @@ export interface CompetitorSeoKeyword {
   id: number;
   keyword: string;
 }
+
+export type BridgeJob = {
+  id: string;
+  kind: string;
+  status: 'queued' | 'running' | 'done' | 'failed' | 'cancelled';
+  payload: { goal?: string; repo_key?: string };
+  result: { final_answer?: string; ok?: boolean } | null;
+  error_message: string | null;
+  created_at: string;
+  finished_at: string | null;
+  worker_id: string | null;
+};
