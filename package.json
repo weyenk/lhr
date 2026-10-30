@@ -41,5 +41,11 @@
     "tsx": "^4.23.15",
     "typescript": "^5.7.0",
     "vitest": "^3.0.0"
+  },
+  "overrides": {
+    "htmlparser2": "8.0.2"
+  },
+  "engines": {
+    "node": "26.x"
   }
 }
