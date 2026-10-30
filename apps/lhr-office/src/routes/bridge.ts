@@ -4,6 +4,9 @@ import { createHubClient, HubClientError, type HubClient } from '../bridge/hubCl
 
 const ALLOWED_REPO_KEYS = new Set(['lhr', 'ecff']);
 
+const JOB_ID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export function createBridgeRouter(
   getClient: () => HubClient = () => createHubClient(loadBridgeConfig()),
 ): express.Router {
@@ -56,8 +59,13 @@ export function createBridgeRouter(
       res.status(401).json({ error: 'unauthorized' });
       return;
     }
+    const id = req.params.id;
+    if (!JOB_ID_RE.test(id)) {
+      res.status(400).json({ error: 'invalid job id' });
+      return;
+    }
     try {
-      const job = await getClient().getJob(sub, req.params.id);
+      const job = await getClient().getJob(sub, id);
       res.json({ job });
     } catch (err) {
       respondHub(res, err);
@@ -77,6 +85,5 @@ function respondHub(res: express.Response, err: unknown): void {
     res.status(502).json({ error: 'job bus unavailable' });
     return;
   }
-  const message = err instanceof Error ? err.message : String(err);
-  res.status(500).json({ error: message });
+  res.status(500).json({ error: 'internal error' });
 }

@@ -60,7 +60,7 @@ export function createHubClient(config: BridgeConfig, fetchImpl: FetchLike = fet
   }
 
   async function getJob(createdBy: string, id: string): Promise<BridgeJob> {
-    const res = await fetchImpl(`${base}/jobs/${id}`, {
+    const res = await fetchImpl(`${base}/jobs/${encodeURIComponent(id)}`, {
       method: 'GET',
       headers: headers(config.tenantKey, createdBy),
     });

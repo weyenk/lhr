@@ -61,6 +61,16 @@ describe('createHubClient', () => {
     expect(init.headers.authorization).toBe('Bearer tenant-secret');
   });
 
+  it('encodes job id in GET URL', async () => {
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify({ job: sampleJob }), { status: 200 }),
+    );
+    const client = createHubClient(config, fetchMock);
+    await client.getJob('user-1', '../other');
+    const [url] = fetchMock.mock.calls[0]!;
+    expect(url).toBe('https://hub.example/api/v1/jobs/..%2Fother');
+  });
+
   it('lists jobs for X-Created-By', async () => {
     fetchMock.mockResolvedValue(
       new Response(JSON.stringify({ jobs: [sampleJob] }), { status: 200 }),

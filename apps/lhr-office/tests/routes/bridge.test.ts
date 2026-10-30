@@ -93,6 +93,14 @@ describe('GET /api/bridge/jobs/:id', () => {
     const res = await request(buildApp()).get(`/api/bridge/jobs/${job.id}`);
     expect(res.status).toBe(200);
     expect(res.body.job.id).toBe(job.id);
+    expect(getJob).toHaveBeenCalledWith('user-sub-1', job.id);
+  });
+
+  it('rejects invalid job id with 400 and does not call hub', async () => {
+    const res = await request(buildApp()).get('/api/bridge/jobs/not-a-uuid');
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({ error: 'invalid job id' });
+    expect(getJob).not.toHaveBeenCalled();
   });
 
   it('maps hub 404 to 404', async () => {
