@@ -20,6 +20,7 @@ const dbMock = {
   insertCandidateCompetitor: vi.fn().mockResolvedValue(null),
   listCompetitorsByStatus: vi.fn(),
   listKeywords: vi.fn().mockResolvedValue([]),
+  listDiscoveryQueries: vi.fn().mockResolvedValue([]),
   listRecentCompetitorReports: vi.fn(async (_db: unknown, competitorId: number, limit = 10) =>
     reports.filter((r) => r.competitorId === competitorId).slice(-limit).reverse(),
   ),
@@ -28,6 +29,7 @@ const dbMock = {
     reports.push(row);
     return row;
   }),
+  ZERO_OVERLAP_SCORES: { market: 0, content: 0, product: 0, threat: 0 },
 };
 vi.mock('@lhr/db', () => dbMock);
 
@@ -74,7 +76,16 @@ beforeEach(() => {
   process.env.AIRLIE_HUB_TENANT_KEY = 'test-tenant-key';
   dbMock.listCompetitorsByStatus.mockResolvedValue([trackedCompetitor]);
   serpapiMock.fetchSearchResults.mockResolvedValue([]);
-  llmMock.callLLM.mockResolvedValue('unused LLM output');
+  llmMock.callLLM.mockImplementation(async (_messages, options?: { persona?: string }) => {
+    if (options?.persona?.includes('overlap scores')) {
+      return JSON.stringify({
+        market: 40, content: 40, product: 40, threat: 40,
+        decisionBrief: 'Baseline cycle brief.',
+        suggestedActions: ['Keep watching'],
+      });
+    }
+    return 'unused LLM output';
+  });
   global.fetch = vi.fn().mockImplementation(async (url: string | URL) => {
     const u = url.toString();
     if (u === 'https://reliable-recipes.com') return { ok: true, text: async () => HOMEPAGE_WITH_FEED };

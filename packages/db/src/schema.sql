@@ -90,6 +90,20 @@ CREATE TABLE IF NOT EXISTS competitor_seo_keywords (
   added_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Search phrases used by competitor-analysis discovery (Phase A) to find new candidate domains.
+CREATE TABLE IF NOT EXISTS competitor_discovery_queries (
+  id SERIAL PRIMARY KEY,
+  query TEXT NOT NULL UNIQUE,
+  added_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+INSERT INTO competitor_discovery_queries (query) VALUES
+  ('gluten free recipe blog'),
+  ('kitchenware affiliate roundup'),
+  ('comfort food recipe blog'),
+  ('best kitchen gadgets blog')
+ON CONFLICT (query) DO NOTHING;
+
 CREATE TABLE IF NOT EXISTS competitor_reports (
   id SERIAL PRIMARY KEY,
   competitor_id INTEGER NOT NULL REFERENCES competitors(id),
@@ -99,8 +113,18 @@ CREATE TABLE IF NOT EXISTS competitor_reports (
   seo_positions JSONB NOT NULL,
   monetization_snapshot TEXT NOT NULL,
   design_snapshot TEXT NOT NULL,
-  summary TEXT NOT NULL
+  summary TEXT NOT NULL,
+  -- Decision packaging for Research Overview A (overlap radar + brief). Safe defaults for
+  -- rows written before this feature so GET /api/competitors never 500s on old data.
+  overlap_scores JSONB NOT NULL DEFAULT '{"market":0,"content":0,"product":0,"threat":0}'::jsonb,
+  decision_brief TEXT NOT NULL DEFAULT '',
+  suggested_actions JSONB NOT NULL DEFAULT '[]'::jsonb
 );
+
+-- Existing DBs created before decision-brief columns: additive, idempotent.
+ALTER TABLE competitor_reports ADD COLUMN IF NOT EXISTS overlap_scores JSONB NOT NULL DEFAULT '{"market":0,"content":0,"product":0,"threat":0}'::jsonb;
+ALTER TABLE competitor_reports ADD COLUMN IF NOT EXISTS decision_brief TEXT NOT NULL DEFAULT '';
+ALTER TABLE competitor_reports ADD COLUMN IF NOT EXISTS suggested_actions JSONB NOT NULL DEFAULT '[]'::jsonb;
 
 -- apps/lhr-office never queries these tables through Supabase's auto-generated PostgREST API
 -- (its Express server talks to Postgres directly via DATABASE_URL, and the SPA only uses
@@ -116,6 +140,7 @@ ALTER TABLE trend_seed_topics ENABLE ROW LEVEL SECURITY;
 ALTER TABLE trends_reports ENABLE ROW LEVEL SECURITY;
 ALTER TABLE competitors ENABLE ROW LEVEL SECURITY;
 ALTER TABLE competitor_seo_keywords ENABLE ROW LEVEL SECURITY;
+ALTER TABLE competitor_discovery_queries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE competitor_reports ENABLE ROW LEVEL SECURITY;
 
 -- Published posts served by on-demand Astro routes (ISR). `data` holds the full validated postSchema object.

@@ -2,7 +2,9 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import {
   insertCandidateCompetitor,
   listCompetitorsByStatus,
+  normalizeCompetitorDomain,
   setCompetitorStatus,
+  upsertTrackedCompetitor,
 } from '../src/competitors';
 
 function mockDb(rows: unknown[] = []) {
@@ -74,5 +76,32 @@ describe('setCompetitorStatus', () => {
     await setCompetitorStatus(db as never, 1, 'rejected');
     expect(db.query).toHaveBeenCalledWith(expect.stringContaining("status = 'rejected'"), [1]);
     expect(db.query.mock.calls[0][0]).not.toContain('approved_at');
+  });
+});
+
+describe('normalizeCompetitorDomain', () => {
+  it('strips protocol, www, path, and lowercases', () => {
+    expect(normalizeCompetitorDomain('https://WWW.Example.com/recipes?x=1')).toBe('example.com');
+    expect(normalizeCompetitorDomain('  All-Clad.com  ')).toBe('all-clad.com');
+  });
+});
+
+describe('upsertTrackedCompetitor', () => {
+  it('inserts or reactivates a domain as tracked', async () => {
+    const tracked = { ...competitorRow, status: 'tracked', approved_at: new Date('2026-10-31T00:00:00Z') };
+    const db = mockDb([tracked]);
+    const result = await upsertTrackedCompetitor(db as never, 'https://www.example-recipes.com/blog');
+    expect(db.query).toHaveBeenCalledWith(
+      expect.stringContaining('ON CONFLICT (domain) DO UPDATE'),
+      ['example-recipes.com', null],
+    );
+    expect(result.status).toBe('tracked');
+    expect(result.domain).toBe('example-recipes.com');
+  });
+
+  it('throws when the domain is empty after normalization', async () => {
+    const db = mockDb();
+    await expect(upsertTrackedCompetitor(db as never, 'https://')).rejects.toThrow(/domain/i);
+    expect(db.query).not.toHaveBeenCalled();
   });
 });

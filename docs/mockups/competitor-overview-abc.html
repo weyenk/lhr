@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>lhr office — competitor overview A / B / C</title>
+  <style>
+    :root {
+      --bg: #151B23;
+      --surface: #1B2430;
+      --surface-2: #222C3A;
+      --border: #2A3542;
+      --accent: #3FC7E0;
+      --accent-dim: rgba(63, 199, 224, 0.15);
+      --warning: #E0B93F;
+      --success: #4CAF7D;
+      --error: #E0574F;
+      --text: #E6E9EF;
+      --muted: #8B95A5;
+      --font: -apple-system, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      min-height: 100vh;
+    }
+    .chooser {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      background: rgba(21, 27, 35, 0.94);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px;
+    }
+    .chooser h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; }
+    .chooser p { margin: 0 0 14px; color: var(--muted); font-size: 13px; max-width: 720px; line-height: 1.45; }
+    .tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+    .tabs button {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font: inherit;
+      font-size: 13px;
+      text-align: left;
+      max-width: 300px;
+      transition: border-color 0.15s, background 0.15s, transform 0.15s;
+    }
+    .tabs button:hover { border-color: var(--accent); transform: translateY(-1px); }
+    .tabs button.active {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+      color: var(--accent);
+    }
+    .tabs button strong { display: block; margin-bottom: 2px; }
+    .tabs button span { color: var(--muted); font-size: 12px; line-height: 1.35; }
+    .tabs button.active span { color: rgba(63, 199, 224, 0.8); }
+
+    .stage { display: none; padding: 24px; max-width: 1280px; margin: 0 auto; }
+    .stage.visible { display: block; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: none; }
+    }
+    .pitch {
+      margin-bottom: 16px;
+      padding: 14px 16px;
+      border-left: 3px solid var(--accent);
+      background: var(--surface);
+      border-radius: 0 8px 8px 0;
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--muted);
+    }
+    .pitch strong { color: var(--text); }
+
+    .shell {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      min-height: 680px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--bg);
+      box-shadow: 0 24px 60px rgba(0,0,0,0.35);
+    }
+    .nav {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 16px 12px;
+    }
+    .brand {
+      font-weight: 600;
+      font-size: 13px;
+      margin-bottom: 20px;
+      padding: 0 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .brand i {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--accent); display: inline-block;
+    }
+    .nav a {
+      display: block;
+      padding: 8px;
+      border-radius: 6px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 13px;
+      margin-bottom: 2px;
+    }
+    .nav a.on { background: var(--border); color: var(--accent); }
+
+    .main { padding: 20px 22px 28px; }
+    .main h2 { margin: 0 0 4px; font-size: 20px; font-weight: 600; }
+    .sub { margin: 0 0 18px; color: var(--muted); font-size: 13px; }
+
+    /* ---- A: radar hero + chips ---- */
+    .a-layout {
+      display: grid;
+      grid-template-columns: minmax(280px, 1.1fr) minmax(240px, 0.9fr);
+      gap: 20px;
+      align-items: start;
+    }
+    .radar-panel, .chip-panel, .card-grid, .scatter-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+    }
+    .panel-label {
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+    .radar-svg-wrap {
+      width: 100%;
+      max-width: 360px;
+      margin: 0 auto;
+      aspect-ratio: 1;
+    }
+    .radar-svg-wrap svg { width: 100%; height: 100%; display: block; }
+    .selected-name {
+      text-align: center;
+      margin-top: 8px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .selected-name span { color: var(--muted); font-weight: 400; font-size: 12px; }
+
+    .chips {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .chip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      cursor: pointer;
+      text-align: left;
+      color: inherit;
+      font: inherit;
+      width: 100%;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .chip:hover { border-color: var(--accent); }
+    .chip.on {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+    }
+    .chip-avatar {
+      width: 28px; height: 28px; border-radius: 8px;
+      background: #2F3B4A;
+      display: grid; place-items: center;
+      font-size: 11px; font-weight: 700; color: var(--accent);
+      flex-shrink: 0;
+    }
+    .chip-meta { flex: 1; min-width: 0; }
+    .chip-meta strong { display: block; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .chip-meta small { color: var(--muted); font-size: 11px; }
+    .threat-pill {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(224, 87, 79, 0.15);
+      color: #F08A84;
+      flex-shrink: 0;
+    }
+    .threat-pill.mid { background: rgba(224, 185, 63, 0.15); color: var(--warning); }
+    .threat-pill.low { background: rgba(76, 175, 125, 0.15); color: var(--success); }
+
+    /* ---- B: mini radar cards ---- */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+      padding: 14px;
+    }
+    .mini-card {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      border-radius: 10px;
+      padding: 12px;
+      cursor: pointer;
+      color: inherit;
+      font: inherit;
+      text-align: left;
+      transition: border-color 0.15s, transform 0.15s;
+    }
+    .mini-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .mini-card.on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+    .mini-card header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      gap: 8px;
+    }
+    .mini-card header strong { font-size: 12px; }
+    .mini-radar { width: 100%; aspect-ratio: 1; max-width: 140px; margin: 0 auto 8px; }
+    .mini-radar svg { width: 100%; height: 100%; }
+    .mini-card p {
+      margin: 0;
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* ---- C: scatter ---- */
+    .c-layout {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 16px;
+    }
+    .scatter-svg { width: 100%; aspect-ratio: 4/3; }
+    .axis-label { fill: var(--muted); font-size: 11px; }
+    .dot { cursor: pointer; }
+    .dot circle { transition: r 0.15s; }
+    .dot:hover circle, .dot.on circle { r: 11; }
+
+    .sources {
+      margin-top: 16px;
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .sources summary { cursor: pointer; color: var(--text); }
+
+    /* ---- Modal ---- */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(8, 12, 18, 0.72);
+      backdrop-filter: blur(6px);
+      z-index: 40;
+      display: none;
+      align-items: stretch;
+      justify-content: center;
+      padding: 24px;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      width: min(980px, 100%);
+      max-height: calc(100vh - 48px);
+      overflow: auto;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+      animation: fadeIn 0.25s ease;
+    }
+    .modal-head {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px 20px;
+      background: rgba(27, 36, 48, 0.95);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(8px);
+    }
+    .modal-head h3 { margin: 0; font-size: 18px; }
+    .modal-head .actions { display: flex; gap: 8px; align-items: center; }
+    .modal-head a, .modal-head button, .ghost {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text);
+      border-radius: 6px;
+      padding: 7px 11px;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .modal-head a:hover, .modal-head button:hover, .ghost:hover { border-color: var(--accent); }
+    .modal-body {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 0;
+    }
+    .modal-radar {
+      padding: 20px;
+      border-right: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .modal-radar .radar-svg-wrap { max-width: 240px; }
+    .score-list { margin-top: 14px; display: grid; gap: 6px; }
+    .score-list div {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .score-list strong { color: var(--text); font-variant-numeric: tabular-nums; }
+    .modal-copy { padding: 20px 22px 28px; }
+    .modal-copy section { margin-bottom: 22px; }
+    .modal-copy h4 {
+      margin: 0 0 8px;
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .modal-copy p, .modal-copy li {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.55;
+      color: var(--text);
+    }
+    .modal-copy ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+    .actions-box {
+      background: var(--accent-dim);
+      border: 1px solid rgba(63, 199, 224, 0.35);
+      border-radius: 10px;
+      padding: 14px 16px;
+    }
+    .actions-box h4 { color: var(--accent); }
+    .seo-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      font-size: 13px;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .seo-row span:last-child { color: var(--text); font-variant-numeric: tabular-nums; }
+
+    @media (max-width: 860px) {
+      .shell { grid-template-columns: 1fr; }
+      .nav { display: none; }
+      .a-layout, .c-layout, .modal-body { grid-template-columns: 1fr; }
+      .modal-radar { border-right: none; border-bottom: 1px solid var(--border); }
+    }
+  </style>
+</head>
+<body>
+  <header class="chooser">
+    <h1>Competitor overview — pick a layout</h1>
+    <p>
+      Three ways to browse tracked competitors without an endless text list.
+      Click any competitor to open the shared large analysis modal (decision brief, radar, suggested actions).
+    </p>
+    <div class="tabs" role="tablist">
+      <button type="button" class="active" data-stage="a" role="tab" aria-selected="true">
+        <strong>A · Radar hero + chips</strong>
+        <span>Spatial first. Recommended for ~5–20 competitors.</span>
+      </button>
+      <button type="button" data-stage="b" role="tab" aria-selected="false">
+        <strong>B · Mini-radar cards</strong>
+        <span>Dense grid of tiny spiders. Busy as the set grows.</span>
+      </button>
+      <button type="button" data-stage="c" role="tab" aria-selected="false">
+        <strong>C · Scatter + chips</strong>
+        <span>Mockup-style plane (market × threat). Only 2 dimensions.</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- A -->
+  <section class="stage visible" id="a" aria-label="Layout A">
+    <div class="pitch"><strong>A — Radar hero + chip strip.</strong> One big 4-axis spider for the selected competitor; chips on the side for switching. Full analysis lives in the modal.</div>
+    <div class="shell">
+      <aside class="nav">
+        <div class="brand"><i></i> lhr office</div>
+        <a href="#">Overview</a>
+        <a href="#">Approvals</a>
+        <a href="#">Agents &amp; Jobs</a>
+        <a href="#" class="on">Research</a>
+      </aside>
+      <div class="main">
+        <h2>Competitors</h2>
+        <p class="sub">Overlap radar · click a chip or the chart label area to open the full brief</p>
+        <div class="a-layout">
+          <div class="radar-panel">
+            <div class="panel-label">Overlap vs LHR</div>
+            <div class="radar-svg-wrap" id="a-radar"></div>
+            <div class="selected-name" id="a-selected-label"></div>
+            <p style="text-align:center;margin:10px 0 0">
+              <button type="button" class="ghost" id="a-open">Open full analysis →</button>
+            </p>
+          </div>
+          <div class="chip-panel">
+            <div class="panel-label">Tracked · sorted by threat</div>
+            <div class="chips" id="a-chips"></div>
+          </div>
+        </div>
+        <details class="sources"><summary>Sources (discovery queries &amp; SEO keywords)</summary>
+          <p style="margin:8px 0 0">Collapsed so they don’t dominate the workshop. Same controls as today live here.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- B -->
+  <section class="stage" id="b" aria-label="Layout B">
+    <div class="pitch"><strong>B — Mini-radar cards.</strong> Every competitor is a small card with its own spider. Fast to scan; gets crowded past ~12.</div>
+    <div class="shell">
+      <aside class="nav">
+        <div class="brand"><i></i> lhr office</div>
+        <a href="#">Overview</a>
+        <a href="#">Approvals</a>
+        <a href="#">Agents &amp; Jobs</a>
+        <a href="#" class="on">Research</a>
+      </aside>
+      <div class="main">
+        <h2>Competitors</h2>
+        <p class="sub">Each card is clickable · opens the same analysis modal</p>
+        <div class="card-grid" id="b-grid"></div>
+        <details class="sources"><summary>Sources (discovery queries &amp; SEO keywords)</summary>
+          <p style="margin:8px 0 0">Collapsed footer, same as A.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- C -->
+  <section class="stage" id="c" aria-label="Layout C">
+    <div class="pitch"><strong>C — Scatter + chips.</strong> Closest to the original mockup plane. Axes here are <em>shared market</em> × <em>threat</em> (not all four). Good for relative placement; weaker for product/content nuance.</div>
+    <div class="shell">
+      <aside class="nav">
+        <div class="brand"><i></i> lhr office</div>
+        <a href="#">Overview</a>
+        <a href="#">Approvals</a>
+        <a href="#">Agents &amp; Jobs</a>
+        <a href="#" class="on">Research</a>
+      </aside>
+      <div class="main">
+        <h2>Competitors</h2>
+        <p class="sub">Hover / click dots · list mirrors selection</p>
+        <div class="c-layout">
+          <div class="scatter-panel">
+            <div class="panel-label">Market overlap → · Threat ↑</div>
+            <svg class="scatter-svg" viewBox="0 0 480 340" id="c-scatter"></svg>
+          </div>
+          <div class="chip-panel">
+            <div class="panel-label">Tracked</div>
+            <div class="chips" id="c-chips"></div>
+          </div>
+        </div>
+        <details class="sources"><summary>Sources (discovery queries &amp; SEO keywords)</summary>
+          <p style="margin:8px 0 0">Collapsed footer, same as A.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <div class="modal-backdrop" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal">
+      <div class="modal-head">
+        <h3 id="modal-title">competitor.com</h3>
+        <div class="actions">
+          <a href="#" id="modal-site" target="_blank" rel="noopener">Website</a>
+          <button type="button" class="ghost">Remove</button>
+          <button type="button" id="modal-close" aria-label="Close">Close</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <aside class="modal-radar">
+          <div class="panel-label">Overlap radar</div>
+          <div class="radar-svg-wrap" id="modal-radar"></div>
+          <div class="score-list" id="modal-scores"></div>
+        </aside>
+        <div class="modal-copy">
+          <section>
+            <h4>Decision brief</h4>
+            <p id="modal-brief"></p>
+          </section>
+          <section class="actions-box">
+            <h4>Suggested actions</h4>
+            <ul id="modal-actions"></ul>
+          </section>
+          <section>
+            <h4>Monetization</h4>
+            <p id="modal-monetization"></p>
+          </section>
+          <section>
+            <h4>Design</h4>
+            <p id="modal-design"></p>
+          </section>
+          <section>
+            <h4>SEO positions</h4>
+            <div id="modal-seo"></div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const AXES = [
+      { key: 'market', label: 'Shared market' },
+      { key: 'content', label: 'Content' },
+      { key: 'product', label: 'Product' },
+      { key: 'threat', label: 'Threat' },
+    ];
+
+    const competitors = [
+      {
+        id: 1, domain: 'food52.com', initial: 'F5',
+        market: 72, content: 68, product: 55, threat: 78,
+        brief: 'Food52 remains the closest mainstream lifestyle-recipe neighbor: strong editorial + shop hybrid. This cycle homepage was rate-limited, so monetization/design refreshes are thin — treat prior snapshots as still in force.',
+        actions: [
+          'Double down on gluten-free / allergen POV Food52 under-serves.',
+          'Watch their shop drops for kitchenware SKUs that could conflict with the active LHR set.',
+          'Reuse their newsletter CTA pattern (recipe + product) on /community.',
+        ],
+        monetization: 'Magazine + shop + classes + affiliates historically; unreachable this cycle.',
+        design: 'Editorial hero, category rails, commerce CTAs; unreachable this cycle.',
+        seo: [{ k: 'gluten free recipe blog', p: null }, { k: 'food blog', p: null }, { k: 'kitchenware affiliate roundup', p: null }],
+      },
+      {
+        id: 2, domain: 'glutenfreeonashoestring.com', initial: 'GS',
+        market: 88, content: 82, product: 70, threat: 84,
+        brief: 'Highest content overlap with LHR’s gluten-free lane. Pushing cookbooks + subscriber-only content this cycle — classic funnel tightening.',
+        actions: [
+          'Ship one “tested, affordable GF baking” pillar post this set.',
+          'Add a lead magnet (meal plan / flour blend guide) to match their free-offer energy.',
+          'Avoid competing head-on on cookbook SKUs; differentiate with kitchenware affiliates.',
+        ],
+        monetization: 'Cookbooks, email lead magnets, subscriber-only content, authority via “800 tested recipes.”',
+        design: 'Warm first-person recipe blog; cookbook banners; category recipe grids; strong email CTAs.',
+        seo: [{ k: 'gluten free recipe blog', p: 6 }, { k: 'food blog', p: null }, { k: 'kitchenware affiliate roundup', p: null }],
+      },
+      {
+        id: 3, domain: 'theskinnyishdish.com', initial: 'SD',
+        market: 61, content: 58, product: 35, threat: 52,
+        brief: 'Busy-family high-protein comfort food. Lower product overlap (little commerce) but useful CTA / layout lessons.',
+        actions: [
+          'Borrow category-tile browsing for air fryer / one-pot style posts on LHR.',
+          'Keep affiliate focus — they aren’t a shop threat.',
+        ],
+        monetization: 'Newsletter + social; no clear product or affiliate disclosures on homepage.',
+        design: 'Hero for busy families, large category tiles, recipe grids, founder story + social follows.',
+        seo: [{ k: 'gluten free recipe blog', p: null }, { k: 'food blog', p: 18 }, { k: 'kitchenware affiliate roundup', p: null }],
+      },
+      {
+        id: 4, domain: 'thewheatlesskitchen.com', initial: 'WK',
+        market: 85, content: 74, product: 48, threat: 71,
+        brief: 'Direct GF family niche overlap. Design shifted toward connect/subscribe and “As Seen In” — authority + list-building push.',
+        actions: [
+          'Mirror a visible “Work with me / Shop” pair only when the active set can back it.',
+          'Compete on kid-friendly GF angles they emphasize.',
+        ],
+        monetization: 'Content-led; Shop + Work With Me links; email capture; social.',
+        design: 'Header with categories, welcome block, recent/popular posts, Let’s Connect, As Seen In.',
+        seo: [{ k: 'gluten free recipe blog', p: 11 }, { k: 'food blog', p: null }, { k: 'kitchenware affiliate roundup', p: null }],
+      },
+      {
+        id: 5, domain: 'glutenfreeandmore.com', initial: 'GM',
+        market: 79, content: 65, product: 62, threat: 66,
+        brief: 'Magazine + product hybrid in the allergen space. Stronger commerce signal than pure blogs.',
+        actions: [
+          'Differentiate with kitchenware-led stories rather than magazine-style subscriptions.',
+          'Track their product price bands when homepage fetches succeed.',
+        ],
+        monetization: 'Own products / magazine style offers on homepage.',
+        design: 'Content + commerce blend with subscription energy.',
+        seo: [{ k: 'gluten free recipe blog', p: 9 }, { k: 'food blog', p: null }, { k: 'kitchenware affiliate roundup', p: null }],
+      },
+    ].sort((a, b) => b.threat - a.threat);
+
+    let selectedId = competitors[0].id;
+
+    function threatClass(t) {
+      if (t >= 75) return '';
+      if (t >= 55) return 'mid';
+      return 'low';
+    }
+
+    function polar(cx, cy, r, i, n) {
+      const angle = -Math.PI / 2 + (i / n) * Math.PI * 2;
+      return [cx + r * Math.cos(angle), cy + r * Math.sin(angle)];
+    }
+
+    function spiderSvg(comp, size = 320, showLabels = true) {
+      const cx = size / 2, cy = size / 2, maxR = size * 0.36;
+      const n = AXES.length;
+      let rings = '';
+      for (const f of [0.33, 0.66, 1]) {
+        const pts = AXES.map((_, i) => polar(cx, cy, maxR * f, i, n).join(',')).join(' ');
+        rings += `<polygon points="${pts}" fill="none" stroke="#2A3542" />`;
+      }
+      let spokes = '';
+      let labels = '';
+      AXES.forEach((axis, i) => {
+        const [x, y] = polar(cx, cy, maxR, i, n);
+        spokes += `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="#2A3542" />`;
+        if (showLabels) {
+          const [lx, ly] = polar(cx, cy, maxR + size * 0.12, i, n);
+          labels += `<text x="${lx}" y="${ly}" fill="#8B95A5" font-size="${size < 200 ? 8 : 10}" text-anchor="middle" dominant-baseline="middle">${axis.label}</text>`;
+        }
+      });
+      const valuePts = AXES.map((axis, i) => {
+        const v = comp[axis.key] / 100;
+        return polar(cx, cy, maxR * v, i, n).join(',');
+      }).join(' ');
+      return `<svg viewBox="0 0 ${size} ${size}" role="img" aria-label="Overlap radar for ${comp.domain}">
+        ${rings}${spokes}
+        <polygon points="${valuePts}" fill="rgba(63,199,224,0.22)" stroke="#3FC7E0" stroke-width="2" />
+        ${AXES.map((axis, i) => {
+          const [x, y] = polar(cx, cy, maxR * (comp[axis.key] / 100), i, n);
+          return `<circle cx="${x}" cy="${y}" r="3.5" fill="#3FC7E0" />`;
+        }).join('')}
+        ${labels}
+      </svg>`;
+    }
+
+    function chipHtml(c, selected) {
+      return `<button type="button" class="chip ${selected ? 'on' : ''}" data-id="${c.id}">
+        <span class="chip-avatar">${c.initial}</span>
+        <span class="chip-meta">
+          <strong>${c.domain}</strong>
+          <small>market ${c.market} · content ${c.content}</small>
+        </span>
+        <span class="threat-pill ${threatClass(c.threat)}">${c.threat}</span>
+      </button>`;
+    }
+
+    function selected() {
+      return competitors.find((c) => c.id === selectedId) || competitors[0];
+    }
+
+    function renderA() {
+      const c = selected();
+      document.getElementById('a-radar').innerHTML = spiderSvg(c, 340, true);
+      document.getElementById('a-selected-label').innerHTML =
+        `${c.domain}<br><span>threat ${c.threat} · click Open for full brief</span>`;
+      document.getElementById('a-chips').innerHTML = competitors.map((x) => chipHtml(x, x.id === selectedId)).join('');
+      document.querySelectorAll('#a-chips .chip').forEach((el) => {
+        el.onclick = () => { selectedId = Number(el.dataset.id); renderA(); };
+        el.ondblclick = () => openModal(Number(el.dataset.id));
+      });
+    }
+
+    function renderB() {
+      document.getElementById('b-grid').innerHTML = competitors.map((c) => `
+        <button type="button" class="mini-card ${c.id === selectedId ? 'on' : ''}" data-id="${c.id}">
+          <header>
+            <strong>${c.domain}</strong>
+            <span class="threat-pill ${threatClass(c.threat)}">${c.threat}</span>
+          </header>
+          <div class="mini-radar">${spiderSvg(c, 160, false)}</div>
+          <p>${c.brief}</p>
+        </button>`).join('');
+      document.querySelectorAll('#b-grid .mini-card').forEach((el) => {
+        el.onclick = () => {
+          selectedId = Number(el.dataset.id);
+          renderB();
+          openModal(selectedId);
+        };
+      });
+    }
+
+    function renderC() {
+      const svg = document.getElementById('c-scatter');
+      const pad = { l: 48, r: 24, t: 24, b: 40 };
+      const w = 480, h = 340;
+      const ix = (v) => pad.l + (v / 100) * (w - pad.l - pad.r);
+      const iy = (v) => h - pad.b - (v / 100) * (h - pad.t - pad.b);
+      let grid = '';
+      for (const v of [25, 50, 75]) {
+        grid += `<line x1="${ix(v)}" y1="${pad.t}" x2="${ix(v)}" y2="${h - pad.b}" stroke="#2A3542" />`;
+        grid += `<line x1="${pad.l}" y1="${iy(v)}" x2="${w - pad.r}" y2="${iy(v)}" stroke="#2A3542" />`;
+      }
+      const dots = competitors.map((c) => `
+        <g class="dot ${c.id === selectedId ? 'on' : ''}" data-id="${c.id}">
+          <circle cx="${ix(c.market)}" cy="${iy(c.threat)}" r="${c.id === selectedId ? 11 : 8}" fill="#3FC7E0" fill-opacity="0.9" />
+          <text x="${ix(c.market) + 12}" y="${iy(c.threat) + 4}" fill="#E6E9EF" font-size="10">${c.domain.split('.')[0]}</text>
+        </g>`).join('');
+      svg.innerHTML = `
+        <rect x="${pad.l}" y="${pad.t}" width="${w - pad.l - pad.r}" height="${h - pad.t - pad.b}" fill="none" stroke="#2A3542" />
+        ${grid}
+        <text class="axis-label" x="${w / 2}" y="${h - 12}" text-anchor="middle">Shared market →</text>
+        <text class="axis-label" x="14" y="${h / 2}" text-anchor="middle" transform="rotate(-90 14 ${h / 2})">Threat →</text>
+        ${dots}`;
+      svg.querySelectorAll('.dot').forEach((el) => {
+        el.addEventListener('click', () => {
+          selectedId = Number(el.dataset.id);
+          renderC();
+          openModal(selectedId);
+        });
+      });
+      document.getElementById('c-chips').innerHTML = competitors.map((x) => chipHtml(x, x.id === selectedId)).join('');
+      document.querySelectorAll('#c-chips .chip').forEach((el) => {
+        el.onclick = () => { selectedId = Number(el.dataset.id); renderC(); };
+        el.ondblclick = () => openModal(Number(el.dataset.id));
+      });
+    }
+
+    function openModal(id) {
+      selectedId = id;
+      const c = selected();
+      document.getElementById('modal-title').textContent = c.domain;
+      document.getElementById('modal-site').href = `https://${c.domain}`;
+      document.getElementById('modal-radar').innerHTML = spiderSvg(c, 260, true);
+      document.getElementById('modal-scores').innerHTML = AXES.map((a) =>
+        `<div><span>${a.label}</span><strong>${c[a.key]}</strong></div>`).join('');
+      document.getElementById('modal-brief').textContent = c.brief;
+      document.getElementById('modal-actions').innerHTML = c.actions.map((t) => `<li>${t}</li>`).join('');
+      document.getElementById('modal-monetization').textContent = c.monetization;
+      document.getElementById('modal-design').textContent = c.design;
+      document.getElementById('modal-seo').innerHTML = c.seo.map((row) =>
+        `<div class="seo-row"><span>${row.k}</span><span>${row.p == null ? '—' : '#' + row.p}</span></div>`).join('');
+      document.getElementById('modal').classList.add('open');
+    }
+
+    function closeModal() {
+      document.getElementById('modal').classList.remove('open');
+    }
+
+    document.querySelectorAll('.tabs button').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tabs button').forEach((b) => {
+          b.classList.remove('active');
+          b.setAttribute('aria-selected', 'false');
+        });
+        btn.classList.add('active');
+        btn.setAttribute('aria-selected', 'true');
+        document.querySelectorAll('.stage').forEach((s) => s.classList.remove('visible'));
+        document.getElementById(btn.dataset.stage).classList.add('visible');
+      });
+    });
+
+    document.getElementById('a-open').onclick = () => openModal(selectedId);
+    document.getElementById('modal-close').onclick = closeModal;
+    document.getElementById('modal').addEventListener('click', (e) => {
+      if (e.target.id === 'modal') closeModal();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeModal();
+    });
+
+    renderA();
+    renderB();
+    renderC();
+  </script>
+</body>
+</html>

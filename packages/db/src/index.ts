@@ -9,6 +9,7 @@ export * from './trendSeedTopics.js';
 export * from './trendsReports.js';
 export * from './competitors.js';
 export * from './competitorSeoKeywords.js';
+export * from './competitorDiscoveryQueries.js';
 export * from './competitorReports.js';
 export * from './posts.js';
 export * from './postDrafts.js';
