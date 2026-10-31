@@ -8,13 +8,13 @@ describe('affiliate disclosure page', () => {
   }, 60000);
 
   it('includes the required Amazon Associates disclosure wording', () => {
-    const html = readFileSync('dist/affiliate-disclosure/index.html', 'utf-8');
+    const html = readFileSync('dist/client/affiliate-disclosure/index.html', 'utf-8');
     expect(html).toContain('Amazon Services LLC Associates Program');
     expect(html).toContain('an affiliate advertising program designed to provide a means for sites to earn advertising fees by advertising and linking to Amazon.com');
   });
 
   it('links to the privacy policy', () => {
-    const html = readFileSync('dist/affiliate-disclosure/index.html', 'utf-8');
+    const html = readFileSync('dist/client/affiliate-disclosure/index.html', 'utf-8');
     expect(html).toContain('href="/privacy-policy/"');
   });
 });
