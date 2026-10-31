@@ -70,7 +70,8 @@ beforeEach(() => {
   reports = [];
   nextReportId = 1;
   process.env.SERPAPI_KEY = 'test-serpapi-key';
-  process.env.OPENROUTER_API_KEY = 'test-openrouter-key';
+  process.env.AIRLIE_HUB_URL = 'https://hub.example/api/v1';
+  process.env.AIRLIE_HUB_TENANT_KEY = 'test-tenant-key';
   dbMock.listCompetitorsByStatus.mockResolvedValue([trackedCompetitor]);
   serpapiMock.fetchSearchResults.mockResolvedValue([]);
   llmMock.callLLM.mockResolvedValue('unused LLM output');

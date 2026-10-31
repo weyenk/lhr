@@ -36,7 +36,8 @@ const trackedCompetitor = {
 beforeEach(() => {
   vi.clearAllMocks();
   process.env.SERPAPI_KEY = 'test-serpapi-key';
-  process.env.OPENROUTER_API_KEY = 'test-openrouter-key';
+  process.env.AIRLIE_HUB_URL = 'https://hub.example/api/v1';
+  process.env.AIRLIE_HUB_TENANT_KEY = 'test-tenant-key';
 
   serpapiMock.fetchSearchResults.mockResolvedValue([]);
   dbMock.insertCandidateCompetitor.mockResolvedValue(null);
@@ -171,14 +172,17 @@ describe('analyzeCompetitors', () => {
   it('stores the raw current snapshot, not the LLM diff text, in monetizationSnapshot/designSnapshot', async () => {
     dbMock.listCompetitorsByStatus.mockResolvedValue([trackedCompetitor]);
     global.fetch = vi.fn().mockResolvedValue({ ok: true, text: async () => '<html><body>Shop the Kitchen</body></html>' }) as unknown as typeof fetch;
-    llmMock.callLLM.mockImplementation(async (messages: { role: string; content: string }[]) => {
-      const userContent = messages[messages.length - 1].content;
-      if (messages[0].content.includes('monetization and product strategy')) return 'Sells a $40 cast-iron pan.';
-      if (messages[0].content.includes('layout, prominent calls-to-action')) return 'Grid homepage with a shop CTA.';
-      if (messages[0].content.includes('describe what substantively changed')) return 'Added a new spatula set.';
-      if (userContent.includes('New content')) return 'Weekly summary text.';
-      return 'unused';
-    });
+    llmMock.callLLM.mockImplementation(
+      async (messages: { role: string; content: string }[], options?: { persona?: string }) => {
+        const persona = options?.persona ?? '';
+        const userContent = messages[messages.length - 1].content;
+        if (persona.includes('monetization and product strategy')) return 'Sells a $40 cast-iron pan.';
+        if (persona.includes('layout, prominent calls-to-action')) return 'Grid homepage with a shop CTA.';
+        if (persona.includes('describe what substantively changed')) return 'Added a new spatula set.';
+        if (userContent.includes('New content')) return 'Weekly summary text.';
+        return 'unused';
+      },
+    );
 
     await analyzeCompetitors();
 
@@ -229,15 +233,17 @@ describe('analyzeCompetitors', () => {
       },
     ]);
     global.fetch = vi.fn().mockResolvedValue({ ok: true, text: async () => '<html><body>Shop the Kitchen</body></html>' }) as unknown as typeof fetch;
-    llmMock.callLLM.mockImplementation(async (messages: { role: string; content: string }[]) => {
-      const systemContent = messages[0].content;
-      const userContent = messages[messages.length - 1].content;
-      if (systemContent.includes('monetization and product strategy')) return 'Sells a $55 stand mixer.';
-      if (systemContent.includes('layout, prominent calls-to-action')) return 'Minimalist homepage with a shop CTA.';
-      if (systemContent.includes('describe what substantively changed')) return 'Diff output text.';
-      if (userContent.includes('New content')) return 'Weekly summary text.';
-      return 'unused';
-    });
+    llmMock.callLLM.mockImplementation(
+      async (messages: { role: string; content: string }[], options?: { persona?: string }) => {
+        const persona = options?.persona ?? '';
+        const userContent = messages[messages.length - 1].content;
+        if (persona.includes('monetization and product strategy')) return 'Sells a $55 stand mixer.';
+        if (persona.includes('layout, prominent calls-to-action')) return 'Minimalist homepage with a shop CTA.';
+        if (persona.includes('describe what substantively changed')) return 'Diff output text.';
+        if (userContent.includes('New content')) return 'Weekly summary text.';
+        return 'unused';
+      },
+    );
 
     await analyzeCompetitors();
 
@@ -246,12 +252,14 @@ describe('analyzeCompetitors', () => {
     // its "Previous snapshot:" half is the OLDER real snapshot, not the sentinel from the more
     // recent (but unreachable) report.
     const diffCalls = llmMock.callLLM.mock.calls.filter((c) =>
-      c[0][0].content.includes('describe what substantively changed'),
+      (c[1] as { persona?: string } | undefined)?.persona?.includes('describe what substantively changed'),
     );
-    const monetizationDiffCall = diffCalls.find((c) => c[0][1].content.includes('Sells a $55 stand mixer.'));
+    const monetizationDiffCall = diffCalls.find((c) =>
+      c[0][0].content.includes('Sells a $55 stand mixer.'),
+    );
     expect(monetizationDiffCall).toBeDefined();
-    expect(monetizationDiffCall![0][1].content).toContain('Previous snapshot:\nSells a $40 cast-iron pan.');
-    expect(monetizationDiffCall![0][1].content).not.toContain('unreachable this cycle');
+    expect(monetizationDiffCall![0][0].content).toContain('Previous snapshot:\nSells a $40 cast-iron pan.');
+    expect(monetizationDiffCall![0][0].content).not.toContain('unreachable this cycle');
   });
 
   it('writes the placeholder summary when the synthesis LLM call fails, but keeps the report', async () => {
@@ -282,9 +290,9 @@ describe('analyzeCompetitors', () => {
     expect(dbMock.insertCompetitorReport).not.toHaveBeenCalled();
   });
 
-  it('throws before doing anything when OPENROUTER_API_KEY is missing (fail-fast)', async () => {
-    delete process.env.OPENROUTER_API_KEY;
-    await expect(analyzeCompetitors()).rejects.toThrow(/OPENROUTER_API_KEY/);
+  it('throws before doing anything when AIRLIE_HUB_TENANT_KEY is missing (fail-fast)', async () => {
+    delete process.env.AIRLIE_HUB_TENANT_KEY;
+    await expect(analyzeCompetitors()).rejects.toThrow(/AIRLIE_HUB_TENANT_KEY/);
     expect(dbMock.insertCompetitorReport).not.toHaveBeenCalled();
   });
 });

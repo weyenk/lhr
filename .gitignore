@@ -9,3 +9,4 @@ src/env/
 .superpowers/
 .vercel
 .env*
+.worktrees/

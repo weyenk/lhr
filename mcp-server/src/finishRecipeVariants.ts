@@ -72,7 +72,8 @@ function applyResults(existing: RecipeVariantData[], results: RecipeVariantResul
 // completed diet is written and kept regardless of what happens on later ticks.
 export async function finishPendingRecipeVariants(): Promise<JobResult> {
   const client = createGitHubClient(requireEnv('GITHUB_TOKEN'));
-  requireEnv('OPENROUTER_API_KEY');
+  requireEnv('AIRLIE_HUB_URL');
+  requireEnv('AIRLIE_HUB_TENANT_KEY');
 
   const found = await findIncompleteRecipeDraft(client);
   if (!found) {

@@ -4,150 +4,232 @@ import { callLLM } from '../src/index';
 const originalFetch = global.fetch;
 const originalEnv = { ...process.env };
 
+const HUB = 'https://hub.example/api/v1';
+const JOB_ID = '11111111-1111-1111-1111-111111111111';
+
+function jsonResponse(status: number, body: unknown): Response {
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    text: async () => JSON.stringify(body),
+    json: async () => body,
+  } as unknown as Response;
+}
+
 beforeEach(() => {
-  process.env.OPENROUTER_API_KEY = 'test-key';
-  delete process.env.OPENROUTER_MODEL;
+  process.env.AIRLIE_HUB_URL = HUB;
+  process.env.AIRLIE_HUB_TENANT_KEY = 'tenant-secret';
 });
 
 afterEach(() => {
   global.fetch = originalFetch;
   process.env = { ...originalEnv };
+  vi.restoreAllMocks();
 });
 
 describe('callLLM', () => {
-  it('posts the messages to OpenRouter and returns the reply content', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ choices: [{ message: { content: 'roasted beet slices' } }] }),
+  it('enqueues an llm job, polls until done, and returns result.content', async () => {
+    let polls = 0;
+    global.fetch = vi.fn().mockImplementation(async (url: string, init?: RequestInit) => {
+      if (init?.method === 'POST' && url === `${HUB}/jobs`) {
+        return jsonResponse(201, {
+          job: { id: JOB_ID, status: 'queued', result: null, error_message: null },
+        });
+      }
+      if (url === `${HUB}/jobs/${JOB_ID}`) {
+        polls += 1;
+        if (polls < 2) {
+          return jsonResponse(200, {
+            job: { id: JOB_ID, status: 'running', result: null, error_message: null },
+          });
+        }
+        return jsonResponse(200, {
+          job: {
+            id: JOB_ID,
+            status: 'done',
+            result: { output: 'chat.completions', content: 'roasted beet slices' },
+            error_message: null,
+          },
+        });
+      }
+      throw new Error(`unexpected fetch ${url}`);
     }) as unknown as typeof fetch;
 
-    const result = await callLLM([{ role: 'user', content: 'Substitute: bacon' }]);
+    // Skip real poll sleeps in this suite when status is already terminal after enqueue+one poll.
+    vi.spyOn(global, 'setTimeout').mockImplementation(((fn: TimerHandler) => {
+      if (typeof fn === 'function') fn();
+      return 0 as unknown as ReturnType<typeof setTimeout>;
+    }) as typeof setTimeout);
+
+    const result = await callLLM(
+      [
+        { role: 'system', content: 'You substitute ingredients.' },
+        { role: 'user', content: 'Substitute: bacon' },
+      ],
+      { persona: 'You substitute ingredients.' },
+    );
 
     expect(result).toBe('roasted beet slices');
-    expect(global.fetch).toHaveBeenCalledWith(
-      'https://openrouter.ai/api/v1/chat/completions',
-      expect.objectContaining({
-        method: 'POST',
-        headers: expect.objectContaining({ Authorization: 'Bearer test-key' }),
-      }),
+
+    const enqueueCall = (global.fetch as ReturnType<typeof vi.fn>).mock.calls.find(
+      (c) => c[1]?.method === 'POST',
     );
-    const body = JSON.parse((global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body);
-    expect(body.model).toBeUndefined();
-    expect(body.models).toEqual([
-      'google/gemma-4-31b-it:free',
-      'nvidia/nemotron-3-super-120b-a12b:free',
-      'z-ai/glm-5.2:free',
-    ]);
-    expect(body.messages).toEqual([{ role: 'user', content: 'Substitute: bacon' }]);
+    expect(enqueueCall[0]).toBe(`${HUB}/jobs`);
+    expect(enqueueCall[1].headers).toEqual(
+      expect.objectContaining({ Authorization: 'Bearer tenant-secret' }),
+    );
+    const body = JSON.parse(enqueueCall[1].body as string);
+    expect(body).toEqual({
+      kind: 'llm',
+      created_by: 'lhr-office-jobs',
+      channel: 'web',
+      payload: {
+        prompt: 'Substitute: bacon',
+        persona: 'You substitute ingredients.',
+        output: 'chat.completions',
+        caller: 'lhr',
+      },
+    });
+    expect(body.payload.model).toBeUndefined();
+    expect(body.payload.thinking).toBeUndefined();
+
+    const pollCall = (global.fetch as ReturnType<typeof vi.fn>).mock.calls.find(
+      (c) => c[0] === `${HUB}/jobs/${JOB_ID}`,
+    );
+    expect(pollCall[1].headers).toEqual(
+      expect.objectContaining({ 'X-Created-By': 'lhr-office-jobs' }),
+    );
   });
 
-  it('uses OPENROUTER_MODEL as the sole model when set, bypassing the default fallback chain', async () => {
-    process.env.OPENROUTER_MODEL = 'some/other-model:free';
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ choices: [{ message: { content: 'x' } }] }),
+  it('treats a system message as persona when the persona option is omitted', async () => {
+    global.fetch = vi.fn().mockImplementation(async (url: string, init?: RequestInit) => {
+      if (init?.method === 'POST') {
+        return jsonResponse(201, {
+          job: { id: JOB_ID, status: 'queued', result: null, error_message: null },
+        });
+      }
+      return jsonResponse(200, {
+        job: {
+          id: JOB_ID,
+          status: 'done',
+          result: { content: 'ok' },
+          error_message: null,
+        },
+      });
     }) as unknown as typeof fetch;
 
-    await callLLM([{ role: 'user', content: 'hi' }]);
+    await callLLM([
+      { role: 'system', content: 'Be brief.' },
+      { role: 'user', content: 'hi' },
+    ]);
 
     const body = JSON.parse((global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body);
-    expect(body.models).toEqual(['some/other-model:free']);
+    expect(body.payload.persona).toBe('Be brief.');
+    expect(body.payload.prompt).toBe('hi');
   });
 
-  it('throws when OPENROUTER_API_KEY is not set', async () => {
-    delete process.env.OPENROUTER_API_KEY;
-    await expect(callLLM([{ role: 'user', content: 'hi' }])).rejects.toThrow(/OPENROUTER_API_KEY/);
+  it('throws when AIRLIE_HUB_URL is not set', async () => {
+    delete process.env.AIRLIE_HUB_URL;
+    await expect(
+      callLLM([{ role: 'system', content: 's' }, { role: 'user', content: 'hi' }]),
+    ).rejects.toThrow(/AIRLIE_HUB_URL/);
   });
 
-  it('throws immediately when the request fails with a non-429 status', async () => {
-    global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 500, text: async () => '' }) as unknown as typeof fetch;
-    await expect(callLLM([{ role: 'user', content: 'hi' }])).rejects.toThrow(/500/);
+  it('throws when AIRLIE_HUB_TENANT_KEY is not set', async () => {
+    delete process.env.AIRLIE_HUB_TENANT_KEY;
+    await expect(
+      callLLM([{ role: 'system', content: 's' }, { role: 'user', content: 'hi' }]),
+    ).rejects.toThrow(/AIRLIE_HUB_TENANT_KEY/);
+  });
+
+  it('throws when enqueue fails with a non-201 status', async () => {
+    global.fetch = vi.fn().mockResolvedValue(
+      jsonResponse(500, { error: 'hub exploded' }),
+    ) as unknown as typeof fetch;
+    await expect(
+      callLLM([{ role: 'system', content: 's' }, { role: 'user', content: 'hi' }]),
+    ).rejects.toThrow(/500.*hub exploded/);
     expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 
-  it('includes the response body in the thrown error, so the real reason is visible', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: false,
-      status: 402,
-      text: async () => '{"error":{"message":"Insufficient credits for this request","code":402}}',
-    }) as unknown as typeof fetch;
-    await expect(callLLM([{ role: 'user', content: 'hi' }])).rejects.toThrow(/Insufficient credits/);
-  });
-
-  it('does not crash when the error response has no body/text() available', async () => {
-    global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 500 }) as unknown as typeof fetch;
-    await expect(callLLM([{ role: 'user', content: 'hi' }])).rejects.toThrow(/500/);
-  });
-
-  it('retries a 429 (honoring Retry-After) and succeeds on a later attempt', async () => {
-    let calls = 0;
-    global.fetch = vi.fn().mockImplementation(async () => {
-      calls++;
-      if (calls < 3) {
-        return { ok: false, status: 429, headers: new Headers({ 'retry-after': '0' }) };
+  it('throws when the job fails', async () => {
+    global.fetch = vi.fn().mockImplementation(async (_url: string, init?: RequestInit) => {
+      if (init?.method === 'POST') {
+        return jsonResponse(201, {
+          job: { id: JOB_ID, status: 'queued', result: null, error_message: null },
+        });
       }
-      return {
-        ok: true,
-        headers: new Headers(),
-        json: async () => ({ choices: [{ message: { content: 'ok after retry' } }] }),
-      };
+      return jsonResponse(200, {
+        job: {
+          id: JOB_ID,
+          status: 'failed',
+          result: null,
+          error_message: 'serve unavailable',
+        },
+      });
     }) as unknown as typeof fetch;
 
-    const result = await callLLM([{ role: 'user', content: 'hi' }]);
-
-    expect(result).toBe('ok after retry');
-    expect(calls).toBe(3);
+    await expect(
+      callLLM([{ role: 'system', content: 's' }, { role: 'user', content: 'hi' }]),
+    ).rejects.toThrow(/failed: serve unavailable/);
   });
 
-  it('throws after exhausting retries when persistently rate limited, with the body in the error', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: false,
-      status: 429,
-      headers: new Headers({ 'retry-after': '0' }),
-      text: async () => '{"error":{"message":"Rate limit exceeded","code":429}}',
+  it('throws when done but result.content is missing', async () => {
+    global.fetch = vi.fn().mockImplementation(async (_url: string, init?: RequestInit) => {
+      if (init?.method === 'POST') {
+        return jsonResponse(201, {
+          job: { id: JOB_ID, status: 'queued', result: null, error_message: null },
+        });
+      }
+      return jsonResponse(200, {
+        job: { id: JOB_ID, status: 'done', result: {}, error_message: null },
+      });
     }) as unknown as typeof fetch;
 
-    await expect(callLLM([{ role: 'user', content: 'hi' }])).rejects.toThrow(/429.*Rate limit exceeded/s);
-    expect(global.fetch).toHaveBeenCalledTimes(4);
-  });
-
-  it('throws when the response has no message content', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ choices: [] }),
-    }) as unknown as typeof fetch;
-    await expect(callLLM([{ role: 'user', content: 'hi' }])).rejects.toThrow(/no message content/);
-  });
-
-  it('bounds the request with an abort signal, so a hung model cannot stall the pipeline forever', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ choices: [{ message: { content: 'ok' } }] }),
-    }) as unknown as typeof fetch;
-
-    await callLLM([{ role: 'user', content: 'hi' }]);
-
-    const options = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1];
-    expect(options.signal).toBeInstanceOf(AbortSignal);
+    await expect(
+      callLLM([{ role: 'system', content: 's' }, { role: 'user', content: 'hi' }]),
+    ).rejects.toThrow(/no result\.content/);
   });
 
   it('skips the request and throws immediately once the given deadline has already passed', async () => {
     global.fetch = vi.fn();
-    await expect(callLLM([{ role: 'user', content: 'hi' }], { deadline: Date.now() - 1 })).rejects.toThrow(
-      /ran out of time/,
-    );
+    await expect(
+      callLLM([{ role: 'system', content: 's' }, { role: 'user', content: 'hi' }], {
+        deadline: Date.now() - 1,
+      }),
+    ).rejects.toThrow(/ran out of time/);
     expect(global.fetch).not.toHaveBeenCalled();
   });
 
-  it('still calls the model when the deadline has not passed yet', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ choices: [{ message: { content: 'ok' } }] }),
+  it('still enqueues when the deadline has not passed yet', async () => {
+    global.fetch = vi.fn().mockImplementation(async (_url: string, init?: RequestInit) => {
+      if (init?.method === 'POST') {
+        return jsonResponse(201, {
+          job: { id: JOB_ID, status: 'queued', result: null, error_message: null },
+        });
+      }
+      return jsonResponse(200, {
+        job: {
+          id: JOB_ID,
+          status: 'done',
+          result: { content: 'ok' },
+          error_message: null,
+        },
+      });
     }) as unknown as typeof fetch;
 
-    const result = await callLLM([{ role: 'user', content: 'hi' }], { deadline: Date.now() + 60_000 });
+    const result = await callLLM(
+      [{ role: 'system', content: 's' }, { role: 'user', content: 'hi' }],
+      { deadline: Date.now() + 60_000 },
+    );
 
     expect(result).toBe('ok');
-    expect(global.fetch).toHaveBeenCalledTimes(1);
+    expect(global.fetch).toHaveBeenCalled();
+  });
+
+  it('requires a persona somehow (option or system message)', async () => {
+    global.fetch = vi.fn();
+    await expect(callLLM([{ role: 'user', content: 'hi' }])).rejects.toThrow(/persona/);
+    expect(global.fetch).not.toHaveBeenCalled();
   });
 });

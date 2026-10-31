@@ -81,17 +81,14 @@ export async function substituteIngredient(
   }
 
   const content = await callLLM(
-    [
-      {
-        role: 'system',
-        content:
-          'You substitute recipe ingredients for a specific diet. Reply with ONLY the substitute ' +
-          'ingredient name, or the exact text "no substitution needed" if the ingredient is already ' +
-          'fine for that diet. No punctuation, no explanation.',
-      },
-      { role: 'user', content: `Ingredient: "${normalized}"\nDiet: ${diet}` },
-    ],
-    { deadline },
+    [{ role: 'user', content: `Ingredient: "${normalized}"\nDiet: ${diet}` }],
+    {
+      deadline,
+      persona:
+        'You substitute recipe ingredients for a specific diet. Reply with ONLY the substitute ' +
+        'ingredient name, or the exact text "no substitution needed" if the ingredient is already ' +
+        'fine for that diet. No punctuation, no explanation.',
+    },
   );
 
   const suggestion = content.trim();
@@ -118,17 +115,16 @@ export async function rewriteSteps(
   const content = await callLLM(
     [
       {
-        role: 'system',
-        content:
-          'You rewrite recipe steps so they reflect ingredient substitutions. Reply with ONLY a JSON ' +
-          'array of strings, one per input step, in the same order, with no other text.',
-      },
-      {
         role: 'user',
         content: `Diet: ${diet}\nSubstitutions:\n${changeList}\n\nSteps:\n${JSON.stringify(originalSteps)}`,
       },
     ],
-    { deadline },
+    {
+      deadline,
+      persona:
+        'You rewrite recipe steps so they reflect ingredient substitutions. Reply with ONLY a JSON ' +
+        'array of strings, one per input step, in the same order, with no other text.',
+    },
   );
 
   let parsed: unknown;
@@ -157,9 +153,8 @@ async function buildVariantOnce(
   originalSteps: string[],
   deadline?: number,
 ): Promise<{ ingredients: RecipeIngredient[]; steps: string[]; notes?: string }> {
-  // Sequential, not Promise.all: firing one call per ingredient (times every diet, via the
-  // Promise.all this replaced in generateAllVariants below) burst well past OpenRouter's
-  // free-tier rate limit on any recipe with more than a handful of ingredients.
+  // Sequential, not Promise.all: one hub LLM job per ingredient keeps pipeline deadlines and
+  // Mac bridge load predictable on recipes with many ingredients.
   const substituted: SubstitutedIngredient[] = [];
   for (const ing of originalIngredients) {
     substituted.push(await substituteIngredient(ing, diet, deadline));

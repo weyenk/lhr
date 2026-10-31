@@ -102,38 +102,36 @@ async function fetchHomepageText(domain: string): Promise<string> {
   return htmlToText(await response.text());
 }
 
+const MONETIZATION_PERSONA =
+  "You analyze a competitor recipe/kitchenware site's homepage text and produce a short, factual snapshot of its monetization and product strategy: what it sells or promotes, any visible price ranges, and any visible affiliate/ad programs or sponsorship disclosures. 2-4 sentences, no speculation beyond what the text shows.";
+
+const DESIGN_PERSONA =
+  "You analyze a competitor site's homepage text (tags stripped, so infer structure from headings, nav labels, and link text) and produce a short, factual description of its apparent layout, prominent calls-to-action, and visual/content style. 2-4 sentences, no speculation beyond what the text shows.";
+
+const DIFF_PERSONA =
+  'Given a previous snapshot and a current snapshot of the same thing, describe what substantively changed in 1-2 sentences. If the current snapshot is just a prose rephrasing of the same facts with no substantive change, respond exactly with "No substantive change."';
+
+const WEEKLY_SUMMARY_PERSONA =
+  'Synthesize this week\'s changes for a tracked competitor into a short "what changed this week" summary (2-4 sentences), covering new content, SEO positions, monetization, and design where notable. Skip dimensions with no notable change.';
+
 async function summarizeMonetization(domain: string, pageText: string): Promise<string> {
-  return callLLM([
-    {
-      role: 'system',
-      content:
-        "You analyze a competitor recipe/kitchenware site's homepage text and produce a short, factual snapshot of its monetization and product strategy: what it sells or promotes, any visible price ranges, and any visible affiliate/ad programs or sponsorship disclosures. 2-4 sentences, no speculation beyond what the text shows.",
-    },
-    { role: 'user', content: `Homepage text for ${domain}:\n\n${pageText}` },
-  ]);
+  return callLLM([{ role: 'user', content: `Homepage text for ${domain}:\n\n${pageText}` }], {
+    persona: MONETIZATION_PERSONA,
+  });
 }
 
 async function summarizeDesign(domain: string, pageText: string): Promise<string> {
-  return callLLM([
-    {
-      role: 'system',
-      content:
-        "You analyze a competitor site's homepage text (tags stripped, so infer structure from headings, nav labels, and link text) and produce a short, factual description of its apparent layout, prominent calls-to-action, and visual/content style. 2-4 sentences, no speculation beyond what the text shows.",
-    },
-    { role: 'user', content: `Homepage text for ${domain}:\n\n${pageText}` },
-  ]);
+  return callLLM([{ role: 'user', content: `Homepage text for ${domain}:\n\n${pageText}` }], {
+    persona: DESIGN_PERSONA,
+  });
 }
 
 async function diffSnapshot(previous: string | null, current: string): Promise<string> {
   if (previous === null) return `Initial snapshot: ${current}`;
-  return callLLM([
-    {
-      role: 'system',
-      content:
-        'Given a previous snapshot and a current snapshot of the same thing, describe what substantively changed in 1-2 sentences. If the current snapshot is just a prose rephrasing of the same facts with no substantive change, respond exactly with "No substantive change."',
-    },
-    { role: 'user', content: `Previous snapshot:\n${previous}\n\nCurrent snapshot:\n${current}` },
-  ]);
+  return callLLM(
+    [{ role: 'user', content: `Previous snapshot:\n${previous}\n\nCurrent snapshot:\n${current}` }],
+    { persona: DIFF_PERSONA },
+  );
 }
 
 async function buildCompetitorReport(
@@ -203,23 +201,21 @@ async function buildCompetitorReport(
 
   let summary: string;
   try {
-    summary = await callLLM([
-      {
-        role: 'system',
-        content:
-          'Synthesize this week\'s changes for a tracked competitor into a short "what changed this week" summary (2-4 sentences), covering new content, SEO positions, monetization, and design where notable. Skip dimensions with no notable change.',
-      },
-      {
-        role: 'user',
-        content: [
-          `Competitor: ${competitor.domain}`,
-          `New content: ${contentDescriptor}`,
-          `SEO positions: ${JSON.stringify(seoPositions)}`,
-          `Monetization change: ${monetizationChange}`,
-          `Design change: ${designChange}`,
-        ].join('\n'),
-      },
-    ]);
+    summary = await callLLM(
+      [
+        {
+          role: 'user',
+          content: [
+            `Competitor: ${competitor.domain}`,
+            `New content: ${contentDescriptor}`,
+            `SEO positions: ${JSON.stringify(seoPositions)}`,
+            `Monetization change: ${monetizationChange}`,
+            `Design change: ${designChange}`,
+          ].join('\n'),
+        },
+      ],
+      { persona: WEEKLY_SUMMARY_PERSONA },
+    );
   } catch (err) {
     console.warn(`[competitors] synthesis LLM call failed for ${competitor.domain}.`, err);
     summary = SUMMARY_FAILURE_PLACEHOLDER;
@@ -234,7 +230,8 @@ async function buildCompetitorReport(
 
 export async function analyzeCompetitors(): Promise<JobResult> {
   requireEnv('SERPAPI_KEY');
-  requireEnv('OPENROUTER_API_KEY');
+  requireEnv('AIRLIE_HUB_URL');
+  requireEnv('AIRLIE_HUB_TENANT_KEY');
   const db = getPool();
 
   const cycleId = new Date().toISOString().slice(0, 10);

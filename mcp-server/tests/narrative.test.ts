@@ -21,7 +21,8 @@ describe('generateNarrative', () => {
   it('passes the recipe title/cuisine/category to the LLM call', async () => {
     callLLM.mockResolvedValue('A story.');
     await generateNarrative({ title: 'Teriyaki Chicken Casserole', cuisine: 'Japanese', category: 'Chicken' });
-    const userMessage = callLLM.mock.calls[0][0][1].content;
+    const userMessage = callLLM.mock.calls[0][0][0].content;
+    expect(callLLM.mock.calls[0][1]).toEqual(expect.objectContaining({ persona: expect.any(String) }));
     expect(userMessage).toContain('Teriyaki Chicken Casserole');
     expect(userMessage).toContain('Japanese');
     expect(userMessage).toContain('Chicken');
