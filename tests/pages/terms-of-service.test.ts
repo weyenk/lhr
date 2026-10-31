@@ -8,13 +8,13 @@ describe('terms of service page', () => {
   }, 60000);
 
   it('renders the terms with a food-content disclaimer', () => {
-    const html = readFileSync('dist/terms-of-service/index.html', 'utf-8');
+    const html = readFileSync('dist/client/terms-of-service/index.html', 'utf-8');
     expect(html).toContain('Terms of Service');
     expect(html).toContain('informational and entertainment purposes only');
   });
 
   it('links to the affiliate disclosure page', () => {
-    const html = readFileSync('dist/terms-of-service/index.html', 'utf-8');
+    const html = readFileSync('dist/client/terms-of-service/index.html', 'utf-8');
     expect(html).toContain('href="/affiliate-disclosure/"');
   });
 });

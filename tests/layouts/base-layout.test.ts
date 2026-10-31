@@ -12,14 +12,14 @@ describe('Umami analytics script', () => {
         PUBLIC_UMAMI_WEBSITE_ID: 'test-website-id',
       },
     });
-    const html = readFileSync('dist/index.html', 'utf-8');
+    const html = readFileSync('dist/client/about/index.html', 'utf-8');
     expect(html).toContain('src="https://umami.loveheatrelationship.com/script.js"');
     expect(html).toContain('data-website-id="test-website-id"');
   }, 60000);
 
   it('is omitted from the build when Umami env vars are unset', () => {
     execSync('npm run build', { stdio: 'inherit' });
-    const html = readFileSync('dist/index.html', 'utf-8');
+    const html = readFileSync('dist/client/about/index.html', 'utf-8');
     expect(html).not.toContain('data-website-id');
   }, 60000);
 });
@@ -34,7 +34,7 @@ describe('Umami replays/heatmaps recorder script', () => {
         PUBLIC_UMAMI_WEBSITE_ID: 'test-website-id',
       },
     });
-    const html = readFileSync('dist/index.html', 'utf-8');
+    const html = readFileSync('dist/client/about/index.html', 'utf-8');
     expect(html).toContain('src="https://umami.loveheatrelationship.com/recorder.js"');
   }, 60000);
 
@@ -46,7 +46,7 @@ describe('Umami replays/heatmaps recorder script', () => {
         PUBLIC_UMAMI_WEBSITE_ID: 'test-website-id',
       },
     });
-    const html = readFileSync('dist/index.html', 'utf-8');
+    const html = readFileSync('dist/client/about/index.html', 'utf-8');
     expect(html).not.toContain('recorder.js');
   }, 60000);
 });
@@ -57,7 +57,7 @@ describe('site header', () => {
   }, 60000);
 
   it('renders the wordmark and links to Home and About', () => {
-    const html = readFileSync('dist/index.html', 'utf-8');
+    const html = readFileSync('dist/client/about/index.html', 'utf-8');
     expect(html).toContain('site-header');
     expect(html).toContain('site-header__nav');
     expect(html).toContain('href="/"');
@@ -65,7 +65,7 @@ describe('site header', () => {
   });
 
   it('renders an accessible mobile nav toggle', () => {
-    const html = readFileSync('dist/index.html', 'utf-8');
+    const html = readFileSync('dist/client/about/index.html', 'utf-8');
     expect(html).toContain('data-nav-toggle');
     expect(html).toContain('aria-label="Toggle navigation"');
     expect(html).toContain('aria-expanded="false"');
@@ -78,14 +78,14 @@ describe('site footer', () => {
   }, 60000);
 
   it('renders the wordmark and copyright line', () => {
-    const html = readFileSync('dist/index.html', 'utf-8');
+    const html = readFileSync('dist/client/about/index.html', 'utf-8');
     const year = new Date().getFullYear();
     expect(html).toContain('site-footer');
     expect(html).toContain(`© ${year} Love Heat Relationship`);
   });
 
   it('links to the legal pages', () => {
-    const html = readFileSync('dist/index.html', 'utf-8');
+    const html = readFileSync('dist/client/about/index.html', 'utf-8');
     expect(html).toContain('href="/privacy-policy/"');
     expect(html).toContain('href="/terms-of-service/"');
     expect(html).toContain('href="/affiliate-disclosure/"');

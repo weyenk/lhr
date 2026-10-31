@@ -8,7 +8,7 @@ describe('privacy policy page', () => {
   }, 60000);
 
   it('renders the Umami analytics disclosure accurately', () => {
-    const html = readFileSync('dist/privacy-policy/index.html', 'utf-8');
+    const html = readFileSync('dist/client/privacy-policy/index.html', 'utf-8');
     expect(html).toContain('Privacy Policy');
     expect(html).toContain('Umami');
     expect(html).toContain('cookieless');
@@ -16,7 +16,7 @@ describe('privacy policy page', () => {
   });
 
   it('links to the affiliate disclosure page', () => {
-    const html = readFileSync('dist/privacy-policy/index.html', 'utf-8');
+    const html = readFileSync('dist/client/privacy-policy/index.html', 'utf-8');
     expect(html).toContain('href="/affiliate-disclosure/"');
   });
 });
