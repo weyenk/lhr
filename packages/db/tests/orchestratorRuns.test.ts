@@ -6,6 +6,9 @@ import {
   getLatestSuccess,
   getRecentRunning,
   getRunHistory,
+  reapOrphanedRunningRuns,
+  ORCHESTRATOR_STALE_RUNNING_MS,
+  ORPHANED_RUN_ERROR_MESSAGE,
 } from '../src/orchestratorRuns';
 import type { Queryable } from '../src/client';
 
@@ -109,5 +112,25 @@ describe('getRunHistory', () => {
     const result = await getRunHistory(db, 'recipe-variant-generator', 5);
     expect(result).toEqual([mappedRow, mappedRow]);
     expect(db.query).toHaveBeenCalledWith(expect.any(String), ['recipe-variant-generator', 5]);
+  });
+});
+
+describe('reapOrphanedRunningRuns', () => {
+  it('marks stale running rows as failure and returns how many were reaped', async () => {
+    const db = fakeDb([{ id: 82 }, { id: 3 }]);
+    const count = await reapOrphanedRunningRuns(db, ORCHESTRATOR_STALE_RUNNING_MS);
+    expect(count).toBe(2);
+    expect(db.query).toHaveBeenCalledWith(
+      expect.stringMatching(/UPDATE orchestrator_runs[\s\S]*status = 'failure'[\s\S]*status = 'running'/),
+      [expect.any(Date), ORPHANED_RUN_ERROR_MESSAGE],
+    );
+    const cutoff = (db.query.mock.calls[0] as unknown[])[1] as [Date, string];
+    expect(Date.now() - cutoff[0].getTime()).toBeGreaterThanOrEqual(ORCHESTRATOR_STALE_RUNNING_MS - 50);
+    expect(cutoff[1]).toBe(ORPHANED_RUN_ERROR_MESSAGE);
+  });
+
+  it('returns 0 when nothing is stale', async () => {
+    const db = fakeDb([]);
+    expect(await reapOrphanedRunningRuns(db, ORCHESTRATOR_STALE_RUNNING_MS)).toBe(0);
   });
 });

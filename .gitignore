@@ -10,3 +10,4 @@ src/env/
 .vercel
 .env*
 .worktrees/
+.DS_Store

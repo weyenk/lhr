@@ -1,4 +1,4 @@
-import { getPool } from '@lhr/db';
+import { getPool, reapOrphanedRunningRuns, ORCHESTRATOR_STALE_RUNNING_MS } from '@lhr/db';
 import { createApp } from '../src/server.js';
 
 const missing = ['DATABASE_URL', 'SUPABASE_JWT_SECRET'].filter((name) => !process.env[name]);
@@ -25,8 +25,14 @@ if (!process.env.KEEPA_API_KEY || !process.env.AMAZON_ASSOCIATES_TAG) {
 }
 
 const port = Number(process.env.PORT ?? 3001);
+const db = getPool();
 
-createApp(getPool()).listen(port, () => {
+const reaped = await reapOrphanedRunningRuns(db, ORCHESTRATOR_STALE_RUNNING_MS);
+if (reaped > 0) {
+  console.log(`[dev] reaped ${reaped} orphaned orchestrator run(s) left as status=running`);
+}
+
+createApp(db).listen(port, () => {
   console.log(`\nlhr-office running locally: http://localhost:${port}/`);
   console.log('Sign in with a Supabase Auth user for this project (create one in the Supabase dashboard if needed).');
   if (process.env.GITHUB_TOKEN) {

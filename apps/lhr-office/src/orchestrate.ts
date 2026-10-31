@@ -1,9 +1,15 @@
 import type { Queryable } from '@lhr/db';
-import { getLatestSuccess, getRecentRunning, insertRunningRow, finishRun, failRun } from '@lhr/db';
+import {
+  getLatestSuccess,
+  getRecentRunning,
+  insertRunningRow,
+  finishRun,
+  failRun,
+  reapOrphanedRunningRuns,
+  ORCHESTRATOR_STALE_RUNNING_MS,
+} from '@lhr/db';
 import type { JobRegistration } from '@lhr/jobs';
 import { isDue, selectMostOverdue } from '@lhr/jobs';
-
-const OVERLAP_WINDOW_MS = 10 * 60 * 1000;
 
 export type OrchestrationOutcome =
   | { outcome: 'nothing-due' }
@@ -11,6 +17,8 @@ export type OrchestrationOutcome =
   | { outcome: 'ran'; job: string; status: 'success' | 'partial' | 'failure'; summary: string };
 
 export async function runDueJob(db: Queryable, registry: JobRegistration[]): Promise<OrchestrationOutcome> {
+  await reapOrphanedRunningRuns(db, ORCHESTRATOR_STALE_RUNNING_MS);
+
   const now = new Date();
   const lastSuccessAt = new Map<string, Date | null>();
   const due: JobRegistration[] = [];
@@ -35,11 +43,12 @@ export async function runJobNow(
 ): Promise<OrchestrationOutcome | null> {
   const job = registry.find((candidate) => candidate.name === jobName);
   if (!job) return null;
+  await reapOrphanedRunningRuns(db, ORCHESTRATOR_STALE_RUNNING_MS);
   return runIfNotOverlapping(db, job);
 }
 
 async function runIfNotOverlapping(db: Queryable, job: JobRegistration): Promise<OrchestrationOutcome> {
-  const running = await getRecentRunning(db, job.name, OVERLAP_WINDOW_MS);
+  const running = await getRecentRunning(db, job.name, ORCHESTRATOR_STALE_RUNNING_MS);
   if (running) return { outcome: 'skipped', job: job.name, reason: 'already-running' };
 
   const id = await insertRunningRow(db, job.name);

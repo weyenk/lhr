@@ -1,6 +1,11 @@
 import type { Queryable } from './client.js';
 import type { OrchestratorRun, RunStatus } from './types.js';
 
+/** Matches the orchestrator overlap window: running rows older than this are treated as crashed. */
+export const ORCHESTRATOR_STALE_RUNNING_MS = 10 * 60 * 1000;
+
+export const ORPHANED_RUN_ERROR_MESSAGE = 'orphaned: process exited before finish';
+
 type RawRun = {
   id: number;
   job_name: string;
@@ -76,4 +81,20 @@ export async function getRunHistory(db: Queryable, jobName: string, limit: numbe
     [jobName, limit],
   );
   return result.rows.map(mapRow);
+}
+
+/** Flip stale `running` rows to `failure` so UI history does not claim they are still in progress. */
+export async function reapOrphanedRunningRuns(
+  db: Queryable,
+  olderThanMs: number = ORCHESTRATOR_STALE_RUNNING_MS,
+): Promise<number> {
+  const cutoff = new Date(Date.now() - olderThanMs);
+  const result = await db.query<{ id: number }>(
+    `UPDATE orchestrator_runs
+     SET status = 'failure', error_message = $2, finished_at = now()
+     WHERE status = 'running' AND started_at < $1
+     RETURNING id`,
+    [cutoff, ORPHANED_RUN_ERROR_MESSAGE],
+  );
+  return result.rows.length;
 }
