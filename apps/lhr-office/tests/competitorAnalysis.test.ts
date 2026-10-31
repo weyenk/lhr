@@ -5,8 +5,10 @@ const dbMock = {
   insertCandidateCompetitor: vi.fn(),
   listCompetitorsByStatus: vi.fn(),
   listKeywords: vi.fn(),
+  listDiscoveryQueries: vi.fn(),
   listRecentCompetitorReports: vi.fn(),
   insertCompetitorReport: vi.fn(),
+  ZERO_OVERLAP_SCORES: { market: 0, content: 0, product: 0, threat: 0 },
 };
 vi.mock('@lhr/db', () => dbMock);
 
@@ -43,11 +45,24 @@ beforeEach(() => {
   dbMock.insertCandidateCompetitor.mockResolvedValue(null);
   dbMock.listCompetitorsByStatus.mockResolvedValue([]);
   dbMock.listKeywords.mockResolvedValue([]);
+  dbMock.listDiscoveryQueries.mockResolvedValue([]);
   dbMock.listRecentCompetitorReports.mockResolvedValue([]);
   dbMock.insertCompetitorReport.mockImplementation(async (_db, report) => ({ id: 1, ...report, generatedAt: new Date() }));
   contentMock.fetchCompetitorPosts.mockResolvedValue({ posts: [], source: 'rss' });
   contentMock.diffNewPosts.mockReturnValue([]);
-  llmMock.callLLM.mockResolvedValue('LLM output');
+  llmMock.callLLM.mockImplementation(async (_messages, options?: { persona?: string }) => {
+    if (options?.persona?.includes('overlap scores')) {
+      return JSON.stringify({
+        market: 60,
+        content: 55,
+        product: 40,
+        threat: 58,
+        decisionBrief: 'Moderate overlap; useful CTA lessons, low commerce threat.',
+        suggestedActions: ['Borrow category-tile browsing for one-pot posts'],
+      });
+    }
+    return 'LLM output';
+  });
   // Default homepage fetch (used by the inline fetchHomepageText helper, which has no module
   // boundary of its own to mock) succeeds by default so a "clean cycle" test doesn't depend on
   // real network reachability of a fake competitor domain. Individual tests below override this
@@ -176,6 +191,12 @@ describe('analyzeCompetitors', () => {
       async (messages: { role: string; content: string }[], options?: { persona?: string }) => {
         const persona = options?.persona ?? '';
         const userContent = messages[messages.length - 1].content;
+        if (persona.includes('overlap scores')) {
+          return JSON.stringify({
+            market: 50, content: 50, product: 50, threat: 50,
+            decisionBrief: 'Brief', suggestedActions: ['Act'],
+          });
+        }
         if (persona.includes('monetization and product strategy')) return 'Sells a $40 cast-iron pan.';
         if (persona.includes('layout, prominent calls-to-action')) return 'Grid homepage with a shop CTA.';
         if (persona.includes('describe what substantively changed')) return 'Added a new spatula set.';
@@ -237,6 +258,12 @@ describe('analyzeCompetitors', () => {
       async (messages: { role: string; content: string }[], options?: { persona?: string }) => {
         const persona = options?.persona ?? '';
         const userContent = messages[messages.length - 1].content;
+        if (persona.includes('overlap scores')) {
+          return JSON.stringify({
+            market: 50, content: 50, product: 50, threat: 50,
+            decisionBrief: 'Brief', suggestedActions: ['Act'],
+          });
+        }
         if (persona.includes('monetization and product strategy')) return 'Sells a $55 stand mixer.';
         if (persona.includes('layout, prominent calls-to-action')) return 'Minimalist homepage with a shop CTA.';
         if (persona.includes('describe what substantively changed')) return 'Diff output text.';
@@ -264,7 +291,14 @@ describe('analyzeCompetitors', () => {
 
   it('writes the placeholder summary when the synthesis LLM call fails, but keeps the report', async () => {
     dbMock.listCompetitorsByStatus.mockResolvedValue([trackedCompetitor]);
-    llmMock.callLLM.mockImplementation(async (messages: { content: string }[]) => {
+    llmMock.callLLM.mockImplementation(async (messages: { content: string }[], options?: { persona?: string }) => {
+      if (options?.persona?.includes('overlap scores')) {
+        return JSON.stringify({
+          market: 10, content: 10, product: 10, threat: 10,
+          decisionBrief: 'Thin evidence after summary failure.',
+          suggestedActions: [],
+        });
+      }
       const isSynthesis = messages.some((m) => m.content.includes('New content'));
       if (isSynthesis) throw new Error('OpenRouter down');
       return 'snapshot text';
@@ -274,6 +308,50 @@ describe('analyzeCompetitors', () => {
 
     const report = dbMock.insertCompetitorReport.mock.calls[0][1];
     expect(report.summary).toBe('[Summary generation failed this cycle]');
+    expect(result.status).toBe('partial');
+  });
+
+  it('writes overlap scores, decision brief, and suggested actions from the packaging LLM call', async () => {
+    dbMock.listCompetitorsByStatus.mockResolvedValue([trackedCompetitor]);
+
+    await analyzeCompetitors();
+
+    const report = dbMock.insertCompetitorReport.mock.calls[0][1];
+    expect(report.overlapScores).toEqual({ market: 60, content: 55, product: 40, threat: 58 });
+    expect(report.decisionBrief).toBe('Moderate overlap; useful CTA lessons, low commerce threat.');
+    expect(report.suggestedActions).toEqual(['Borrow category-tile browsing for one-pot posts']);
+  });
+
+  it('fail-softs decision packaging when the packaging LLM call fails, but keeps the report', async () => {
+    dbMock.listCompetitorsByStatus.mockResolvedValue([trackedCompetitor]);
+    llmMock.callLLM.mockImplementation(async (messages: { content: string }[], options?: { persona?: string }) => {
+      if (options?.persona?.includes('overlap scores')) throw new Error('Airlie down');
+      if (messages.some((m) => m.content.includes('New content'))) return 'Weekly summary text.';
+      return 'snapshot text';
+    });
+
+    const result = await analyzeCompetitors();
+
+    const report = dbMock.insertCompetitorReport.mock.calls[0][1];
+    expect(report.summary).toBe('Weekly summary text.');
+    expect(report.overlapScores).toEqual({ market: 0, content: 0, product: 0, threat: 0 });
+    expect(report.decisionBrief).toBe('[Decision brief failed this cycle]');
+    expect(report.suggestedActions).toEqual([]);
+    expect(result.status).toBe('partial');
+  });
+
+  it('fail-softs decision packaging when the packaging JSON is invalid', async () => {
+    dbMock.listCompetitorsByStatus.mockResolvedValue([trackedCompetitor]);
+    llmMock.callLLM.mockImplementation(async (messages: { content: string }[], options?: { persona?: string }) => {
+      if (options?.persona?.includes('overlap scores')) return 'not json at all';
+      if (messages.some((m) => m.content.includes('New content'))) return 'Weekly summary text.';
+      return 'snapshot text';
+    });
+
+    const result = await analyzeCompetitors();
+
+    const report = dbMock.insertCompetitorReport.mock.calls[0][1];
+    expect(report.decisionBrief).toBe('[Decision brief failed this cycle]');
     expect(result.status).toBe('partial');
   });
 

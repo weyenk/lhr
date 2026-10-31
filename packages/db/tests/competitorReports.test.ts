@@ -13,6 +13,9 @@ const newReport: NewCompetitorReport = {
   monetizationSnapshot: 'Sells a $40 cast-iron pan; runs Amazon affiliate links in most posts.',
   designSnapshot: 'Grid homepage, prominent "Shop the kitchen" CTA above the fold.',
   summary: 'Published one new post this week; no monetization or design changes.',
+  overlapScores: { market: 72, content: 68, product: 55, threat: 78 },
+  decisionBrief: 'Closest mainstream lifestyle-recipe neighbor; watch shop drops.',
+  suggestedActions: ['Double down on gluten-free POV', 'Watch shop SKUs vs active set'],
 };
 
 const reportRow = {
@@ -25,6 +28,9 @@ const reportRow = {
   monetization_snapshot: newReport.monetizationSnapshot,
   design_snapshot: newReport.designSnapshot,
   summary: newReport.summary,
+  overlap_scores: newReport.overlapScores,
+  decision_brief: newReport.decisionBrief,
+  suggested_actions: newReport.suggestedActions,
 };
 
 beforeEach(() => {
@@ -45,10 +51,16 @@ describe('insertCompetitorReport', () => {
         newReport.monetizationSnapshot,
         newReport.designSnapshot,
         newReport.summary,
+        JSON.stringify(newReport.overlapScores),
+        newReport.decisionBrief,
+        JSON.stringify(newReport.suggestedActions),
       ],
     );
     expect(result.summary).toBe(newReport.summary);
     expect(result.newContent).toEqual(newReport.newContent);
+    expect(result.overlapScores).toEqual(newReport.overlapScores);
+    expect(result.decisionBrief).toBe(newReport.decisionBrief);
+    expect(result.suggestedActions).toEqual(newReport.suggestedActions);
   });
 });
 

@@ -31,6 +31,15 @@ function mapRow(row: CompetitorRow): Competitor {
   };
 }
 
+/** Strip protocol/www/path so "https://www.Foo.com/x" and "foo.com" collide on UNIQUE(domain). */
+export function normalizeCompetitorDomain(input: string): string {
+  let domain = input.trim().toLowerCase();
+  domain = domain.replace(/^https?:\/\//, '');
+  domain = domain.replace(/^www\./, '');
+  domain = domain.split(/[/?#]/)[0] ?? '';
+  return domain.replace(/\.$/, '');
+}
+
 export async function insertCandidateCompetitor(
   db: Queryable,
   domain: string,
@@ -41,6 +50,29 @@ export async function insertCandidateCompetitor(
     [domain, name],
   );
   return result.rows[0] ? mapRow(result.rows[0]) : null;
+}
+
+/** Manual add from the office: create as tracked, or re-track if the domain already exists. */
+export async function upsertTrackedCompetitor(
+  db: Queryable,
+  domainInput: string,
+  name: string | null = null,
+): Promise<Competitor> {
+  const domain = normalizeCompetitorDomain(domainInput);
+  if (!domain || !domain.includes('.')) {
+    throw new Error('Enter a valid domain (e.g. example.com)');
+  }
+  const result = await db.query<CompetitorRow>(
+    `INSERT INTO competitors (domain, name, status, approved_at)
+     VALUES ($1, $2, 'tracked', now())
+     ON CONFLICT (domain) DO UPDATE
+       SET status = 'tracked',
+           approved_at = COALESCE(competitors.approved_at, now()),
+           name = COALESCE(EXCLUDED.name, competitors.name)
+     RETURNING *`,
+    [domain, name],
+  );
+  return mapRow(result.rows[0]);
 }
 
 export async function listCompetitorsByStatus(db: Queryable, status: CompetitorStatus): Promise<Competitor[]> {

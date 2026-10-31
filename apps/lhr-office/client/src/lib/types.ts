@@ -35,11 +35,41 @@ export interface AffiliateCandidate {
 
 export type TrendCategory = 'web-design' | 'cooking' | 'nutrition';
 
+export interface TrendsTopicUsed {
+  topic: string;
+  source: 'curated' | 'suggested';
+}
+
+export interface TrendsRelatedQuery {
+  query: string;
+  value: string;
+}
+
+export interface TrendsTopicInterest {
+  direction: 'rising' | 'falling' | 'flat';
+  topQueries: TrendsRelatedQuery[];
+  risingQueries: TrendsRelatedQuery[];
+}
+
+export interface TrendsTopicFinding {
+  topic: string;
+  source: 'curated' | 'suggested';
+  interest: TrendsTopicInterest;
+}
+
+export interface TrendsRawFindings {
+  topics?: TrendsTopicFinding[];
+  trendingNow?: { query: string; searchVolume: number | null; increasePercentage: number | null }[];
+}
+
 export interface TrendsReport {
   id: number;
   cycleId: string;
   category: TrendCategory;
   summary: string;
+  generatedAt?: string;
+  topicsUsed?: TrendsTopicUsed[];
+  rawFindings?: TrendsRawFindings;
 }
 
 export interface TrendSeedTopic {
@@ -47,6 +77,7 @@ export interface TrendSeedTopic {
   category: TrendCategory;
   topic: string;
   status: 'curated' | 'candidate';
+  timesSeen?: number;
 }
 
 export interface TrendsResponse {
@@ -61,11 +92,37 @@ export interface Competitor {
   status: 'candidate' | 'tracked' | 'rejected';
 }
 
+export interface OverlapScores {
+  market: number;
+  content: number;
+  product: number;
+  threat: number;
+}
+
+export interface CompetitorPostSummary {
+  title: string;
+  url: string;
+  publishedAt: string | null;
+}
+
+export interface SeoPositionEntry {
+  keyword: string;
+  position: number | null;
+}
+
 export interface CompetitorReport {
   id: number;
   competitorId: number;
   cycleId: string;
+  generatedAt?: string | Date;
+  newContent: CompetitorPostSummary[];
+  seoPositions: SeoPositionEntry[];
+  monetizationSnapshot: string;
+  designSnapshot: string;
   summary: string;
+  overlapScores: OverlapScores;
+  decisionBrief: string;
+  suggestedActions: string[];
 }
 
 export interface CompetitorsResponse {
@@ -77,6 +134,11 @@ export interface CompetitorsResponse {
 export interface CompetitorSeoKeyword {
   id: number;
   keyword: string;
+}
+
+export interface CompetitorDiscoveryQuery {
+  id: number;
+  query: string;
 }
 
 export type BridgeJob = {

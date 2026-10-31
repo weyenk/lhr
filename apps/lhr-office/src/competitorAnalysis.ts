@@ -5,11 +5,14 @@ import {
   insertCandidateCompetitor,
   listCompetitorsByStatus,
   listKeywords,
+  listDiscoveryQueries,
   listRecentCompetitorReports,
   insertCompetitorReport,
+  ZERO_OVERLAP_SCORES,
   type Competitor,
   type SeoPositionEntry,
   type NewCompetitorReport,
+  type OverlapScores,
 } from '@lhr/db';
 import { fetchSearchResults } from './serpapiSearch.js';
 import { fetchCompetitorPosts, diffNewPosts, type CompetitorPost } from './competitorContent.js';
@@ -24,23 +27,31 @@ function requireEnv(name: string): string {
 const REQUEST_TIMEOUT_MS = 10_000;
 const UNREACHABLE_NOTE = 'unreachable this cycle';
 const SUMMARY_FAILURE_PLACEHOLDER = '[Summary generation failed this cycle]';
+const DECISION_BRIEF_FAILURE_PLACEHOLDER = '[Decision brief failed this cycle]';
 const CONTENT_BASELINE_CYCLES = 10;
 const MAX_TEXT_CHARS = 6000;
 
-// A small, curated, non-auto-expanding list of niche-discovery queries.
-const DISCOVERY_QUERIES: readonly string[] = [
+/** Used only when `competitor_discovery_queries` is empty (fresh DB before seed/UI edits). */
+export const DEFAULT_DISCOVERY_QUERIES: readonly string[] = [
   'gluten free recipe blog',
   'kitchenware affiliate roundup',
   'comfort food recipe blog',
   'best kitchen gadgets blog',
 ];
 
+async function discoveryQueriesForRun(db: Queryable): Promise<string[]> {
+  const rows = await listDiscoveryQueries(db);
+  if (rows.length > 0) return rows.map((r) => r.query);
+  return [...DEFAULT_DISCOVERY_QUERIES];
+}
+
 async function discoverCandidates(db: Queryable): Promise<{ discovered: number; failedQueries: string[] }> {
   const seenThisRun = new Set<string>();
   let discovered = 0;
   const failedQueries: string[] = [];
+  const queries = await discoveryQueriesForRun(db);
 
-  for (const query of DISCOVERY_QUERIES) {
+  for (const query of queries) {
     let results;
     try {
       results = await fetchSearchResults(query);
@@ -114,15 +125,67 @@ const DIFF_PERSONA =
 const WEEKLY_SUMMARY_PERSONA =
   'Synthesize this week\'s changes for a tracked competitor into a short "what changed this week" summary (2-4 sentences), covering new content, SEO positions, monetization, and design where notable. Skip dimensions with no notable change.';
 
+const DECISION_PACKAGING_PERSONA =
+  'Produce overlap scores and a decision brief for Love Heat Relationship (LHR) — a personal gluten-free / relationship-food recipe blog with kitchenware affiliate sets on ~26-post / 6-month cadence — vs one competitor. Reply with ONLY a JSON object (no markdown fences) of shape: {"market":0-100,"content":0-100,"product":0-100,"threat":0-100,"decisionBrief":"2-4 sentences for the author","suggestedActions":["1-5 concrete LHR-side actions"]}. market=shared audience/niche, content=editorial similarity, product=commerce/affiliate posture vs LHR kitchenware affiliates, threat=urgency to respond this cycle (blend of the three plus SEO presence and change intensity). Never invent traffic, revenue, or MAU. If a dimension is unreachable this cycle, lean on any prior snapshots provided and note thin evidence in decisionBrief.';
+
+/** Per-call budget so a wedged Airlie worker cannot leave competitor-analysis polling forever. */
+const LLM_CALL_BUDGET_MS = 3 * 60 * 1000;
+
+export type DecisionPackaging = {
+  overlapScores: OverlapScores;
+  decisionBrief: string;
+  suggestedActions: string[];
+};
+
+function clampScore(value: unknown): number | null {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return null;
+  const n = Math.round(value);
+  if (n < 0 || n > 100) return null;
+  return n;
+}
+
+/** Exported for unit tests — parses packaging LLM JSON into validated fields. */
+export function parseDecisionPackaging(raw: string): DecisionPackaging {
+  const trimmed = raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
+  const parsed: unknown = JSON.parse(trimmed);
+  if (!parsed || typeof parsed !== 'object') throw new Error('decision packaging is not an object');
+  const obj = parsed as Record<string, unknown>;
+  const market = clampScore(obj.market);
+  const content = clampScore(obj.content);
+  const product = clampScore(obj.product);
+  const threat = clampScore(obj.threat);
+  if (market === null || content === null || product === null || threat === null) {
+    throw new Error('decision packaging scores must be integers 0-100');
+  }
+  if (typeof obj.decisionBrief !== 'string' || !obj.decisionBrief.trim()) {
+    throw new Error('decision packaging missing decisionBrief');
+  }
+  if (!Array.isArray(obj.suggestedActions) || !obj.suggestedActions.every((a) => typeof a === 'string')) {
+    throw new Error('decision packaging suggestedActions must be a string array');
+  }
+  const suggestedActions = obj.suggestedActions.map((a) => a.trim()).filter(Boolean).slice(0, 5);
+  return {
+    overlapScores: { market, content, product, threat },
+    decisionBrief: obj.decisionBrief.trim(),
+    suggestedActions,
+  };
+}
+
+function llmDeadline(): number {
+  return Date.now() + LLM_CALL_BUDGET_MS;
+}
+
 async function summarizeMonetization(domain: string, pageText: string): Promise<string> {
   return callLLM([{ role: 'user', content: `Homepage text for ${domain}:\n\n${pageText}` }], {
     persona: MONETIZATION_PERSONA,
+    deadline: llmDeadline(),
   });
 }
 
 async function summarizeDesign(domain: string, pageText: string): Promise<string> {
   return callLLM([{ role: 'user', content: `Homepage text for ${domain}:\n\n${pageText}` }], {
     persona: DESIGN_PERSONA,
+    deadline: llmDeadline(),
   });
 }
 
@@ -130,7 +193,7 @@ async function diffSnapshot(previous: string | null, current: string): Promise<s
   if (previous === null) return `Initial snapshot: ${current}`;
   return callLLM(
     [{ role: 'user', content: `Previous snapshot:\n${previous}\n\nCurrent snapshot:\n${current}` }],
-    { persona: DIFF_PERSONA },
+    { persona: DIFF_PERSONA, deadline: llmDeadline() },
   );
 }
 
@@ -214,7 +277,7 @@ async function buildCompetitorReport(
           ].join('\n'),
         },
       ],
-      { persona: WEEKLY_SUMMARY_PERSONA },
+      { persona: WEEKLY_SUMMARY_PERSONA, deadline: llmDeadline() },
     );
   } catch (err) {
     console.warn(`[competitors] synthesis LLM call failed for ${competitor.domain}.`, err);
@@ -222,8 +285,53 @@ async function buildCompetitorReport(
     hadIssue = true;
   }
 
+  let overlapScores = ZERO_OVERLAP_SCORES;
+  let decisionBrief = DECISION_BRIEF_FAILURE_PLACEHOLDER;
+  let suggestedActions: string[] = [];
+  try {
+    const packagingRaw = await callLLM(
+      [
+        {
+          role: 'user',
+          content: [
+            `Competitor: ${competitor.domain}`,
+            `Weekly change summary: ${summary}`,
+            `New content: ${contentDescriptor}`,
+            `SEO positions: ${JSON.stringify(seoPositions)}`,
+            `Current monetization snapshot: ${monetizationSnapshot}`,
+            `Prior monetization snapshot (if any): ${monetizationBaseline ?? 'none'}`,
+            `Current design snapshot: ${designSnapshot}`,
+            `Prior design snapshot (if any): ${designBaseline ?? 'none'}`,
+          ].join('\n'),
+        },
+      ],
+      { persona: DECISION_PACKAGING_PERSONA, deadline: llmDeadline() },
+    );
+    const packaging = parseDecisionPackaging(packagingRaw);
+    overlapScores = packaging.overlapScores;
+    decisionBrief = packaging.decisionBrief;
+    suggestedActions = packaging.suggestedActions;
+  } catch (err) {
+    console.warn(`[competitors] decision packaging failed for ${competitor.domain}.`, err);
+    overlapScores = ZERO_OVERLAP_SCORES;
+    decisionBrief = DECISION_BRIEF_FAILURE_PLACEHOLDER;
+    suggestedActions = [];
+    hadIssue = true;
+  }
+
   return {
-    report: { competitorId: competitor.id, cycleId, newContent, seoPositions, monetizationSnapshot, designSnapshot, summary },
+    report: {
+      competitorId: competitor.id,
+      cycleId,
+      newContent,
+      seoPositions,
+      monetizationSnapshot,
+      designSnapshot,
+      summary,
+      overlapScores,
+      decisionBrief,
+      suggestedActions,
+    },
     hadIssue,
   };
 }
