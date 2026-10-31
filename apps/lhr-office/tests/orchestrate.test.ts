@@ -2,20 +2,25 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import type { JobRegistration } from '@lhr/jobs';
 import type { Queryable } from '@lhr/db';
 
+const STALE_MS = 10 * 60 * 1000;
+
 const db = {
   getLatestSuccess: vi.fn(),
   getRecentRunning: vi.fn(),
   insertRunningRow: vi.fn(),
   finishRun: vi.fn(),
   failRun: vi.fn(),
+  reapOrphanedRunningRuns: vi.fn(),
 };
 
 vi.mock('@lhr/db', () => ({
+  ORCHESTRATOR_STALE_RUNNING_MS: STALE_MS,
   getLatestSuccess: (...args: unknown[]) => db.getLatestSuccess(...args),
   getRecentRunning: (...args: unknown[]) => db.getRecentRunning(...args),
   insertRunningRow: (...args: unknown[]) => db.insertRunningRow(...args),
   finishRun: (...args: unknown[]) => db.finishRun(...args),
   failRun: (...args: unknown[]) => db.failRun(...args),
+  reapOrphanedRunningRuns: (...args: unknown[]) => db.reapOrphanedRunningRuns(...args),
 }));
 
 const { runDueJob, runJobNow } = await import('../src/orchestrate');
@@ -31,6 +36,7 @@ beforeEach(() => {
   db.getLatestSuccess.mockResolvedValue(null);
   db.getRecentRunning.mockResolvedValue(null);
   db.insertRunningRow.mockResolvedValue(1);
+  db.reapOrphanedRunningRuns.mockResolvedValue(0);
 });
 
 describe('runDueJob', () => {
@@ -39,12 +45,14 @@ describe('runDueJob', () => {
     const outcome = await runDueJob(fakeDb, [job('a', vi.fn())]);
     expect(outcome).toEqual({ outcome: 'nothing-due' });
     expect(db.insertRunningRow).not.toHaveBeenCalled();
+    expect(db.reapOrphanedRunningRuns).toHaveBeenCalledWith(fakeDb, STALE_MS);
   });
 
   it('runs the only due job and records success', async () => {
     const run = vi.fn().mockResolvedValue({ status: 'success', summary: 'did the thing' });
     const outcome = await runDueJob(fakeDb, [job('a', run)]);
     expect(run).toHaveBeenCalledOnce();
+    expect(db.reapOrphanedRunningRuns).toHaveBeenCalledWith(fakeDb, STALE_MS);
     expect(db.insertRunningRow).toHaveBeenCalledWith(fakeDb, 'a');
     expect(db.finishRun).toHaveBeenCalledWith(fakeDb, 1, 'success', 'did the thing');
     expect(outcome).toEqual({ outcome: 'ran', job: 'a', status: 'success', summary: 'did the thing' });
@@ -95,6 +103,7 @@ describe('runJobNow', () => {
     const run = vi.fn().mockResolvedValue({ status: 'success', summary: 'manual run' });
     const outcome = await runJobNow(fakeDb, [job('a', run)], 'a');
     expect(run).toHaveBeenCalledOnce();
+    expect(db.reapOrphanedRunningRuns).toHaveBeenCalledWith(fakeDb, STALE_MS);
     expect(outcome).toEqual({ outcome: 'ran', job: 'a', status: 'success', summary: 'manual run' });
   });
 
@@ -104,5 +113,10 @@ describe('runJobNow', () => {
     const outcome = await runJobNow(fakeDb, [job('a', run)], 'a');
     expect(run).not.toHaveBeenCalled();
     expect(outcome).toEqual({ outcome: 'skipped', job: 'a', reason: 'already-running' });
+  });
+
+  it('does not reap when the job name is unknown', async () => {
+    await runJobNow(fakeDb, [job('a', vi.fn())], 'nope');
+    expect(db.reapOrphanedRunningRuns).not.toHaveBeenCalled();
   });
 });
