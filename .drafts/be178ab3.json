@@ -1,0 +1,55 @@
+{
+  "kind": "post",
+  "postType": "recipe",
+  "title": "Padron peppers",
+  "ingredients": [
+    {
+      "item": "Olive Oil",
+      "amount": "1 tablespoon"
+    },
+    {
+      "item": "Padron peppers",
+      "amount": "500g"
+    }
+  ],
+  "steps": [
+    "step 1",
+    "Heat the olive oil in a large frying pan over a high heat, or if using an air-fryer, heat to 205C for 3 mins. Fry the peppers, stirring frequently, for 5 mins until blistered and wilted. The peppers should be soft and slightly charred.",
+    "step 2",
+    "Transfer the peppers to a serving plate and season with some sea salt. Serve with dips or as part of a tapas spread, if you like."
+  ],
+  "sections": [],
+  "photos": [
+    {
+      "url": "https://www.themealdb.com/images/media/meals/0ljvc51763248075.jpg",
+      "caption": "Padron peppers"
+    }
+  ],
+  "kitchenwareIds": [],
+  "affiliateLinkIds": [],
+  "pendingAffiliateLinks": [],
+  "pendingIngredientLinks": [],
+  "variants": [
+    {
+      "diet": "original",
+      "ingredients": [
+        {
+          "item": "Olive Oil",
+          "amount": "1 tablespoon"
+        },
+        {
+          "item": "Padron peppers",
+          "amount": "500g"
+        }
+      ],
+      "steps": [
+        "step 1",
+        "Heat the olive oil in a large frying pan over a high heat, or if using an air-fryer, heat to 205C for 3 mins. Fry the peppers, stirring frequently, for 5 mins until blistered and wilted. The peppers should be soft and slightly charred.",
+        "step 2",
+        "Transfer the peppers to a serving plate and season with some sea salt. Serve with dips or as part of a tapas spread, if you like."
+      ]
+    }
+  ],
+  "sourceMealDbId": "53150",
+  "narrativeBody": "There is a particular kind of magic in a basket of padrón peppers. They look so unassuming—small, glossy, a little wrinkled, like something that wandered in from a village square in Galicia—but a few minutes under high heat turns them into something tender, smoky, and quietly dramatic. You can almost hear the tapas bar around you: the hiss of oil, the clink of glasses, someone laughing about which pepper is going to be the spicy one.\n\nI love them because they don’t ask for much. A little olive oil, a pinch of flaky salt, and enough patience to let the skins blister until they go soft and slightly charred. Most of them are gentle, sweet, and a little grassy. The occasional one catches you off guard with a bright, peppery bite, and that little surprise is half the fun.\n\nThey’re the kind of dish that makes a kitchen feel like a place worth lingering in—easy enough for a weeknight, elegant enough for a table full of people, and completely vegan without anyone having to be told. Serve them warm, with a glass of something cold, and let them disappear one by one."
+}
