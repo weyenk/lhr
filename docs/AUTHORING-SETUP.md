@@ -56,13 +56,9 @@ committed) if present, or falls back to whatever's already in your shell if it's
 
 - `GITHUB_TOKEN` — a GitHub personal access token with repo write access (same token used by
   `npm run backfill:ingredient-links`).
-- `OPENROUTER_API_KEY` — an OpenRouter API key (free tier is sufficient). By default the script
-  sends a fallback chain of three free models across three different upstream providers (Google
-  AI Studio, NVIDIA, Z.ai — see `DEFAULT_MODELS` in `mcp-server/src/openrouter.ts`), so OpenRouter
-  automatically tries the next one if one provider's shared free pool is rate-limited. Set
-  `OPENROUTER_MODEL` to force a single specific model instead (bypasses the fallback chain
-  entirely) — check `https://openrouter.ai/api/v1/models` for current `:free` slugs; OpenRouter
-  has retired free model slugs before without notice.
+- `AIRLIE_HUB_URL` / `AIRLIE_HUB_TENANT_KEY` — Airlie Job Bus credentials. Recipe LLM steps go
+  through `@lhr/llm` (hub kind `llm`); Mac-side `task serve` + `task bridge` must be running for
+  jobs to complete. See `docs/DEPLOYMENT.md` (Airlie Job Bus section).
 
 Run it manually with:
 

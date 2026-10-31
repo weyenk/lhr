@@ -35,6 +35,15 @@ async function readConstitution(client: GitHubClient): Promise<string> {
   return file?.content ?? '';
 }
 
+async function readContentStrategistPersona(client: GitHubClient): Promise<string> {
+  const file = await getFile(client, '.claude/agents/content-strategist.md', 'main');
+  const body = file?.content?.trim();
+  if (!body) {
+    throw new Error('Missing .claude/agents/content-strategist.md for trends LLM persona');
+  }
+  return body;
+}
+
 async function readRecentPostTitles(client: GitHubClient, limit: number): Promise<string[]> {
   const filenames = await listFiles(client, 'src/content/posts', 'main');
   const titles: string[] = [];
@@ -51,21 +60,17 @@ async function readRecentPostTitles(client: GitHubClient, limit: number): Promis
   return titles;
 }
 
+const SUGGEST_TOPICS_PERSONA =
+  'You suggest search topics for a Google Trends watch list. Reply with a JSON array of ' +
+  `up to ${SUGGESTIONS_PER_CATEGORY} short topic strings, nothing else.`;
+
 async function suggestAdjacentTopics(category: TrendCategory, curated: string[]): Promise<string[]> {
-  const reply = await callLLM([
-    {
-      role: 'system',
-      content:
-        'You suggest search topics for a Google Trends watch list. Reply with a JSON array of ' +
-        `up to ${SUGGESTIONS_PER_CATEGORY} short topic strings, nothing else.`,
-    },
-    {
-      role: 'user',
-      content:
-        `Category: ${category}\nCurrent curated topics: ${curated.length ? curated.join(', ') : '(none yet)'}\n` +
-        `Suggest up to ${SUGGESTIONS_PER_CATEGORY} adjacent topics worth trying this cycle.`,
-    },
-  ]);
+  const prompt =
+    `Category: ${category}\nCurrent curated topics: ${curated.length ? curated.join(', ') : '(none yet)'}\n` +
+    `Suggest up to ${SUGGESTIONS_PER_CATEGORY} adjacent topics worth trying this cycle.`;
+  const reply = await callLLM([{ role: 'user', content: prompt }], {
+    persona: SUGGEST_TOPICS_PERSONA,
+  });
   try {
     const parsed = JSON.parse(reply) as unknown;
     if (!Array.isArray(parsed)) return [];
@@ -81,6 +86,7 @@ async function synthesizeSummary(params: {
   trendingNow: TrendingNowItem[];
   constitution: string;
   recentPostTitles: string[];
+  persona: string;
 }): Promise<string> {
   const findingsText =
     params.findings
@@ -92,23 +98,16 @@ async function synthesizeSummary(params: {
       .join('\n') || '(no topic data succeeded this cycle)';
   const trendingText = params.trendingNow.map((t) => `- ${t.query}`).join('\n') || '(none)';
 
+  const prompt =
+    `Write a short "what is worth knowing this week" summary for a recipe site owner, given ` +
+    `raw Google Trends signal for one category. Flag both what already aligns with her existing ` +
+    `content and what she does not cover yet. Two to four sentences.\n\n` +
+    `Category: ${params.category}\n\nSite principles:\n${params.constitution}\n\n` +
+    `Recent post titles:\n${params.recentPostTitles.join('\n') || '(none)'}\n\n` +
+    `This cycle's topic findings:\n${findingsText}\n\nWildcard trending-now items:\n${trendingText}`;
+
   try {
-    return await callLLM([
-      {
-        role: 'system',
-        content:
-          'You write a short "what is worth knowing this week" summary for a recipe site owner, given ' +
-          'raw Google Trends signal for one category. Flag both what already aligns with her existing ' +
-          'content and what she does not cover yet. Two to four sentences.',
-      },
-      {
-        role: 'user',
-        content:
-          `Category: ${params.category}\n\nSite principles:\n${params.constitution}\n\n` +
-          `Recent post titles:\n${params.recentPostTitles.join('\n') || '(none)'}\n\n` +
-          `This cycle's topic findings:\n${findingsText}\n\nWildcard trending-now items:\n${trendingText}`,
-      },
-    ]);
+    return await callLLM([{ role: 'user', content: prompt }], { persona: params.persona });
   } catch {
     return SUMMARY_FAILURE_PLACEHOLDER;
   }
@@ -121,6 +120,7 @@ export async function sourceWeeklyTrends(): Promise<JobResult> {
 
   const cycleId = new Date().toISOString().slice(0, 10);
   const constitution = await readConstitution(client);
+  const summaryPersona = await readContentStrategistPersona(client);
   const recentPostTitles = await readRecentPostTitles(client, RECENT_POST_LIMIT);
 
   const partialCategories: string[] = [];
@@ -177,7 +177,14 @@ export async function sourceWeeklyTrends(): Promise<JobResult> {
       await upsertSuggestedTopic(pool, category, topic);
     }
 
-    const summary = await synthesizeSummary({ category, findings, trendingNow, constitution, recentPostTitles });
+    const summary = await synthesizeSummary({
+      category,
+      findings,
+      trendingNow,
+      constitution,
+      recentPostTitles,
+      persona: summaryPersona,
+    });
     if (summary === SUMMARY_FAILURE_PLACEHOLDER || hadTopicFailure) {
       partialCategories.push(category);
     }

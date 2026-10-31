@@ -8,20 +8,21 @@ export interface NarrativeSource {
 
 const FALLBACK_NARRATIVE = '[Narrative draft pending — auto-generation failed]';
 
+const NARRATIVE_PERSONA =
+  'You write a short, story-style intro (2-4 paragraphs) for a recipe blog post, in a warm, ' +
+  'personal, first-person voice. Do not include a title or headings, just the narrative prose.';
+
 export async function generateNarrative(source: NarrativeSource): Promise<string> {
   try {
-    const content = await callLLM([
-      {
-        role: 'system',
-        content:
-          'You write a short, story-style intro (2-4 paragraphs) for a recipe blog post, in a warm, ' +
-          'personal, first-person voice. Do not include a title or headings, just the narrative prose.',
-      },
-      {
-        role: 'user',
-        content: `Recipe: "${source.title}"\nCuisine/region: ${source.cuisine}\nCategory: ${source.category}`,
-      },
-    ]);
+    const content = await callLLM(
+      [
+        {
+          role: 'user',
+          content: `Recipe: "${source.title}"\nCuisine/region: ${source.cuisine}\nCategory: ${source.category}`,
+        },
+      ],
+      { persona: NARRATIVE_PERSONA },
+    );
     const trimmed = content.trim();
     return trimmed.length > 0 ? trimmed : FALLBACK_NARRATIVE;
   } catch (err) {

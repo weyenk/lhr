@@ -76,7 +76,8 @@ beforeEach(() => {
   state = makeFakeGitHub();
   vi.clearAllMocks();
   process.env.GITHUB_TOKEN = 'test-token';
-  process.env.OPENROUTER_API_KEY = 'test-key';
+  process.env.AIRLIE_HUB_URL = 'https://hub.example/api/v1';
+  process.env.AIRLIE_HUB_TENANT_KEY = 'test-tenant-key';
 });
 
 describe('pendingDiets', () => {

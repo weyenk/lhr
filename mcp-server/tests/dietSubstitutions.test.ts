@@ -117,14 +117,20 @@ describe('deadline propagation', () => {
     callLLM.mockResolvedValue('roasted beet slices');
     const deadline = Date.now() + 60_000;
     await substituteIngredient({ item: 'Smoked salmon' }, 'vegan', deadline);
-    expect(callLLM).toHaveBeenCalledWith(expect.anything(), { deadline });
+    expect(callLLM).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ deadline, persona: expect.any(String) }),
+    );
   });
 
   it('rewriteSteps forwards the deadline to its LLM call', async () => {
     callLLM.mockResolvedValue('["Brown the plant-based meat."]');
     const deadline = Date.now() + 60_000;
     await rewriteSteps(['Brown the beef.'], [{ from: 'beef', to: 'plant-based meat' }], 'vegan', deadline);
-    expect(callLLM).toHaveBeenCalledWith(expect.anything(), { deadline });
+    expect(callLLM).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ deadline, persona: expect.any(String) }),
+    );
   });
 
   it('generateVariant forwards the deadline through to every LLM call it makes', async () => {
@@ -132,7 +138,7 @@ describe('deadline propagation', () => {
     const deadline = Date.now() + 60_000;
     await generateVariant('vegan', [{ item: 'Smoked salmon' }], ['Grill the salmon.'], deadline);
     for (const call of callLLM.mock.calls) {
-      expect(call[1]).toEqual({ deadline });
+      expect(call[1]).toEqual(expect.objectContaining({ deadline, persona: expect.any(String) }));
     }
   });
 });

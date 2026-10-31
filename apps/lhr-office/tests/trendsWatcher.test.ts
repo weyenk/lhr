@@ -38,7 +38,15 @@ beforeEach(() => {
     firstSeenAt: new Date(), lastSeenAt: new Date(), promotedAt: null,
   }));
   dbMock.insertTrendsReport.mockImplementation(async (_db, report) => ({ id: 1, ...report, generatedAt: new Date() }));
-  githubMock.getFile.mockResolvedValue({ content: '# LHR Constitution\n\n1. Never auto-publish.', sha: 'x' });
+  githubMock.getFile.mockImplementation(async (_client: unknown, path: string) => {
+    if (path === 'docs/CONSTITUTION.md') {
+      return { content: '# LHR Constitution\n\n1. Never auto-publish.', sha: 'x' };
+    }
+    if (path === '.claude/agents/content-strategist.md') {
+      return { content: '---\nname: content-strategist\n---\n\nYou are a content strategist.', sha: 'y' };
+    }
+    return null;
+  });
   githubMock.listFiles.mockResolvedValue([]);
   llmMock.callLLM.mockImplementation(async (messages: { content: string }[]) => {
     const isSuggestionCall = messages.some((m) => m.content.includes('Suggest up to'));

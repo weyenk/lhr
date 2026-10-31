@@ -45,8 +45,8 @@ Manual, one-time setup (outside this repo's code):
      product-in-photo placement) is registered later, one at a time, in its own implementation
      plan, by appending a `JobRegistration` entry to that file — no other change to
      `apps/lhr-office` is needed to add a job. Each agent's own plan is also responsible for adding
-     whatever env vars its pipeline needs (e.g. `OPENROUTER_API_KEY`, `KEEPA_API_KEY`,
-     `SERPAPI_KEY`) to the `apps/lhr-office` Vercel project.
+     whatever env vars its pipeline needs (e.g. `AIRLIE_HUB_URL` / `AIRLIE_HUB_TENANT_KEY` for
+     LLM via the Job Bus, `KEEPA_API_KEY`, `SERPAPI_KEY`) to the `apps/lhr-office` Vercel project.
    - The `affiliate-sourcing` agent specifically needs `KEEPA_API_KEY` (Keepa product-finder API
      key) and `AMAZON_ASSOCIATES_TAG` (the Amazon Associates tracking tag stamped onto approved
      product links) set on the `apps/lhr-office` Vercel project, alongside the `GITHUB_TOKEN` the
@@ -71,6 +71,10 @@ set these **server-only** variables — never `VITE_*` or other client-exposed n
 
 - `AIRLIE_HUB_URL` — e.g. `https://airlie-hub.vercel.app/api/v1`
 - `AIRLIE_HUB_TENANT_KEY` — the `lhr` value from hub `TENANT_SERVICE_KEYS`
+
+These same vars power `@lhr/llm` (cadence jobs and MCP recipe variants): it enqueues hub kind
+`llm` and polls until `done`/`failed`. OpenRouter is not used. Hub must allow `llm` in
+`ALLOWED_KINDS`; oversized personas may need a higher hub `MAX_PAYLOAD_BYTES` (default 64KiB).
 
 Redeploy after changing hub keys. Mac-side `task serve` + `task bridge` (see the Airlie guide)
 are required for jobs to reach `done`.
