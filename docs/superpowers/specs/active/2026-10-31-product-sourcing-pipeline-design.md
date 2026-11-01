@@ -44,9 +44,9 @@ Agents & Jobs / cron
   → [GATE: final Approvals]        # always ON
 ```
 
-**Gating profiles** (office config — env or small DB setting; default `strict`):
+**Gating profiles** (office config — env `PRODUCT_SOURCING_GATING_PROFILE`; default `trust`):
 
-| Gate | `strict` (v1 default) | `trust` (future landing) |
+| Gate | `strict` | `trust` (default) |
 |------|------------------------|---------------------------|
 | After criteria | pause | auto-advance |
 | After search (pick products) | pause | pause |

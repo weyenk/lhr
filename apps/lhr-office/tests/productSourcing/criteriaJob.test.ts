@@ -53,6 +53,8 @@ beforeEach(() => {
 
 describe('runProductSourcingCriteria', () => {
   it('creates a cycle, stores criteria and waits for approval under strict gating', async () => {
+    process.env.PRODUCT_SOURCING_GATING_PROFILE = 'strict';
+
     const result = await runProductSourcingCriteria();
 
     expect(dbMock.createSourcedProductCycle).toHaveBeenCalledWith({ pool: true }, { gatingProfile: 'strict' });
@@ -62,9 +64,7 @@ describe('runProductSourcingCriteria', () => {
     expect(result.status).toBe('success');
   });
 
-  it('auto-approves criteria under trust gating', async () => {
-    process.env.PRODUCT_SOURCING_GATING_PROFILE = 'trust';
-
+  it('defaults to trust and auto-approves criteria when gating env is unset', async () => {
     const result = await runProductSourcingCriteria();
 
     expect(dbMock.createSourcedProductCycle).toHaveBeenCalledWith({ pool: true }, { gatingProfile: 'trust' });

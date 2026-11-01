@@ -14,8 +14,8 @@ describe('readGatingProfile', () => {
     else process.env[ENV_KEY] = original;
   });
 
-  it('defaults to strict when unset', () => {
-    expect(readGatingProfile()).toBe('strict');
+  it('defaults to trust when unset', () => {
+    expect(readGatingProfile()).toBe('trust');
   });
 
   it('reads trust', () => {
@@ -28,9 +28,9 @@ describe('readGatingProfile', () => {
     expect(readGatingProfile()).toBe('strict');
   });
 
-  it('defaults to strict when invalid', () => {
+  it('defaults to trust when invalid', () => {
     process.env[ENV_KEY] = 'yolo';
-    expect(readGatingProfile()).toBe('strict');
+    expect(readGatingProfile()).toBe('trust');
   });
 });
 
