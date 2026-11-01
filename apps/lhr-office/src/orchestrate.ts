@@ -10,6 +10,7 @@ import {
 } from '@lhr/db';
 import type { JobRegistration } from '@lhr/jobs';
 import { isDue, selectMostOverdue } from '@lhr/jobs';
+import { effectiveCadence } from './resolveJobTuning.js';
 
 export type OrchestrationOutcome =
   | { outcome: 'nothing-due' }
@@ -19,6 +20,7 @@ export type OrchestrationOutcome =
 export async function runDueJob(db: Queryable, registry: JobRegistration[]): Promise<OrchestrationOutcome> {
   await reapOrphanedRunningRuns(db, ORCHESTRATOR_STALE_RUNNING_MS);
 
+  const cadences = await effectiveCadence(db, registry);
   const now = new Date();
   const lastSuccessAt = new Map<string, Date | null>();
   const due: JobRegistration[] = [];
@@ -27,7 +29,8 @@ export async function runDueJob(db: Queryable, registry: JobRegistration[]): Pro
     const latest = await getLatestSuccess(db, candidate.name);
     const finishedAt = latest?.finishedAt ?? null;
     lastSuccessAt.set(candidate.name, finishedAt);
-    if (isDue(candidate.cadenceDays, finishedAt, now)) due.push(candidate);
+    const cadenceDays = cadences.get(candidate.name) ?? candidate.cadenceDays;
+    if (isDue(cadenceDays, finishedAt, now)) due.push(candidate);
   }
 
   const selected = selectMostOverdue(due, lastSuccessAt, now);

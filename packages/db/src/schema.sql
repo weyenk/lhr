@@ -224,3 +224,15 @@ CREATE INDEX IF NOT EXISTS sourced_product_candidates_cycle_status_idx
 
 ALTER TABLE sourced_product_cycles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sourced_product_candidates ENABLE ROW LEVEL SECURITY;
+
+-- Per-job author-editable tuning: a cadence-days override (NULL = use the registry default)
+-- and a JSONB map of prose-override text keyed by the prose catalog entry id
+-- (apps/lhr-office/src/jobProseCatalog.ts). One row per job, created on first PATCH.
+CREATE TABLE IF NOT EXISTS job_tuning (
+  job_name TEXT PRIMARY KEY,
+  cadence_days INTEGER,
+  prose_overrides JSONB NOT NULL DEFAULT '{}'::jsonb,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE job_tuning ENABLE ROW LEVEL SECURITY;

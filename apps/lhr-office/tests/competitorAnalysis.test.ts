@@ -21,6 +21,12 @@ vi.mock('../src/competitorContent', () => contentMock);
 const llmMock = { callLLM: vi.fn() };
 vi.mock('@lhr/llm', () => llmMock);
 
+// resolveProse hits the DB (getJobTuning) to look up a prose override; this test suite is not
+// exercising that lookup, so stub it to always fall through to the hardcoded default it's given.
+vi.mock('../src/resolveJobTuning.js', () => ({
+  resolveProse: vi.fn(async (_db: unknown, _jobName: string, _key: string, fallback: string) => fallback),
+}));
+
 const { analyzeCompetitors } = await import('../src/competitorAnalysis');
 
 const originalEnv = { ...process.env };

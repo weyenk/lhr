@@ -13,6 +13,9 @@ import { createGitHubClient } from 'lhr-authoring-mcp-server/dist-lib/github.js'
 import { gateAutoClears } from './gating.js';
 import { loadAgentPersona } from './loadPersona.js';
 import { callLlmJson } from './parseLlmJson.js';
+import { resolveProse } from '../resolveJobTuning.js';
+
+export const PRODUCT_SOURCING_MONETIZE_JOB_NAME = 'product-sourcing-monetize';
 
 export type Verdict = { pass: boolean; rationale: string };
 
@@ -67,16 +70,16 @@ export function describeCandidate(c: SourcedProductCandidate): string {
   return `{"id": ${c.id}, ${JSON.stringify({ title, platform, sourceUrl, moq, unitCostCents, notes }).slice(1)}`;
 }
 
-function buildPrompt(candidates: SourcedProductCandidate[]): string {
-  return (
-    `Judge each shortlisted wholesale product on wholesale sellability only: is there a realistic path to buying it ` +
-    `at wholesale and reselling it profitably (unit cost vs. a plausible retail price, MOQ vs. a small shop's budget, ` +
-    `supplier reliability signals, shipping and fragility)? Do not consider affiliate programs or commissions.\n` +
-    `Use only the facts given; where MOQ or cost is null, say it is unknown rather than guessing.\n\n` +
-    `Reply with JSON only, exactly this shape, with one entry for every candidate id:\n` +
-    `{"results": [{"id": number, "pass": boolean, "rationale": string (one or two sentences)}]}\n\n` +
-    `Candidates:\n${candidates.map(describeCandidate).join('\n')}`
-  );
+export const MONETIZE_TASK_PROMPT =
+  `Judge each shortlisted wholesale product on wholesale sellability only: is there a realistic path to buying it ` +
+  `at wholesale and reselling it profitably (unit cost vs. a plausible retail price, MOQ vs. a small shop's budget, ` +
+  `supplier reliability signals, shipping and fragility)? Do not consider affiliate programs or commissions.\n` +
+  `Use only the facts given; where MOQ or cost is null, say it is unknown rather than guessing.\n\n` +
+  `Reply with JSON only, exactly this shape, with one entry for every candidate id:\n` +
+  `{"results": [{"id": number, "pass": boolean, "rationale": string (one or two sentences)}]}`;
+
+function buildPrompt(instructions: string, candidates: SourcedProductCandidate[]): string {
+  return `${instructions}\n\nCandidates:\n${candidates.map(describeCandidate).join('\n')}`;
 }
 
 export async function runProductSourcingMonetize(): Promise<JobResult> {
@@ -92,14 +95,17 @@ export async function runProductSourcingMonetize(): Promise<JobResult> {
   const persona = await loadAgentPersona(client, PERSONA_PATH);
 
   const candidates = await listSourcedProductCandidates(pool, cycle.id, 'picked');
-  const verdicts =
-    candidates.length === 0
-      ? new Map<number, Verdict>()
-      : await callLlmJson(
-          [{ role: 'user', content: buildPrompt(candidates) }],
-          { persona },
-          verdictParser(candidates.map((c) => c.id)),
-        );
+  let verdicts: Map<number, Verdict>;
+  if (candidates.length === 0) {
+    verdicts = new Map<number, Verdict>();
+  } else {
+    const instructions = await resolveProse(pool, PRODUCT_SOURCING_MONETIZE_JOB_NAME, 'monetize', MONETIZE_TASK_PROMPT);
+    verdicts = await callLlmJson(
+      [{ role: 'user', content: buildPrompt(instructions, candidates) }],
+      { persona },
+      verdictParser(candidates.map((c) => c.id)),
+    );
+  }
 
   const autoClear = gateAutoClears(cycle.gatingProfile, 'monetize');
   let passed = 0;
