@@ -273,14 +273,31 @@ export function Approvals() {
         <QueueEmpty />
       ) : (
         <ul className="decision-list">
-          {competitorCandidates.map((c) => (
-            <DecisionRow
-              key={c.id}
-              title={c.domain}
-              primary={{ label: 'Approve', onClick: () => runAction(() => apiFetch(`/api/competitors/${c.id}/approve`, { method: 'POST' }), competitors.refetch) }}
-              secondary={{ label: 'Reject', onClick: () => runAction(() => apiFetch(`/api/competitors/${c.id}/reject`, { method: 'POST' }), competitors.refetch) }}
-            />
-          ))}
+          {competitorCandidates.map((c) => {
+            const title = c.name?.trim() || c.domain;
+            const matchBits = [
+              c.name?.trim() ? c.domain : null,
+              c.discoveryQuery ? `Found via: ${c.discoveryQuery}` : null,
+            ].filter(Boolean);
+            return (
+              <DecisionRow
+                key={c.id}
+                title={title}
+                meta={matchBits.length > 0 ? matchBits.join(' · ') : undefined}
+                link={{ label: 'Website', href: `https://${c.domain}`, ariaLabel: `Website ${c.domain}` }}
+                primary={{
+                  label: 'Approve',
+                  tone: 'approve',
+                  onClick: () => runAction(() => apiFetch(`/api/competitors/${c.id}/approve`, { method: 'POST' }), competitors.refetch),
+                }}
+                secondary={{
+                  label: 'Reject',
+                  tone: 'reject',
+                  onClick: () => runAction(() => apiFetch(`/api/competitors/${c.id}/reject`, { method: 'POST' }), competitors.refetch),
+                }}
+              />
+            );
+          })}
         </ul>
       );
   }

@@ -15,6 +15,7 @@ const competitorRow = {
   id: 1,
   domain: 'example-recipes.com',
   name: null,
+  discovery_query: null,
   status: 'candidate',
   discovered_at: new Date('2026-09-06T00:00:00Z'),
   approved_at: null,
@@ -30,22 +31,27 @@ describe('insertCandidateCompetitor', () => {
     const result = await insertCandidateCompetitor(db as never, 'example-recipes.com');
     expect(db.query).toHaveBeenCalledWith(
       expect.stringContaining('ON CONFLICT (domain) DO NOTHING'),
-      ['example-recipes.com', null],
+      ['example-recipes.com', null, null],
     );
     expect(result).toEqual({
       id: 1,
       domain: 'example-recipes.com',
       name: null,
+      discoveryQuery: null,
       status: 'candidate',
       discoveredAt: competitorRow.discovered_at,
       approvedAt: null,
     });
   });
 
-  it('passes through an optional name', async () => {
-    const db = mockDb([{ ...competitorRow, name: 'Example Recipes' }]);
-    await insertCandidateCompetitor(db as never, 'example-recipes.com', 'Example Recipes');
-    expect(db.query).toHaveBeenCalledWith(expect.any(String), ['example-recipes.com', 'Example Recipes']);
+  it('passes through optional name and discovery query', async () => {
+    const db = mockDb([{ ...competitorRow, name: 'Example Recipes', discovery_query: 'gluten free recipe blog' }]);
+    await insertCandidateCompetitor(db as never, 'example-recipes.com', 'Example Recipes', 'gluten free recipe blog');
+    expect(db.query).toHaveBeenCalledWith(expect.any(String), [
+      'example-recipes.com',
+      'Example Recipes',
+      'gluten free recipe blog',
+    ]);
   });
 
   it('returns null when the domain already exists (safe no-op)', async () => {

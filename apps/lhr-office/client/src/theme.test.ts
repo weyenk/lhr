@@ -28,7 +28,15 @@ describe('theme.css', () => {
 });
 
 describe('approvals workshop styles', () => {
-  it.each(['.approvals-workshop', '.decision-row', '.queue-empty', '.tab-count'])('styles %s', (selector) => {
+  it.each([
+    '.approvals-workshop',
+    '.decision-row',
+    '.queue-empty',
+    '.tab-count',
+    '.decision-action-approve',
+    '.decision-action-reject',
+    '.decision-action-link',
+  ])('styles %s', (selector) => {
     expect(css).toContain(selector);
   });
 

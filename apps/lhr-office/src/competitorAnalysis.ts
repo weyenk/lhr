@@ -64,7 +64,7 @@ async function discoverCandidates(db: Queryable): Promise<{ discovered: number; 
     for (const result of results) {
       if (seenThisRun.has(result.domain)) continue;
       seenThisRun.add(result.domain);
-      const inserted = await insertCandidateCompetitor(db, result.domain);
+      const inserted = await insertCandidateCompetitor(db, result.domain, result.title, query);
       if (inserted) discovered += 1;
     }
   }

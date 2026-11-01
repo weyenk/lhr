@@ -37,7 +37,20 @@ function mockData() {
     if (path === '/api/sourced-products/cycle') return sourcedState;
     if (path === '/api/candidates/recipe') return { id: 'cand1', record: { status: 'pending', source: { idMeal: '1', title: 'Teriyaki Chicken', cuisine: 'Japanese', category: 'Chicken' } } };
     if (path === '/api/candidates/affiliate') return [{ id: 1, title: 'Cast Iron Skillet' }];
-    if (path === '/api/competitors') return { tracked: [], candidates: [{ id: 9, domain: 'other.com' }], latestReportsByCompetitorId: {} };
+    if (path === '/api/competitors') {
+      return {
+        tracked: [],
+        candidates: [
+          {
+            id: 9,
+            domain: 'other.com',
+            name: 'Other Kitchen Blog',
+            discoveryQuery: 'gluten free recipe blog',
+          },
+        ],
+        latestReportsByCompetitorId: {},
+      };
+    }
     return { ok: true };
   });
 }
@@ -114,7 +127,7 @@ describe('Approvals', () => {
     it('defaults to the first type with pending work when recipe is empty', async () => {
       mockEmptyExcept('competitors');
       render(<Approvals />);
-      expect(await screen.findByText('other.com')).toBeInTheDocument();
+      expect(await screen.findByText('Other Kitchen Blog')).toBeInTheDocument();
       expect(screen.getByRole('tab', { name: /Competitors/ })).toHaveAttribute('aria-selected', 'true');
     });
 
@@ -141,7 +154,7 @@ describe('Approvals', () => {
       expect(screen.getByText('Cast Iron Skillet')).toBeInTheDocument();
       expect(screen.queryByText(/Teriyaki Chicken/)).not.toBeInTheDocument();
       fireEvent.click(screen.getByRole('tab', { name: /Competitors/ }));
-      expect(screen.getByText('other.com')).toBeInTheDocument();
+      expect(screen.getByText('Other Kitchen Blog')).toBeInTheDocument();
       expect(screen.queryByText('Cast Iron Skillet')).not.toBeInTheDocument();
     });
 
@@ -172,6 +185,39 @@ describe('Approvals', () => {
       await waitFor(() => expect(apiFetchMock).toHaveBeenCalledWith('/api/competitors/9/approve', { method: 'POST' }));
       fireEvent.click(screen.getByRole('button', { name: 'Reject' }));
       await waitFor(() => expect(apiFetchMock).toHaveBeenCalledWith('/api/competitors/9/reject', { method: 'POST' }));
+    });
+
+    it('shows site name as the title with domain and discovery context underneath', async () => {
+      render(<Approvals />);
+      fireEvent.click(await screen.findByRole('tab', { name: /Competitors/ }));
+      expect(await screen.findByText('Other Kitchen Blog')).toBeInTheDocument();
+      expect(screen.getByText(/other\.com · Found via: gluten free recipe blog/)).toBeInTheDocument();
+      const website = screen.getByRole('link', { name: /Website other\.com/i });
+      expect(website).toHaveAttribute('href', 'https://other.com');
+      expect(website).toHaveAttribute('target', '_blank');
+      expect(website).toHaveClass('decision-action-link');
+      expect(screen.getByRole('button', { name: 'Approve' })).toHaveClass('decision-action-approve');
+      expect(screen.getByRole('button', { name: 'Reject' })).toHaveClass('decision-action-reject');
+    });
+
+    it('falls back to the domain as the title when no site name is stored', async () => {
+      apiFetchMock.mockImplementation(async (path: string) => {
+        if (path === '/api/sourced-products/cycle') return { cycle: null, candidates: [] };
+        if (path === '/api/candidates/recipe') return null;
+        if (path === '/api/candidates/affiliate') return [];
+        if (path === '/api/competitors') {
+          return {
+            tracked: [],
+            candidates: [{ id: 9, domain: 'other.com', name: null, discoveryQuery: 'kitchenware affiliate roundup' }],
+            latestReportsByCompetitorId: {},
+          };
+        }
+        return { ok: true };
+      });
+      render(<Approvals />);
+      fireEvent.click(await screen.findByRole('tab', { name: /Competitors/ }));
+      expect(await screen.findByText('other.com')).toBeInTheDocument();
+      expect(screen.getByText(/Found via: kitchenware affiliate roundup/)).toBeInTheDocument();
     });
   });
 

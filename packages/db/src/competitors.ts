@@ -6,6 +6,8 @@ export interface Competitor {
   id: number;
   domain: string;
   name: string | null;
+  /** SerpApi discovery query that first surfaced this domain; null for manual adds / pre-feature rows. */
+  discoveryQuery: string | null;
   status: CompetitorStatus;
   discoveredAt: Date;
   approvedAt: Date | null;
@@ -15,6 +17,7 @@ type CompetitorRow = {
   id: number;
   domain: string;
   name: string | null;
+  discovery_query: string | null;
   status: CompetitorStatus;
   discovered_at: Date;
   approved_at: Date | null;
@@ -25,6 +28,7 @@ function mapRow(row: CompetitorRow): Competitor {
     id: row.id,
     domain: row.domain,
     name: row.name,
+    discoveryQuery: row.discovery_query ?? null,
     status: row.status,
     discoveredAt: row.discovered_at,
     approvedAt: row.approved_at,
@@ -44,10 +48,11 @@ export async function insertCandidateCompetitor(
   db: Queryable,
   domain: string,
   name: string | null = null,
+  discoveryQuery: string | null = null,
 ): Promise<Competitor | null> {
   const result = await db.query<CompetitorRow>(
-    `INSERT INTO competitors (domain, name) VALUES ($1, $2) ON CONFLICT (domain) DO NOTHING RETURNING *`,
-    [domain, name],
+    `INSERT INTO competitors (domain, name, discovery_query) VALUES ($1, $2, $3) ON CONFLICT (domain) DO NOTHING RETURNING *`,
+    [domain, name, discoveryQuery],
   );
   return result.rows[0] ? mapRow(result.rows[0]) : null;
 }

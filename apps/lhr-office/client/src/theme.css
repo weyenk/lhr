@@ -168,14 +168,55 @@ body {
   font-size: 13px;
 }
 
-.approvals-workshop .decision-row-meta a {
-  color: var(--accent);
-}
-
 .approvals-workshop .decision-row-actions {
   display: flex;
   gap: var(--space-1);
   flex-shrink: 0;
+  align-items: center;
+}
+
+.approvals-workshop .decision-row-actions button,
+.approvals-workshop .decision-row-actions .decision-action-link {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: transparent;
+  color: #E6E9EF;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.approvals-workshop .decision-row-actions button:hover,
+.approvals-workshop .decision-row-actions .decision-action-link:hover {
+  border-color: #3A4656;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.approvals-workshop .decision-row-actions .decision-action-approve {
+  color: var(--success);
+  border-color: color-mix(in srgb, var(--success) 55%, var(--border));
+}
+
+.approvals-workshop .decision-row-actions .decision-action-approve:hover {
+  background: color-mix(in srgb, var(--success) 14%, transparent);
+  border-color: var(--success);
+}
+
+.approvals-workshop .decision-row-actions .decision-action-reject {
+  color: var(--error);
+  border-color: color-mix(in srgb, var(--error) 55%, var(--border));
+}
+
+.approvals-workshop .decision-row-actions .decision-action-reject:hover {
+  background: color-mix(in srgb, var(--error) 14%, transparent);
+  border-color: var(--error);
 }
 
 .approvals-workshop .queue-empty {

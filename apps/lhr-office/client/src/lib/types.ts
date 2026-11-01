@@ -89,6 +89,7 @@ export interface Competitor {
   id: number;
   domain: string;
   name: string | null;
+  discoveryQuery?: string | null;
   status: 'candidate' | 'tracked' | 'rejected';
 }
 

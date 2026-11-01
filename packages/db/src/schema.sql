@@ -79,10 +79,14 @@ CREATE TABLE IF NOT EXISTS competitors (
   id SERIAL PRIMARY KEY,
   domain TEXT NOT NULL UNIQUE,
   name TEXT,
+  -- SerpApi discovery query that first surfaced this domain (null for manual adds / legacy rows).
+  discovery_query TEXT,
   status TEXT NOT NULL DEFAULT 'candidate',  -- 'candidate' | 'tracked' | 'rejected'
   discovered_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   approved_at TIMESTAMPTZ
 );
+
+ALTER TABLE competitors ADD COLUMN IF NOT EXISTS discovery_query TEXT;
 
 CREATE TABLE IF NOT EXISTS competitor_seo_keywords (
   id SERIAL PRIMARY KEY,
