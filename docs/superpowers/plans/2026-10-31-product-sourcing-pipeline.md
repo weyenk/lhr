@@ -14,7 +14,7 @@
 
 - **No Amazon affiliate / Keepa** in this pipeline; do not register `affiliate-sourcing`.
 - **Final Approve/Deny = decision only** — no Shopify write, no `src/content/products` commit.
-- **Gating profile:** env `PRODUCT_SOURCING_GATING_PROFILE` = `strict` | `trust` (default `strict` if unset/invalid). Snapshotted onto each cycle at create time; never mutate mid-cycle.
+- **Gating profile:** env `PRODUCT_SOURCING_GATING_PROFILE` = `strict` | `trust` (default `trust` if unset/invalid; set `strict` for every-stage gates). Snapshotted onto each cycle at create time; never mutate mid-cycle.
 - **Gate matrix:** after criteria — pause in `strict`, auto in `trust`; after search (pick products) — always pause; after monetize — pause in `strict`, auto in `trust`; final Approvals — always pause.
 - **Cadence:** `product-sourcing-criteria` `cadenceDays: 7`; `product-sourcing-search`, `product-sourcing-monetize`, `product-sourcing-brand` each `cadenceDays: 1` (daily cron picks up work after gates clear, same idea as `recipe-variant-finisher`).
 - **SerpAPI caps per search job run:** max **6** queries, **8** organic results per query; default platforms `alibaba.com` and `dhgate.com` unless criteria JSON lists others.
