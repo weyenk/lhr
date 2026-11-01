@@ -33,6 +33,17 @@ describe('jobs registry', () => {
     expect(job?.run).toBeTypeOf('function');
   });
 
+  it.each([
+    ['product-sourcing-criteria', 7],
+    ['product-sourcing-search', 1],
+    ['product-sourcing-monetize', 1],
+    ['product-sourcing-brand', 1],
+  ])('registers the %s job on a %i-day cadence', (name, cadenceDays) => {
+    const job = jobs.find((j) => j.name === name);
+    expect(job).toMatchObject({ cadenceDays });
+    expect(job?.run).toBeTypeOf('function');
+  });
+
   it('is always shape-valid', () => {
     expect(() => validateJobRegistrations(jobs)).not.toThrow();
   });
