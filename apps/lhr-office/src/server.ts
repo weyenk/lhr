@@ -14,6 +14,7 @@ import {
 } from './routes/candidates.js';
 import { createTrendsRouter } from './routes/trends.js';
 import { createCompetitorsRouter } from './routes/competitors.js';
+import { createSourcedProductsRouter } from './routes/sourcedProducts.js';
 import { createAuthoringRouter } from './routes/authoring.js';
 import { createBridgeRouter } from './routes/bridge.js';
 import { clientAssets as defaultClientAssets, type ClientAsset } from './clientAssets.generated.js';
@@ -58,6 +59,7 @@ export function createApp(
   app.use('/api/candidates', requireSupabaseAuth, createCandidatesRouter(candidates, affiliateCandidates));
   app.use('/api/trends', requireSupabaseAuth, createTrendsRouter(db));
   app.use('/api/competitors', requireSupabaseAuth, createCompetitorsRouter(db));
+  app.use('/api/sourced-products', requireSupabaseAuth, createSourcedProductsRouter(db));
   app.use('/api/authoring', requireSupabaseAuth, createAuthoringRouter(db));
   app.use('/api/bridge', requireSupabaseAuth, createBridgeRouter());
 

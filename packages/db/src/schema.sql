@@ -177,3 +177,46 @@ CREATE INDEX IF NOT EXISTS post_drafts_author_sub_updated_at_idx
 ALTER TABLE posts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE post_drafts ENABLE ROW LEVEL SECURITY;
 
+
+-- Product-sourcing pipeline: one cycle per sourcing round, with candidates
+-- moving through criteria -> search -> monetize -> brand -> final approval.
+CREATE TABLE IF NOT EXISTS sourced_product_cycles (
+  id SERIAL PRIMARY KEY,
+  started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  status TEXT NOT NULL,
+  criteria_json JSONB,
+  criteria_approved_at TIMESTAMPTZ,
+  gating_profile TEXT NOT NULL,
+  closed_at TIMESTAMPTZ
+);
+
+CREATE TABLE IF NOT EXISTS sourced_product_candidates (
+  id SERIAL PRIMARY KEY,
+  cycle_id INTEGER NOT NULL REFERENCES sourced_product_cycles(id),
+  title TEXT NOT NULL,
+  image_url TEXT,
+  source_url TEXT NOT NULL,
+  platform TEXT NOT NULL,
+  moq TEXT,
+  unit_cost_cents INTEGER,
+  notes TEXT,
+  status TEXT NOT NULL DEFAULT 'sourced',
+  monetize_pass BOOLEAN,
+  monetize_rationale TEXT,
+  brand_pass BOOLEAN,
+  brand_rationale TEXT,
+  decided_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS sourced_product_candidates_cycle_source_url_key
+  ON sourced_product_candidates (cycle_id, source_url);
+
+CREATE INDEX IF NOT EXISTS sourced_product_cycles_status_idx
+  ON sourced_product_cycles (status);
+
+CREATE INDEX IF NOT EXISTS sourced_product_candidates_cycle_status_idx
+  ON sourced_product_candidates (cycle_id, status);
+
+ALTER TABLE sourced_product_cycles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sourced_product_candidates ENABLE ROW LEVEL SECURITY;

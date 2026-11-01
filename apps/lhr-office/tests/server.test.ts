@@ -185,9 +185,9 @@ describe('/api/* auth', () => {
     expect(res.status).toBe(200);
   });
 
-  it('rejects GET /api/candidates/recipe, /api/trends, and /api/competitors with no token', async () => {
+  it('rejects GET /api/candidates/recipe, /api/trends, /api/competitors, and /api/sourced-products/cycle with no token', async () => {
     const app = createApp(fakeDb, [], noCandidates, noAffiliateCandidates);
-    for (const path of ['/api/candidates/recipe', '/api/trends', '/api/competitors']) {
+    for (const path of ['/api/candidates/recipe', '/api/trends', '/api/competitors', '/api/sourced-products/cycle']) {
       const res = await request(app).get(path);
       expect(res.status).toBe(401);
     }
