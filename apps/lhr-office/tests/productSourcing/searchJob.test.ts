@@ -40,6 +40,7 @@ function hit(n: number, domain = 'alibaba.com') {
 beforeEach(() => {
   vi.clearAllMocks();
   process.env.GITHUB_TOKEN = 'test-token';
+  process.env.SERPAPI_KEY = 'test-serpapi-key';
   dbMock.getOpenSourcedProductCycle.mockResolvedValue(cycle('searching'));
   dbMock.insertSourcedProductCandidate.mockImplementation(async (_db, c) => ({ id: 1, ...c }));
   githubMock.getFile.mockResolvedValue({ content: 'You are a sourcing scout.', sha: 'a' });
@@ -48,17 +49,29 @@ beforeEach(() => {
 });
 
 describe('runProductSourcingSearch', () => {
-  it.each(['drafting_criteria', 'awaiting_criteria_approval', 'awaiting_product_picks', 'monetizing'])(
-    'is blocked without mutation when the open cycle is %s',
+  it.each(['drafting_criteria', 'monetizing', 'branding'])(
+    'is blocked as cycle not searching when the open cycle is %s',
     async (status) => {
       dbMock.getOpenSourcedProductCycle.mockResolvedValue(cycle(status));
 
       const result = await runProductSourcingSearch();
 
-      expect(result.status).toBe('success');
-      expect(result.summary).toMatch(/^blocked/);
+      expect(result).toEqual({ status: 'success', summary: 'blocked: cycle not searching' });
       expect(serpMock.fetchSearchResults).not.toHaveBeenCalled();
       expect(dbMock.insertSourcedProductCandidate).not.toHaveBeenCalled();
+      expect(dbMock.setCycleStatus).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(['awaiting_criteria_approval', 'awaiting_product_picks', 'awaiting_monetize_approval', 'awaiting_final'])(
+    'is blocked waiting for gate when the open cycle is %s',
+    async (status) => {
+      dbMock.getOpenSourcedProductCycle.mockResolvedValue(cycle(status));
+
+      const result = await runProductSourcingSearch();
+
+      expect(result).toEqual({ status: 'success', summary: 'blocked: waiting for gate' });
+      expect(serpMock.fetchSearchResults).not.toHaveBeenCalled();
       expect(dbMock.setCycleStatus).not.toHaveBeenCalled();
     },
   );
@@ -68,7 +81,7 @@ describe('runProductSourcingSearch', () => {
 
     const result = await runProductSourcingSearch();
 
-    expect(result.summary).toMatch(/^blocked/);
+    expect(result).toEqual({ status: 'success', summary: 'blocked: no open cycle' });
     expect(serpMock.fetchSearchResults).not.toHaveBeenCalled();
   });
 
@@ -179,6 +192,14 @@ describe('runProductSourcingSearch', () => {
 
     await expect(runProductSourcingSearch()).rejects.toThrow('GITHUB_TOKEN');
     expect(dbMock.setCycleStatus).not.toHaveBeenCalled();
+  });
+
+  it('throws without mutating when SERPAPI_KEY is missing', async () => {
+    delete process.env.SERPAPI_KEY;
+
+    await expect(runProductSourcingSearch()).rejects.toThrow(/SERPAPI_KEY/);
+    expect(dbMock.setCycleStatus).not.toHaveBeenCalled();
+    expect(serpMock.fetchSearchResults).not.toHaveBeenCalled();
   });
 
   it('leaves the cycle in searching when a SerpAPI query fails', async () => {

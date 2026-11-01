@@ -5,6 +5,7 @@ import {
   insertSourcedProductCandidate,
   setCycleStatus,
   type NewSourcedProductCandidate,
+  type SourcedProductCycle,
 } from '@lhr/db';
 import { createGitHubClient } from 'lhr-authoring-mcp-server/dist-lib/github.js';
 import { fetchSearchResults, type SearchResultItem } from '../serpapiSearch.js';
@@ -17,7 +18,21 @@ const MAX_QUERIES = 6;
 const RESULTS_PER_QUERY = 8;
 const DEFAULT_PLATFORMS = ['alibaba.com', 'dhgate.com'];
 
-const BLOCKED_NOT_SEARCHING: JobResult = { status: 'success', summary: 'blocked: no cycle in searching' };
+const BLOCKED_NO_OPEN_CYCLE: JobResult = { status: 'success', summary: 'blocked: no open cycle' };
+const BLOCKED_WAITING_FOR_GATE: JobResult = { status: 'success', summary: 'blocked: waiting for gate' };
+const BLOCKED_CYCLE_NOT_SEARCHING: JobResult = { status: 'success', summary: 'blocked: cycle not searching' };
+
+function blockedSearchResult(cycle: SourcedProductCycle): JobResult {
+  switch (cycle.status) {
+    case 'awaiting_criteria_approval':
+    case 'awaiting_product_picks':
+    case 'awaiting_monetize_approval':
+    case 'awaiting_final':
+      return BLOCKED_WAITING_FOR_GATE;
+    default:
+      return BLOCKED_CYCLE_NOT_SEARCHING;
+  }
+}
 
 type Annotation = { notes: string | null; moq: string | null; unitCostCents: number | null };
 
@@ -87,9 +102,11 @@ export async function runProductSourcingSearch(): Promise<JobResult> {
   const pool = getPool();
 
   const cycle = await getOpenSourcedProductCycle(pool);
-  if (!cycle || cycle.status !== 'searching') return BLOCKED_NOT_SEARCHING;
+  if (!cycle) return BLOCKED_NO_OPEN_CYCLE;
+  if (cycle.status !== 'searching') return blockedSearchResult(cycle);
 
   const criteria = readCriteria(cycle.criteriaJson);
+  requireEnv('SERPAPI_KEY');
   const client = createGitHubClient(requireEnv('GITHUB_TOKEN'));
   const persona = await loadAgentPersona(client, PERSONA_PATH);
 
