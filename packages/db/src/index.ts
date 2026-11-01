@@ -13,3 +13,5 @@ export * from './competitorDiscoveryQueries.js';
 export * from './competitorReports.js';
 export * from './posts.js';
 export * from './postDrafts.js';
+export * from './sourcedProductCycles.js';
+export * from './sourcedProductCandidates.js';
