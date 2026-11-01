@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>lhr office — interactive concept mockups</title>
+  <style>
+    :root {
+      --bg: #151B23;
+      --surface: #1B2430;
+      --surface-2: #222C3A;
+      --border: #2A3542;
+      --accent: #3FC7E0;
+      --accent-dim: rgba(63, 199, 224, 0.15);
+      --warning: #E0B93F;
+      --success: #4CAF7D;
+      --error: #E0574F;
+      --text: #E6E9EF;
+      --muted: #8B95A5;
+      --font: -apple-system, "Segoe UI", sans-serif;
+      --mono: ui-monospace, "SF Mono", Menlo, monospace;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      min-height: 100vh;
+    }
+    .chooser {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: rgba(21, 27, 35, 0.92);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px;
+    }
+    .chooser h1 {
+      margin: 0 0 4px;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    .chooser p {
+      margin: 0 0 14px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .tabs button {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font: inherit;
+      font-size: 13px;
+      text-align: left;
+      transition: border-color 0.15s, background 0.15s, transform 0.15s;
+      max-width: 280px;
+    }
+    .tabs button:hover { border-color: var(--accent); transform: translateY(-1px); }
+    .tabs button.active {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+      color: var(--accent);
+    }
+    .tabs button strong { display: block; margin-bottom: 2px; }
+    .tabs button span { color: var(--muted); font-size: 12px; }
+    .tabs button.active span { color: rgba(63, 199, 224, 0.75); }
+
+    .stage { display: none; padding: 24px; max-width: 1280px; margin: 0 auto; }
+    .stage.visible { display: block; animation: fadeIn 0.35s ease; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: none; }
+    }
+    .pitch {
+      margin-bottom: 20px;
+      padding: 14px 16px;
+      border-left: 3px solid var(--accent);
+      background: var(--surface);
+      border-radius: 0 8px 8px 0;
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--muted);
+    }
+    .pitch strong { color: var(--text); }
+
+    /* Shared shell chrome */
+    .shell {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      min-height: 640px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--bg);
+      box-shadow: 0 24px 60px rgba(0,0,0,0.35);
+    }
+    .nav {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 16px 12px;
+    }
+    .brand {
+      font-weight: 600;
+      font-size: 13px;
+      margin-bottom: 20px;
+      padding: 0 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .brand i {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-dim);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 3px var(--accent-dim); }
+      50% { box-shadow: 0 0 0 6px transparent; }
+    }
+    .nav a {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      border-radius: 6px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+    .nav a.on { background: var(--border); color: var(--accent); }
+    .badge {
+      background: var(--error);
+      color: white;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 999px;
+    }
+    .main { padding: 20px 24px; position: relative; overflow: hidden; }
+    .hint {
+      margin-top: 14px;
+      font-size: 12px;
+      color: var(--muted);
+      font-family: var(--mono);
+    }
+
+    /* ========== A: Decision Desk ========== */
+    .desk-layout {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 16px;
+      height: 100%;
+    }
+    .card-stack { position: relative; min-height: 420px; }
+    .decision-card {
+      position: absolute;
+      inset: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.4s cubic-bezier(.2,.8,.2,1), opacity 0.35s, border-color 0.2s;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+    }
+    .decision-card.behind-1 { transform: translateY(10px) scale(0.98); opacity: 0.55; z-index: 1; pointer-events: none; }
+    .decision-card.behind-2 { transform: translateY(20px) scale(0.96); opacity: 0.3; z-index: 0; pointer-events: none; }
+    .decision-card.front { z-index: 3; }
+    .decision-card.fly-right { transform: translateX(120%) rotate(6deg); opacity: 0; }
+    .decision-card.fly-left { transform: translateX(-120%) rotate(-6deg); opacity: 0; }
+    .decision-card.fly-up { transform: translateY(-40%) scale(0.9); opacity: 0; }
+    .tag {
+      display: inline-block;
+      font-size: 11px;
+      font-family: var(--mono);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: var(--accent-dim);
+      padding: 4px 8px;
+      border-radius: 4px;
+      margin-bottom: 12px;
+      width: fit-content;
+    }
+    .decision-card h2 { margin: 0 0 8px; font-size: 22px; }
+    .meta { color: var(--muted); font-size: 13px; margin-bottom: 16px; }
+    .preview-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 16px;
+      flex: 1;
+    }
+    .photo-block {
+      background: linear-gradient(145deg, #2A3542 0%, #1B2430 60%, #243040 100%);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      min-height: 160px;
+      display: flex;
+      align-items: flex-end;
+      padding: 12px;
+      color: var(--muted);
+      font-size: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+    .photo-block::before {
+      content: "";
+      position: absolute;
+      inset: 20% 15% auto;
+      height: 40%;
+      background: radial-gradient(circle at 30% 40%, rgba(63,199,224,0.25), transparent 60%),
+                  radial-gradient(circle at 70% 60%, rgba(76,175,125,0.2), transparent 55%);
+      filter: blur(2px);
+    }
+    .facts {
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--muted);
+    }
+    .facts b { color: var(--text); font-weight: 500; }
+    .actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 18px;
+    }
+    .actions button {
+      flex: 1;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text);
+      padding: 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+    }
+    .actions button:hover { transform: translateY(-1px); }
+    .actions button:active { transform: translateY(0); }
+    .actions .approve { background: rgba(76,175,125,0.2); border-color: var(--success); color: var(--success); }
+    .actions .reroll { background: rgba(224,185,63,0.15); border-color: var(--warning); color: var(--warning); }
+    .actions .deny { background: rgba(224,87,79,0.15); border-color: var(--error); color: var(--error); }
+    .kbd {
+      font-family: var(--mono);
+      font-size: 10px;
+      opacity: 0.7;
+      margin-left: 6px;
+    }
+    .queue-rail {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .queue-rail h3 { margin: 0 0 4px; font-size: 13px; color: var(--muted); font-weight: 500; }
+    .queue-item {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      font-size: 12px;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .queue-item:hover, .queue-item.active { border-color: var(--accent); }
+    .queue-item .q-type { color: var(--accent); font-family: var(--mono); font-size: 10px; }
+    .streak {
+      margin-top: auto;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .streak em { color: var(--success); font-style: normal; font-weight: 600; }
+    .toast {
+      position: absolute;
+      top: 16px;
+      right: 24px;
+      background: var(--surface-2);
+      border: 1px solid var(--success);
+      color: var(--success);
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      opacity: 0;
+      transform: translateY(-8px);
+      transition: opacity 0.25s, transform 0.25s;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .toast.show { opacity: 1; transform: none; }
+
+    /* ========== B: Ops Theater ========== */
+    .ops-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 16px;
+    }
+    .ops-header h2 { margin: 0; font-size: 18px; }
+    .live {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--success);
+    }
+    .live::before {
+      content: "";
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--success);
+      animation: blink 1.2s infinite;
+    }
+    @keyframes blink { 50% { opacity: 0.35; } }
+    .pipeline {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .agent-node {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      cursor: pointer;
+      transition: border-color 0.2s, transform 0.15s;
+      position: relative;
+      overflow: hidden;
+    }
+    .agent-node:hover { transform: translateY(-2px); border-color: var(--accent); }
+    .agent-node.running { border-color: var(--accent); }
+    .agent-node.running::after {
+      content: "";
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      animation: scan 1.8s linear infinite;
+    }
+    @keyframes scan {
+      from { transform: translateX(-100%); }
+      to { transform: translateX(100%); }
+    }
+    .agent-node h3 { margin: 0 0 6px; font-size: 13px; }
+    .agent-node .status {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .agent-node.running .status { color: var(--accent); }
+    .agent-node.ok .status { color: var(--success); }
+    .agent-node.warn .status { color: var(--warning); }
+    .flow-line {
+      height: 48px;
+      margin: -4px 0 16px;
+      position: relative;
+    }
+    .flow-svg { width: 100%; height: 100%; }
+    .dot {
+      fill: var(--accent);
+      opacity: 0;
+    }
+    .ops-grid {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 16px;
+    }
+    .timeline, .focus-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      min-height: 260px;
+    }
+    .timeline h3, .focus-panel h3 {
+      margin: 0 0 12px;
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+    .event {
+      display: grid;
+      grid-template-columns: 64px 1fr;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+      animation: slideIn 0.4s ease;
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(-8px); }
+      to { opacity: 1; transform: none; }
+    }
+    .event time { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+    .event .ev-ok { color: var(--success); }
+    .event .ev-run { color: var(--accent); }
+    .event .ev-wait { color: var(--warning); }
+    .cmd {
+      margin-top: 12px;
+      display: flex;
+      gap: 8px;
+    }
+    .cmd input {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      padding: 10px 12px;
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+    .cmd input:focus { outline: none; border-color: var(--accent); }
+    .cmd button {
+      background: var(--accent-dim);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      border-radius: 6px;
+      padding: 0 14px;
+      cursor: pointer;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .stage-bars { display: flex; flex-direction: column; gap: 10px; }
+    .stage-row { font-size: 12px; }
+    .stage-row label { display: flex; justify-content: space-between; margin-bottom: 4px; color: var(--muted); }
+    .bar {
+      height: 6px;
+      background: var(--bg);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .bar > i {
+      display: block;
+      height: 100%;
+      background: var(--accent);
+      border-radius: 999px;
+      width: 0;
+      transition: width 0.8s ease;
+    }
+
+    /* ========== C: Research Workshop ========== */
+    .workshop-tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 16px;
+      background: var(--surface);
+      padding: 4px;
+      border-radius: 8px;
+      width: fit-content;
+      border: 1px solid var(--border);
+    }
+    .workshop-tabs button {
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      padding: 8px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font: inherit;
+      font-size: 13px;
+    }
+    .workshop-tabs button.on {
+      background: var(--border);
+      color: var(--accent);
+    }
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .column {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      min-height: 320px;
+    }
+    .column h3 {
+      margin: 0 0 10px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .chip {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 8px;
+      cursor: grab;
+      font-size: 13px;
+      transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+      user-select: none;
+    }
+    .chip:active { cursor: grabbing; }
+    .chip.dragging {
+      opacity: 0.5;
+      transform: scale(0.98);
+    }
+    .chip:hover { border-color: var(--accent); }
+    .chip .heat {
+      display: flex;
+      gap: 3px;
+      margin-top: 6px;
+    }
+    .chip .heat i {
+      width: 14px; height: 4px; border-radius: 2px;
+      background: var(--border);
+    }
+    .chip .heat i.on { background: var(--warning); }
+    .chip .heat i.hot { background: var(--error); }
+    .column.drop-target { border-color: var(--accent); background: var(--accent-dim); }
+    .radar {
+      display: none;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 16px;
+    }
+    .radar.visible { display: grid; }
+    .radar-viz {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      height: 360px;
+      position: relative;
+      overflow: hidden;
+    }
+    .radar-viz svg { width: 100%; height: 100%; }
+    .comp-list {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+    }
+    .comp-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .comp-row:hover { color: var(--accent); }
+    .comp-row .delta.up { color: var(--success); font-family: var(--mono); font-size: 11px; }
+    .comp-row .delta.down { color: var(--error); font-family: var(--mono); font-size: 11px; }
+    .board.hidden { display: none; }
+
+    @media (max-width: 900px) {
+      .shell { grid-template-columns: 1fr; }
+      .nav { display: none; }
+      .desk-layout, .ops-grid, .board, .radar.visible, .pipeline { grid-template-columns: 1fr; }
+      .decision-card { position: relative; }
+      .card-stack { min-height: auto; }
+      .decision-card.behind-1, .decision-card.behind-2 { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="chooser">
+    <h1>lhr office — concept mockups</h1>
+    <p>Three directions for making the admin console more interesting to use. Click a concept, then interact with the demo UI.</p>
+    <div class="tabs" role="tablist">
+      <button type="button" class="active" data-concept="desk" role="tab" aria-selected="true">
+        <strong>A · Decision Desk</strong>
+        <span>Approvals as a focused card stack with keyboard shortcuts</span>
+      </button>
+      <button type="button" data-concept="ops" role="tab" aria-selected="false">
+        <strong>B · Ops Theater</strong>
+        <span>Live agent pipeline, streaming activity, command bar</span>
+      </button>
+      <button type="button" data-concept="workshop" role="tab" aria-selected="false">
+        <strong>C · Research Workshop</strong>
+        <span>Drag-and-drop trend board + competitor radar</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- A: Decision Desk -->
+  <section class="stage visible" id="desk" aria-label="Decision Desk concept">
+    <div class="pitch">
+      <strong>Decision Desk.</strong> Make Approvals the emotional center of the office: one candidate at a time, rich preview, keyboard-driven triage (A / R / D), and a visible streak so clearing the queue feels satisfying. Overview becomes a thin “what needs you” badge into this desk.
+    </div>
+    <div class="shell">
+      <aside class="nav">
+        <div class="brand"><i></i> lhr office</div>
+        <a href="#">Overview</a>
+        <a href="#" class="on">Approvals <span class="badge" id="desk-badge">3</span></a>
+        <a href="#">Agents &amp; Jobs</a>
+        <a href="#">Research</a>
+      </aside>
+      <div class="main">
+        <div class="toast" id="desk-toast">Approved · next up</div>
+        <div class="desk-layout">
+          <div class="card-stack" id="card-stack"></div>
+          <aside class="queue-rail">
+            <h3>Up next</h3>
+            <div id="queue-list"></div>
+            <div class="streak">Cleared today: <em id="streak">0</em> · press <span class="kbd">A</span> <span class="kbd">R</span> <span class="kbd">D</span></div>
+          </aside>
+        </div>
+        <p class="hint">Try Approve / Reroll / Deny — or keyboard A / R / D</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- B: Ops Theater -->
+  <section class="stage" id="ops" aria-label="Ops Theater concept">
+    <div class="pitch">
+      <strong>Ops Theater.</strong> Treat Overview as a live control room: agents as nodes in a pipeline, a streaming activity feed, inspect-an-agent focus panel with stage progress, and a command palette for “run now.” Makes waiting on cron feel alive instead of a static status table.
+    </div>
+    <div class="shell">
+      <aside class="nav">
+        <div class="brand"><i></i> lhr office</div>
+        <a href="#" class="on">Overview</a>
+        <a href="#">Approvals <span class="badge">2</span></a>
+        <a href="#">Agents &amp; Jobs</a>
+        <a href="#">Research</a>
+      </aside>
+      <div class="main">
+        <div class="ops-header">
+          <h2>Mission control</h2>
+          <span class="live">LIVE · polling 5s</span>
+        </div>
+        <div class="pipeline" id="pipeline">
+          <div class="agent-node ok" data-agent="recipe">
+            <h3>Recipe generator</h3>
+            <div class="status">idle · next in 18h</div>
+          </div>
+          <div class="agent-node running" data-agent="affiliate">
+            <h3>Affiliate scout</h3>
+            <div class="status">running · step 2/4</div>
+          </div>
+          <div class="agent-node warn" data-agent="trends">
+            <h3>Trends watcher</h3>
+            <div class="status">needs review · 4 topics</div>
+          </div>
+          <div class="agent-node ok" data-agent="competitors">
+            <h3>Competitor analysis</h3>
+            <div class="status">ok · 2h ago</div>
+          </div>
+        </div>
+        <div class="flow-line">
+          <svg class="flow-svg" viewBox="0 0 1000 48" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M50 24 H950" stroke="#2A3542" stroke-width="2" fill="none"/>
+            <circle class="dot" r="4" cy="24"><animate attributeName="cx" values="50;950" dur="3s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.1;0.9;1" dur="3s" repeatCount="indefinite"/></circle>
+            <circle class="dot" r="3" cy="24"><animate attributeName="cx" values="50;950" dur="3s" begin="1s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.1;0.9;1" dur="3s" begin="1s" repeatCount="indefinite"/></circle>
+          </svg>
+        </div>
+        <div class="ops-grid">
+          <div class="timeline">
+            <h3>Activity stream</h3>
+            <div id="event-stream"></div>
+          </div>
+          <div class="focus-panel">
+            <h3 id="focus-title">Affiliate scout</h3>
+            <div class="stage-bars" id="stage-bars">
+              <div class="stage-row"><label><span>Search</span><span>done</span></label><div class="bar"><i style="width:100%"></i></div></div>
+              <div class="stage-row"><label><span>Score</span><span>running</span></label><div class="bar"><i id="bar-score" style="width:55%"></i></div></div>
+              <div class="stage-row"><label><span>Dedupe</span><span>queued</span></label><div class="bar"><i style="width:0%"></i></div></div>
+              <div class="stage-row"><label><span>Queue</span><span>queued</span></label><div class="bar"><i style="width:0%"></i></div></div>
+            </div>
+            <div class="cmd">
+              <input id="cmd-input" placeholder="⌘K · run recipe now, open approvals…" />
+              <button type="button" id="cmd-run">Run</button>
+            </div>
+            <p class="hint" id="cmd-hint">Click an agent node to inspect · try the command bar</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- C: Research Workshop -->
+  <section class="stage" id="workshop" aria-label="Research Workshop concept">
+    <div class="pitch">
+      <strong>Research Workshop.</strong> Replace flat lists with a kanban for trend topics (drag candidate → seed → promoted) and a competitor “radar” for relative SEO heat. Turns Research from form CRUD into a spatial board you play with when planning the next set.
+    </div>
+    <div class="shell">
+      <aside class="nav">
+        <div class="brand"><i></i> lhr office</div>
+        <a href="#">Overview</a>
+        <a href="#">Approvals <span class="badge">1</span></a>
+        <a href="#">Agents &amp; Jobs</a>
+        <a href="#" class="on">Research</a>
+      </aside>
+      <div class="main">
+        <div class="workshop-tabs">
+          <button type="button" class="on" data-view="board">Trend board</button>
+          <button type="button" data-view="radar">Competitor radar</button>
+        </div>
+        <div class="board" id="trend-board">
+          <div class="column" data-col="candidate">
+            <h3>Candidates</h3>
+          </div>
+          <div class="column" data-col="seed">
+            <h3>Seeds</h3>
+          </div>
+          <div class="column" data-col="promoted">
+            <h3>Promoted</h3>
+          </div>
+        </div>
+        <div class="radar" id="comp-radar">
+          <div class="radar-viz">
+            <svg viewBox="0 0 400 360" id="radar-svg">
+              <circle cx="200" cy="180" r="140" fill="none" stroke="#2A3542"/>
+              <circle cx="200" cy="180" r="95" fill="none" stroke="#2A3542"/>
+              <circle cx="200" cy="180" r="50" fill="none" stroke="#2A3542"/>
+              <line x1="200" y1="40" x2="200" y2="320" stroke="#2A3542"/>
+              <line x1="60" y1="180" x2="340" y2="180" stroke="#2A3542"/>
+              <text x="200" y="28" fill="#8B95A5" font-size="10" text-anchor="middle">SEO heat →</text>
+              <g id="radar-points"></g>
+            </svg>
+          </div>
+          <div class="comp-list" id="comp-list"></div>
+        </div>
+        <p class="hint" id="workshop-hint">Drag a topic chip between columns · promote/demote is the drop</p>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    /* ----- Concept switcher ----- */
+    const tabs = document.querySelectorAll('.tabs button');
+    const stages = document.querySelectorAll('.stage');
+    tabs.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        tabs.forEach((b) => { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
+        btn.classList.add('active');
+        btn.setAttribute('aria-selected', 'true');
+        stages.forEach((s) => s.classList.remove('visible'));
+        document.getElementById(btn.dataset.concept).classList.add('visible');
+      });
+    });
+
+    /* ----- A: Decision Desk ----- */
+    const candidates = [
+      { type: 'Recipe', title: 'Sheet-pan jerk chicken for a crowd', meta: 'Caribbean · dinner · 45 min', facts: '<b>Yield</b> 8<br><b>Why queued</b> Matches set “summer grill” + trending “jerk”<br><b>Kitchenware</b> sheet pan, tongs' },
+      { type: 'Affiliate', title: 'Lodge 10.25″ cast iron skillet', meta: 'Amazon · $34.90 · tag: lhr-20', facts: '<b>Score</b> 0.86<br><b>Ingredient hits</b> cast iron, sear<br><b>Dupes</b> none in set' },
+      { type: 'Competitor', title: 'halfbakedharvest.com', meta: 'New domain candidate · cooking', facts: '<b>Overlap</b> 12 keywords<br><b>Traffic est.</b> high<br><b>Why</b> recurring SERP neighbor' },
+      { type: 'Recipe', title: 'Brown-butter banana bread', meta: 'Baking · brunch · 70 min', facts: '<b>Yield</b> 1 loaf<br><b>Cover</b> needed<br><b>Affiliate suggest</b> loaf pan' },
+    ];
+    let deskIndex = 0;
+    let streak = 0;
+
+    function renderDesk() {
+      const stack = document.getElementById('card-stack');
+      const queue = document.getElementById('queue-list');
+      stack.innerHTML = '';
+      queue.innerHTML = '';
+      const remaining = candidates.slice(deskIndex);
+      document.getElementById('desk-badge').textContent = String(remaining.length);
+      document.getElementById('streak').textContent = String(streak);
+
+      if (!remaining.length) {
+        stack.innerHTML = '<div class="decision-card front" style="align-items:center;justify-content:center;text-align:center"><h2>Inbox clear</h2><p class="meta">Nice. Agents will refill this when the next runs finish.</p></div>';
+        return;
+      }
+
+      remaining.slice(0, 3).forEach((c, i) => {
+        const el = document.createElement('div');
+        el.className = 'decision-card ' + (i === 0 ? 'front' : i === 1 ? 'behind-1' : 'behind-2');
+        if (i === 0) {
+          el.innerHTML = `
+            <span class="tag">${c.type}</span>
+            <h2>${c.title}</h2>
+            <p class="meta">${c.meta}</p>
+            <div class="preview-grid">
+              <div class="photo-block"><span style="position:relative;z-index:1">cover / product preview</span></div>
+              <div class="facts">${c.facts}</div>
+            </div>
+            <div class="actions">
+              <button type="button" class="approve" data-act="approve">Approve<span class="kbd">A</span></button>
+              <button type="button" class="reroll" data-act="reroll">Reroll<span class="kbd">R</span></button>
+              <button type="button" class="deny" data-act="deny">Deny<span class="kbd">D</span></button>
+            </div>`;
+          el.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => decide(b.dataset.act)));
+        } else {
+          el.innerHTML = `<span class="tag">${c.type}</span><h2 style="font-size:16px">${c.title}</h2>`;
+        }
+        stack.appendChild(el);
+      });
+
+      remaining.forEach((c, i) => {
+        const item = document.createElement('div');
+        item.className = 'queue-item' + (i === 0 ? ' active' : '');
+        item.innerHTML = `<div class="q-type">${c.type}</div>${c.title}`;
+        queue.appendChild(item);
+      });
+    }
+
+    function decide(act) {
+      const front = document.querySelector('#card-stack .decision-card.front');
+      if (!front || deskIndex >= candidates.length) return;
+      const fly = act === 'approve' ? 'fly-right' : act === 'deny' ? 'fly-left' : 'fly-up';
+      front.classList.add(fly);
+      const toast = document.getElementById('desk-toast');
+      toast.textContent = act === 'approve' ? 'Approved · next up' : act === 'deny' ? 'Denied · next up' : 'Rerolled · fetching…';
+      toast.style.borderColor = act === 'approve' ? 'var(--success)' : act === 'deny' ? 'var(--error)' : 'var(--warning)';
+      toast.style.color = toast.style.borderColor;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 900);
+      streak += 1;
+      setTimeout(() => { deskIndex += 1; renderDesk(); }, 320);
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (!document.getElementById('desk').classList.contains('visible')) return;
+      const k = e.key.toLowerCase();
+      if (k === 'a') decide('approve');
+      if (k === 'r') decide('reroll');
+      if (k === 'd') decide('deny');
+    });
+    renderDesk();
+
+    /* ----- B: Ops Theater ----- */
+    const events = [
+      { t: '10:42', cls: 'ev-run', text: 'Affiliate scout started scoring batch' },
+      { t: '10:41', cls: 'ev-wait', text: 'Trends watcher: 4 topics awaiting promote' },
+      { t: '10:18', cls: 'ev-ok', text: 'Competitor analysis finished · 0 new domains' },
+      { t: '09:02', cls: 'ev-ok', text: 'Recipe generator idle · last candidate approved' },
+    ];
+    const stream = document.getElementById('event-stream');
+    function renderEvents() {
+      stream.innerHTML = events.map((e) => `<div class="event"><time>${e.t}</time><div class="${e.cls}">${e.text}</div></div>`).join('');
+    }
+    renderEvents();
+
+    let tick = 0;
+    setInterval(() => {
+      if (!document.getElementById('ops').classList.contains('visible')) return;
+      tick += 1;
+      const bar = document.getElementById('bar-score');
+      if (bar) bar.style.width = Math.min(95, 55 + (tick % 8) * 5) + '%';
+      if (tick % 5 === 0) {
+        const now = new Date();
+        const stamp = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        events.unshift({ t: stamp, cls: 'ev-run', text: 'Heartbeat · affiliate scout still running' });
+        if (events.length > 6) events.pop();
+        renderEvents();
+      }
+    }, 2000);
+
+    const agentCopy = {
+      recipe: { title: 'Recipe generator', bars: [100, 100, 100, 0] },
+      affiliate: { title: 'Affiliate scout', bars: [100, 55, 0, 0] },
+      trends: { title: 'Trends watcher', bars: [100, 100, 40, 0] },
+      competitors: { title: 'Competitor analysis', bars: [100, 100, 100, 100] },
+    };
+    document.querySelectorAll('.agent-node').forEach((node) => {
+      node.addEventListener('click', () => {
+        const id = node.dataset.agent;
+        const info = agentCopy[id];
+        document.getElementById('focus-title').textContent = info.title;
+        const labels = ['Ingest', 'Analyze', 'Write', 'Queue'];
+        document.getElementById('stage-bars').innerHTML = info.bars.map((w, i) => {
+          const state = w === 100 ? 'done' : w > 0 ? 'running' : 'queued';
+          return `<div class="stage-row"><label><span>${labels[i]}</span><span>${state}</span></label><div class="bar"><i style="width:${w}%"></i></div></div>`;
+        }).join('');
+      });
+    });
+
+    document.getElementById('cmd-run').addEventListener('click', () => {
+      const v = document.getElementById('cmd-input').value.trim() || 'run affiliate now';
+      document.getElementById('cmd-hint').textContent = 'Queued: “' + v + '” · (mock)';
+      events.unshift({ t: 'now', cls: 'ev-run', text: 'Command: ' + v });
+      renderEvents();
+    });
+
+    /* ----- C: Research Workshop ----- */
+    const topics = {
+      candidate: [
+        { id: 't1', label: 'air fryer desserts', heat: 4 },
+        { id: 't2', label: 'high-protein meal prep', heat: 5 },
+        { id: 't3', label: 'one-pan weeknights', heat: 3 },
+      ],
+      seed: [
+        { id: 't4', label: 'cast iron breads', heat: 2 },
+      ],
+      promoted: [
+        { id: 't5', label: 'summer grilling', heat: 4 },
+        { id: 't6', label: 'jerk classics', heat: 3 },
+      ],
+    };
+
+    function heatHtml(n) {
+      return '<div class="heat">' + [1,2,3,4,5].map((i) => `<i class="${i <= n ? (i >= 4 ? 'hot on' : 'on') : ''}"></i>`).join('') + '</div>';
+    }
+
+    let dragId = null;
+    let fromCol = null;
+
+    function renderBoard() {
+      document.querySelectorAll('#trend-board .column').forEach((col) => {
+        const key = col.dataset.col;
+        col.querySelectorAll('.chip').forEach((c) => c.remove());
+        topics[key].forEach((t) => {
+          const chip = document.createElement('div');
+          chip.className = 'chip';
+          chip.draggable = true;
+          chip.dataset.id = t.id;
+          chip.innerHTML = t.label + heatHtml(t.heat);
+          chip.addEventListener('dragstart', () => { dragId = t.id; fromCol = key; chip.classList.add('dragging'); });
+          chip.addEventListener('dragend', () => chip.classList.remove('dragging'));
+          col.appendChild(chip);
+        });
+        col.ondragover = (e) => { e.preventDefault(); col.classList.add('drop-target'); };
+        col.ondragleave = () => col.classList.remove('drop-target');
+        col.ondrop = (e) => {
+          e.preventDefault();
+          col.classList.remove('drop-target');
+          if (!dragId || !fromCol) return;
+          const to = col.dataset.col;
+          if (to === fromCol) return;
+          const idx = topics[fromCol].findIndex((x) => x.id === dragId);
+          if (idx < 0) return;
+          const [item] = topics[fromCol].splice(idx, 1);
+          topics[to].push(item);
+          document.getElementById('workshop-hint').textContent =
+            `Moved “${item.label}” → ${to}` + (to === 'promoted' ? ' (would call promote API)' : to === 'candidate' ? ' (would demote)' : '');
+          renderBoard();
+        };
+      });
+    }
+    renderBoard();
+
+    const competitors = [
+      { name: 'halfbakedharvest.com', x: 280, y: 110, delta: '+12%', dir: 'up' },
+      { name: 'smittenkitchen.com', x: 240, y: 200, delta: '+3%', dir: 'up' },
+      { name: 'budgetbytes.com', x: 150, y: 140, delta: '-2%', dir: 'down' },
+      { name: 'minimalistbaker.com', x: 190, y: 250, delta: '+7%', dir: 'up' },
+      { name: 'loveandlemons.com', x: 310, y: 220, delta: '+1%', dir: 'up' },
+    ];
+
+    function renderRadar() {
+      const g = document.getElementById('radar-points');
+      g.innerHTML = competitors.map((c, i) => `
+        <g class="rp" data-i="${i}" style="cursor:pointer">
+          <circle cx="${c.x}" cy="${c.y}" r="8" fill="#3FC7E0" fill-opacity="0.85"/>
+          <text x="${c.x + 12}" y="${c.y + 4}" fill="#E6E9EF" font-size="10">${c.name.split('.')[0]}</text>
+        </g>`).join('');
+      document.getElementById('comp-list').innerHTML = competitors.map((c) => `
+        <div class="comp-row"><span>${c.name}</span><span class="delta ${c.dir}">${c.delta}</span></div>`).join('');
+      g.querySelectorAll('.rp').forEach((el) => {
+        el.addEventListener('mouseenter', () => {
+          el.querySelector('circle').setAttribute('r', '11');
+        });
+        el.addEventListener('mouseleave', () => {
+          el.querySelector('circle').setAttribute('r', '8');
+        });
+      });
+    }
+    renderRadar();
+
+    document.querySelectorAll('.workshop-tabs button').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.workshop-tabs button').forEach((b) => b.classList.remove('on'));
+        btn.classList.add('on');
+        const board = document.getElementById('trend-board');
+        const radar = document.getElementById('comp-radar');
+        if (btn.dataset.view === 'board') {
+          board.classList.remove('hidden');
+          radar.classList.remove('visible');
+          document.getElementById('workshop-hint').textContent = 'Drag a topic chip between columns · promote/demote is the drop';
+        } else {
+          board.classList.add('hidden');
+          radar.classList.add('visible');
+          document.getElementById('workshop-hint').textContent = 'Hover radar points · list shows week-over-week SEO delta (mock)';
+        }
+      });
+    });
+  </script>
+</body>
+</html>
