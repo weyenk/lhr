@@ -13,7 +13,9 @@ import { gateAutoClears, readGatingProfile } from './gating.js';
 import { loadAgentPersona } from './loadPersona.js';
 import { callLlmJson } from './parseLlmJson.js';
 import { resolveProse } from '../resolveJobTuning.js';
+import { CRITERIA_TASK_PROMPT } from '../jobProseDefaults.js';
 
+export { CRITERIA_TASK_PROMPT };
 export const PRODUCT_SOURCING_CRITERIA_JOB_NAME = 'product-sourcing-criteria';
 
 export type SearchCriteria = {
@@ -88,15 +90,6 @@ function blockedResult(cycle: SourcedProductCycle): JobResult | null {
       return BLOCKED_CYCLE_BUSY;
   }
 }
-
-export const CRITERIA_TASK_PROMPT =
-  `Draft a search brief for sourcing new kitchenware products for this site from wholesale marketplaces. ` +
-  `Base it on the brand doc and on gaps in the current product catalog.\n\n` +
-  `Reply with JSON only, exactly this shape:\n` +
-  `{"keywords": string[] (1-${MAX_KEYWORDS} short search phrases), ` +
-  `"platforms": string[] (hostnames without scheme, e.g. "alibaba.com"), ` +
-  `"aestheticNotes": string (free text for the product scout), ` +
-  `"categoryHints": string[] (e.g. "serveware", "knives")}`;
 
 function buildPrompt(instructions: string, brand: string, productNames: string[]): string {
   return (

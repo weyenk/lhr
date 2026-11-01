@@ -13,6 +13,9 @@ import { parseSearchCriteria, type SearchCriteria } from './criteriaJob.js';
 import { loadAgentPersona } from './loadPersona.js';
 import { callLlmJson } from './parseLlmJson.js';
 import { resolveProse } from '../resolveJobTuning.js';
+import { ANNOTATE_TASK_PROMPT } from '../jobProseDefaults.js';
+
+export { ANNOTATE_TASK_PROMPT };
 
 export const PRODUCT_SOURCING_SEARCH_JOB_NAME = 'product-sourcing-search';
 
@@ -67,14 +70,6 @@ function uniqueByLink(hits: SearchResultItem[]): SearchResultItem[] {
   const seen = new Set<string>();
   return hits.filter((h) => (seen.has(h.link) ? false : (seen.add(h.link), true)));
 }
-
-export const ANNOTATE_TASK_PROMPT =
-  `You are screening wholesale search hits for fit with this brief.\n\n` +
-  `You only have each hit's title and URL. Do NOT invent MOQ, unit cost, or any other fact you cannot read ` +
-  `from the title/URL — use null for anything unknown. Prefer null over a guess.\n\n` +
-  `Reply with JSON only, exactly this shape:\n` +
-  `{"annotations": [{"index": number, "notes": string|null (one short sentence on fit), ` +
-  `"moq": string|null, "unitCostCents": number|null}]}`;
 
 function buildAnnotatePrompt(instructions: string, criteria: SearchCriteria, hits: SearchResultItem[]): string {
   const list = hits.map((h, i) => `${i}. ${h.title} (${h.link})`).join('\n');

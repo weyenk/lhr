@@ -18,7 +18,19 @@ import { fetchSearchResults } from './serpapiSearch.js';
 import { fetchCompetitorPosts, diffNewPosts, type CompetitorPost } from './competitorContent.js';
 import { callLLM } from '@lhr/llm';
 import { resolveProse } from './resolveJobTuning.js';
+import {
+  DECISION_PACKAGING_PERSONA,
+  WEEKLY_SUMMARY_PERSONA,
+  MONETIZATION_PERSONA,
+  DESIGN_PERSONA,
+} from './jobProseDefaults.js';
 
+export {
+  DECISION_PACKAGING_PERSONA,
+  WEEKLY_SUMMARY_PERSONA,
+  MONETIZATION_PERSONA,
+  DESIGN_PERSONA,
+};
 export const COMPETITOR_ANALYSIS_JOB_NAME = 'competitor-analysis';
 
 function requireEnv(name: string): string {
@@ -116,20 +128,8 @@ async function fetchHomepageText(domain: string): Promise<string> {
   return htmlToText(await response.text());
 }
 
-export const MONETIZATION_PERSONA =
-  "You analyze a competitor recipe/kitchenware site's homepage text and produce a short, factual snapshot of its monetization and product strategy: what it sells or promotes, any visible price ranges, and any visible affiliate/ad programs or sponsorship disclosures. 2-4 sentences, no speculation beyond what the text shows.";
-
-export const DESIGN_PERSONA =
-  "You analyze a competitor site's homepage text (tags stripped, so infer structure from headings, nav labels, and link text) and produce a short, factual description of its apparent layout, prominent calls-to-action, and visual/content style. 2-4 sentences, no speculation beyond what the text shows.";
-
 const DIFF_PERSONA =
   'Given a previous snapshot and a current snapshot of the same thing, describe what substantively changed in 1-2 sentences. If the current snapshot is just a prose rephrasing of the same facts with no substantive change, respond exactly with "No substantive change."';
-
-export const WEEKLY_SUMMARY_PERSONA =
-  'Synthesize this week\'s changes for a tracked competitor into a short "what changed this week" summary (2-4 sentences), covering new content, SEO positions, monetization, and design where notable. Skip dimensions with no notable change.';
-
-export const DECISION_PACKAGING_PERSONA =
-  'Produce overlap scores and a decision brief for Love Heat Relationship (LHR) — a personal gluten-free / relationship-food recipe blog with kitchenware affiliate sets on ~26-post / 6-month cadence — vs one competitor. Reply with ONLY a JSON object (no markdown fences) of shape: {"market":0-100,"content":0-100,"product":0-100,"threat":0-100,"decisionBrief":"2-4 sentences for the author","suggestedActions":["1-5 concrete LHR-side actions"]}. market=shared audience/niche, content=editorial similarity, product=commerce/affiliate posture vs LHR kitchenware affiliates, threat=urgency to respond this cycle (blend of the three plus SEO presence and change intensity). Never invent traffic, revenue, or MAU. If a dimension is unreachable this cycle, lean on any prior snapshots provided and note thin evidence in decisionBrief.';
 
 /** Per-call budget so a wedged Airlie worker cannot leave competitor-analysis polling forever. */
 const LLM_CALL_BUDGET_MS = 3 * 60 * 1000;

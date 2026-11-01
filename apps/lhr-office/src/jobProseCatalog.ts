@@ -1,14 +1,14 @@
-import { SUGGEST_TOPICS_PERSONA } from './trendsWatcher.js';
 import {
+  SUGGEST_TOPICS_PERSONA,
   DECISION_PACKAGING_PERSONA,
   WEEKLY_SUMMARY_PERSONA,
   MONETIZATION_PERSONA,
   DESIGN_PERSONA,
-} from './competitorAnalysis.js';
-import { CRITERIA_TASK_PROMPT } from './productSourcing/criteriaJob.js';
-import { ANNOTATE_TASK_PROMPT } from './productSourcing/searchJob.js';
-import { MONETIZE_TASK_PROMPT } from './productSourcing/monetizeJob.js';
-import { BRAND_TASK_PROMPT } from './productSourcing/brandJob.js';
+  CRITERIA_TASK_PROMPT,
+  ANNOTATE_TASK_PROMPT,
+  MONETIZE_TASK_PROMPT,
+  BRAND_TASK_PROMPT,
+} from './jobProseDefaults.js';
 
 export interface ProseCatalogEntry {
   id: string;
