@@ -37,7 +37,20 @@ function mockData() {
     if (path === '/api/sourced-products/cycle') return sourcedState;
     if (path === '/api/candidates/recipe') return { id: 'cand1', record: { status: 'pending', source: { idMeal: '1', title: 'Teriyaki Chicken', cuisine: 'Japanese', category: 'Chicken' } } };
     if (path === '/api/candidates/affiliate') return [{ id: 1, title: 'Cast Iron Skillet' }];
-    if (path === '/api/competitors') return { tracked: [], candidates: [{ id: 9, domain: 'other.com' }], latestReportsByCompetitorId: {} };
+    if (path === '/api/competitors') {
+      return {
+        tracked: [],
+        candidates: [
+          {
+            id: 9,
+            domain: 'other.com',
+            name: 'Other Kitchen Blog',
+            discoveryQuery: 'gluten free recipe blog',
+          },
+        ],
+        latestReportsByCompetitorId: {},
+      };
+    }
     return { ok: true };
   });
 }
@@ -172,6 +185,16 @@ describe('Approvals', () => {
       await waitFor(() => expect(apiFetchMock).toHaveBeenCalledWith('/api/competitors/9/approve', { method: 'POST' }));
       fireEvent.click(screen.getByRole('button', { name: 'Reject' }));
       await waitFor(() => expect(apiFetchMock).toHaveBeenCalledWith('/api/competitors/9/reject', { method: 'POST' }));
+    });
+
+    it('shows a Visit link and discovery match context for competitor candidates', async () => {
+      render(<Approvals />);
+      fireEvent.click(await screen.findByRole('tab', { name: /Competitors/ }));
+      const visit = await screen.findByRole('link', { name: /Visit other\.com/i });
+      expect(visit).toHaveAttribute('href', 'https://other.com');
+      expect(visit).toHaveAttribute('target', '_blank');
+      expect(screen.getByText(/Other Kitchen Blog/)).toBeInTheDocument();
+      expect(screen.getByText(/Found via: gluten free recipe blog/)).toBeInTheDocument();
     });
   });
 

@@ -277,6 +277,15 @@ export function Approvals() {
             <DecisionRow
               key={c.id}
               title={c.domain}
+              meta={
+                <>
+                  <a href={`https://${c.domain}`} target="_blank" rel="noopener noreferrer" aria-label={`Visit ${c.domain}`}>
+                    Visit
+                  </a>
+                  {c.name ? <span> — {c.name}</span> : null}
+                  {c.discoveryQuery ? <span> · Found via: {c.discoveryQuery}</span> : null}
+                </>
+              }
               primary={{ label: 'Approve', onClick: () => runAction(() => apiFetch(`/api/competitors/${c.id}/approve`, { method: 'POST' }), competitors.refetch) }}
               secondary={{ label: 'Reject', onClick: () => runAction(() => apiFetch(`/api/competitors/${c.id}/reject`, { method: 'POST' }), competitors.refetch) }}
             />

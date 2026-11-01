@@ -92,7 +92,12 @@ describe('analyzeCompetitors', () => {
 
     await analyzeCompetitors();
 
-    expect(dbMock.insertCandidateCompetitor).toHaveBeenCalledWith(expect.anything(), 'new-blog.com');
+    expect(dbMock.insertCandidateCompetitor).toHaveBeenCalledWith(
+      expect.anything(),
+      'new-blog.com',
+      'T',
+      expect.any(String),
+    );
     // Discovery runs once total, not once per tracked competitor.
     const discoveryCallCount = serpapiMock.fetchSearchResults.mock.calls.length;
     expect(discoveryCallCount).toBeGreaterThan(0);
