@@ -1,17 +1,19 @@
 import { useApiResource } from '../hooks/useApiResource';
 import { usePolling } from '../hooks/usePolling';
-import type { AffiliateCandidate, CompetitorsResponse, JobStatusRow, RecipeCandidateSummary } from '../lib/types';
+import { countSourcedActionable } from '../lib/sourcedActionable';
+import type { AffiliateCandidate, CompetitorsResponse, JobStatusRow, RecipeCandidateSummary, SourcedProductCycleResponse } from '../lib/types';
 
 export function Overview() {
   const jobs = useApiResource<JobStatusRow[]>('/api/jobs');
   const recipeCandidate = useApiResource<RecipeCandidateSummary | null>('/api/candidates/recipe');
   const affiliateCandidates = useApiResource<AffiliateCandidate[]>('/api/candidates/affiliate');
   const competitors = useApiResource<CompetitorsResponse>('/api/competitors');
+  const sourced = useApiResource<SourcedProductCycleResponse>('/api/sourced-products/cycle');
 
   usePolling(jobs.refetch, 5000);
 
   const pendingCount =
-    (recipeCandidate.data ? 1 : 0) + (affiliateCandidates.data?.length ?? 0) + (competitors.data?.candidates.length ?? 0);
+    (recipeCandidate.data ? 1 : 0) + (affiliateCandidates.data?.length ?? 0) + (competitors.data?.candidates.length ?? 0) + countSourcedActionable(sourced.data);
 
   const activity = (jobs.data ?? [])
     .flatMap((job) => job.history)
@@ -26,6 +28,7 @@ export function Overview() {
       {recipeCandidate.error && <p role="alert">{recipeCandidate.error}</p>}
       {affiliateCandidates.error && <p role="alert">{affiliateCandidates.error}</p>}
       {competitors.error && <p role="alert">{competitors.error}</p>}
+      {sourced.error && <p role="alert">{sourced.error}</p>}
       <section className="job-health-strip">
         {(jobs.data ?? []).map((job) => {
           const latest = job.history[0];

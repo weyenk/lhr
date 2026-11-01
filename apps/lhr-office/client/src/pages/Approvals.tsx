@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { apiFetch } from '../lib/api';
 import { useApiResource } from '../hooks/useApiResource';
+import { DecisionRow } from '../components/approvals/DecisionRow';
+import { QueueEmpty } from '../components/approvals/QueueEmpty';
+import { TypeTabBar } from '../components/approvals/TypeTabBar';
+import { countSourcedActionable } from '../lib/sourcedActionable';
 import type {
   AffiliateCandidate,
   CompetitorsResponse,
@@ -12,9 +16,13 @@ import type {
 
 type RunAction = (action: () => Promise<unknown>, refetch: () => void) => Promise<void>;
 type SourcedTab = 'brief' | 'pick' | 'monetize' | 'final';
+type ApprovalType = 'recipe' | 'affiliate' | 'sourced' | 'competitors';
+type SourcedResource = ReturnType<typeof useApiResource<SourcedProductCycleResponse>>;
 
 const SOURCED_BASE = '/api/sourced-products';
 const TAB_LABELS: Record<SourcedTab, string> = { brief: 'Brief', pick: 'Pick', monetize: 'Monetize', final: 'Final' };
+const TYPE_LABELS: Record<ApprovalType, string> = { recipe: 'Recipe', affiliate: 'Affiliate', sourced: 'Sourced', competitors: 'Competitors' };
+const TYPE_ORDER: ApprovalType[] = ['recipe', 'affiliate', 'sourced', 'competitors'];
 
 function defaultTab(cycle: SourcedProductCycle): SourcedTab {
   switch (cycle.status) {
@@ -52,17 +60,21 @@ function SelectableCandidates({
   toggle: (id: number) => void;
 }) {
   return (
-    <ul>
+    <ul className="decision-list">
       {candidates.map((c) => (
-        <li key={c.id}>
-          <label>
-            <input type="checkbox" checked={isChecked(c.id)} onChange={() => toggle(c.id)} />
-            {c.title}
-          </label>{' '}
-          <a href={c.sourceUrl} target="_blank" rel="noreferrer">
-            {c.platform}
-          </a>
-          {c.monetizeRationale && <p>{c.monetizeRationale}</p>}
+        <li key={c.id} className="decision-row">
+          <div className="decision-row-body">
+            <label>
+              <input type="checkbox" checked={isChecked(c.id)} onChange={() => toggle(c.id)} />
+              {c.title}
+            </label>
+            <span className="decision-row-meta">
+              <a href={c.sourceUrl} target="_blank" rel="noreferrer">
+                {c.platform}
+              </a>
+              {c.monetizeRationale && <span> — {c.monetizeRationale}</span>}
+            </span>
+          </div>
         </li>
       ))}
     </ul>
@@ -116,100 +128,90 @@ function MonetizeStage({ cycle, candidates, runAction, refetch }: { cycle: Sourc
   );
 }
 
-function SourcedProductsSection({ runAction }: { runAction: RunAction }) {
-  const resource = useApiResource<SourcedProductCycleResponse>(`${SOURCED_BASE}/cycle`);
+function SourcedPane({ resource, runAction }: { resource: SourcedResource; runAction: RunAction }) {
   const [chosenTab, setChosenTab] = useState<SourcedTab | null>(null);
   const cycle = resource.data?.cycle ?? null;
   const allCandidates = resource.data?.candidates ?? [];
 
-  let body;
-  if (!cycle) {
-    body = <p>No open sourcing cycle</p>;
-  } else {
-    const tabs = visibleTabs(cycle, allCandidates);
-    const preferred = chosenTab ?? defaultTab(cycle);
-    const tab = tabs.includes(preferred) ? preferred : tabs[0];
-    const inStatus = (status: SourcedProductCandidate['status']) => allCandidates.filter((c) => c.status === status);
-    const criteria = cycle.criteriaJson;
-    const sourced = inStatus('sourced');
-    const passes = inStatus('monetize_pass');
-    const pendingFinal = inStatus('pending_final');
+  if (!cycle) return <QueueEmpty>No open sourcing cycle</QueueEmpty>;
 
-    let stage;
-    if (tab === 'brief') {
-      stage = (
-        <div>
-          <ul aria-label="Search keywords">
-            {(criteria?.keywords ?? []).map((k) => (
-              <li key={k}>{k}</li>
-            ))}
-          </ul>
-          {criteria?.aestheticNotes && <p>{criteria.aestheticNotes}</p>}
-          {cycle.status === 'awaiting_criteria_approval' ? (
-            <button onClick={() => runAction(() => apiFetch(`${SOURCED_BASE}/cycle/${cycle.id}/criteria/approve`, { method: 'POST' }), resource.refetch)}>
-              Approve brief
-            </button>
-          ) : (
-            <p>Status: {cycle.status}</p>
-          )}
-        </div>
-      );
-    } else if (tab === 'pick') {
-      stage = sourced.length === 0 ? <p>Nothing at this stage</p> : <PickStage cycle={cycle} candidates={sourced} runAction={runAction} refetch={resource.refetch} />;
-    } else if (tab === 'monetize') {
-      stage = passes.length === 0 ? <p>Nothing at this stage</p> : <MonetizeStage cycle={cycle} candidates={passes} runAction={runAction} refetch={resource.refetch} />;
-    } else {
-      stage =
-        pendingFinal.length === 0 ? (
-          <p>Nothing at this stage</p>
+  const tabs = visibleTabs(cycle, allCandidates);
+  const preferred = chosenTab ?? defaultTab(cycle);
+  const tab = tabs.includes(preferred) ? preferred : tabs[0];
+  const inStatus = (status: SourcedProductCandidate['status']) => allCandidates.filter((c) => c.status === status);
+  const criteria = cycle.criteriaJson;
+  const sourced = inStatus('sourced');
+  const passes = inStatus('monetize_pass');
+  const pendingFinal = inStatus('pending_final');
+  const none = <QueueEmpty>Nothing at this stage</QueueEmpty>;
+
+  let stage;
+  if (tab === 'brief') {
+    stage = (
+      <div>
+        <ul aria-label="Search keywords">
+          {(criteria?.keywords ?? []).map((k) => (
+            <li key={k}>{k}</li>
+          ))}
+        </ul>
+        {criteria?.aestheticNotes && <p>{criteria.aestheticNotes}</p>}
+        {cycle.status === 'awaiting_criteria_approval' ? (
+          <button onClick={() => runAction(() => apiFetch(`${SOURCED_BASE}/cycle/${cycle.id}/criteria/approve`, { method: 'POST' }), resource.refetch)}>Approve brief</button>
         ) : (
-          <ul>
-            {pendingFinal.map((c) => (
-              <li key={c.id}>
-                <span>{c.title}</span>{' '}
+          <p>Status: {cycle.status}</p>
+        )}
+      </div>
+    );
+  } else if (tab === 'pick') {
+    stage = sourced.length === 0 ? none : <PickStage cycle={cycle} candidates={sourced} runAction={runAction} refetch={resource.refetch} />;
+  } else if (tab === 'monetize') {
+    stage = passes.length === 0 ? none : <MonetizeStage cycle={cycle} candidates={passes} runAction={runAction} refetch={resource.refetch} />;
+  } else {
+    stage =
+      pendingFinal.length === 0 ? (
+        none
+      ) : (
+        <ul className="decision-list">
+          {pendingFinal.map((c) => (
+            <DecisionRow
+              key={c.id}
+              title={c.title}
+              meta={
                 <a href={c.sourceUrl} target="_blank" rel="noreferrer">
                   {c.platform}
                 </a>
-                <button aria-label={`Approve ${c.title}`} onClick={() => runAction(() => apiFetch(`${SOURCED_BASE}/candidates/${c.id}/approve`, { method: 'POST' }), resource.refetch)}>
-                  Approve
-                </button>
-                <button aria-label={`Deny ${c.title}`} onClick={() => runAction(() => apiFetch(`${SOURCED_BASE}/candidates/${c.id}/deny`, { method: 'POST' }), resource.refetch)}>
-                  Deny
-                </button>
-              </li>
-            ))}
-          </ul>
-        );
-    }
-
-    body = (
-      <>
-        <div role="tablist">
-          {tabs.map((t) => (
-            <button key={t} role="tab" aria-selected={t === tab} onClick={() => setChosenTab(t)}>
-              {TAB_LABELS[t]}
-            </button>
+              }
+              primary={{
+                label: 'Approve',
+                ariaLabel: `Approve ${c.title}`,
+                onClick: () => runAction(() => apiFetch(`${SOURCED_BASE}/candidates/${c.id}/approve`, { method: 'POST' }), resource.refetch),
+              }}
+              secondary={{
+                label: 'Deny',
+                ariaLabel: `Deny ${c.title}`,
+                onClick: () => runAction(() => apiFetch(`${SOURCED_BASE}/candidates/${c.id}/deny`, { method: 'POST' }), resource.refetch),
+              }}
+            />
           ))}
-        </div>
-        {stage}
-      </>
-    );
+        </ul>
+      );
   }
 
   return (
-    <section>
-      <h2>Sourced products</h2>
-      {resource.error && <p role="alert">{resource.error}</p>}
-      {body}
-    </section>
+    <>
+      <TypeTabBar nested ariaLabel="Sourcing stages" tabs={tabs.map((t) => ({ id: t, label: TAB_LABELS[t] }))} active={tab} onChange={setChosenTab} />
+      {stage}
+    </>
   );
 }
 
 export function Approvals() {
   const recipeCandidate = useApiResource<RecipeCandidateSummary | null>('/api/candidates/recipe');
   const affiliateCandidates = useApiResource<AffiliateCandidate[]>('/api/candidates/affiliate');
+  const sourced = useApiResource<SourcedProductCycleResponse>(`${SOURCED_BASE}/cycle`);
   const competitors = useApiResource<CompetitorsResponse>('/api/competitors');
   const [actionError, setActionError] = useState<string | null>(null);
+  const [chosenType, setChosenType] = useState<ApprovalType | null>(null);
 
   async function runAction(action: () => Promise<unknown>, refetch: () => void) {
     setActionError(null);
@@ -222,69 +224,83 @@ export function Approvals() {
   }
 
   const candidate = recipeCandidate.data;
+  const affiliates = affiliateCandidates.data ?? [];
+  const competitorCandidates = competitors.data?.candidates ?? [];
+
+  const counts: Record<ApprovalType, number> = {
+    recipe: candidate ? 1 : 0,
+    affiliate: affiliates.length,
+    sourced: countSourcedActionable(sourced.data),
+    competitors: competitorCandidates.length,
+  };
+  // An explicit choice sticks; until then, land on the first type with work (recipe if none).
+  const activeType = chosenType ?? TYPE_ORDER.find((t) => counts[t] > 0) ?? 'recipe';
+
+  let pane;
+  if (activeType === 'recipe') {
+    pane = candidate ? (
+      <ul className="decision-list">
+        <DecisionRow
+          title={`${candidate.record.source.title} — ${candidate.record.source.cuisine} ${candidate.record.source.category}`}
+          primary={{ label: 'Approve', onClick: () => runAction(() => apiFetch(`/api/candidates/recipe/${candidate.id}/approve`, { method: 'POST' }), recipeCandidate.refetch) }}
+          secondary={{ label: 'Reroll', onClick: () => runAction(() => apiFetch(`/api/candidates/recipe/${candidate.id}/reroll`, { method: 'POST' }), recipeCandidate.refetch) }}
+        />
+      </ul>
+    ) : (
+      <QueueEmpty />
+    );
+  } else if (activeType === 'affiliate') {
+    pane =
+      affiliates.length === 0 ? (
+        <QueueEmpty />
+      ) : (
+        <ul className="decision-list">
+          {affiliates.map((c) => (
+            <DecisionRow
+              key={c.id}
+              title={c.title}
+              primary={{ label: 'Approve', onClick: () => runAction(() => apiFetch(`/api/candidates/affiliate/${c.id}/approve`, { method: 'POST' }), affiliateCandidates.refetch) }}
+              secondary={{ label: 'Deny', onClick: () => runAction(() => apiFetch(`/api/candidates/affiliate/${c.id}/deny`, { method: 'POST' }), affiliateCandidates.refetch) }}
+            />
+          ))}
+        </ul>
+      );
+  } else if (activeType === 'sourced') {
+    pane = <SourcedPane resource={sourced} runAction={runAction} />;
+  } else {
+    pane =
+      competitorCandidates.length === 0 ? (
+        <QueueEmpty />
+      ) : (
+        <ul className="decision-list">
+          {competitorCandidates.map((c) => (
+            <DecisionRow
+              key={c.id}
+              title={c.domain}
+              primary={{ label: 'Approve', onClick: () => runAction(() => apiFetch(`/api/competitors/${c.id}/approve`, { method: 'POST' }), competitors.refetch) }}
+              secondary={{ label: 'Reject', onClick: () => runAction(() => apiFetch(`/api/competitors/${c.id}/reject`, { method: 'POST' }), competitors.refetch) }}
+            />
+          ))}
+        </ul>
+      );
+  }
 
   return (
-    <div className="panel approvals-panel">
+    <div className="panel approvals-panel approvals-workshop">
       <h1>Approvals</h1>
       {actionError && <p role="alert">{actionError}</p>}
+      {recipeCandidate.error && <p role="alert">{recipeCandidate.error}</p>}
+      {affiliateCandidates.error && <p role="alert">{affiliateCandidates.error}</p>}
+      {sourced.error && <p role="alert">{sourced.error}</p>}
+      {competitors.error && <p role="alert">{competitors.error}</p>}
 
-      <section>
-        <h2>Recipe candidate</h2>
-        {recipeCandidate.error && <p role="alert">{recipeCandidate.error}</p>}
-        {candidate ? (
-          <div>
-            <p>
-              {candidate.record.source.title} — {candidate.record.source.cuisine} {candidate.record.source.category}
-            </p>
-            <button onClick={() => runAction(() => apiFetch(`/api/candidates/recipe/${candidate.id}/approve`, { method: 'POST' }), recipeCandidate.refetch)}>
-              Approve
-            </button>
-            <button onClick={() => runAction(() => apiFetch(`/api/candidates/recipe/${candidate.id}/reroll`, { method: 'POST' }), recipeCandidate.refetch)}>
-              Reroll
-            </button>
-          </div>
-        ) : (
-          <p>Nothing pending</p>
-        )}
-      </section>
-
-      <section>
-        <h2>Affiliate candidates</h2>
-        {affiliateCandidates.error && <p role="alert">{affiliateCandidates.error}</p>}
-        <ul>
-          {(affiliateCandidates.data ?? []).map((c) => (
-            <li key={c.id}>
-              <span>{c.title}</span>
-              <button onClick={() => runAction(() => apiFetch(`/api/candidates/affiliate/${c.id}/approve`, { method: 'POST' }), affiliateCandidates.refetch)}>
-                Approve
-              </button>
-              <button onClick={() => runAction(() => apiFetch(`/api/candidates/affiliate/${c.id}/deny`, { method: 'POST' }), affiliateCandidates.refetch)}>
-                Deny
-              </button>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <SourcedProductsSection runAction={runAction} />
-
-      <section>
-        <h2>Competitor candidates</h2>
-        {competitors.error && <p role="alert">{competitors.error}</p>}
-        <ul>
-          {(competitors.data?.candidates ?? []).map((c) => (
-            <li key={c.id}>
-              <span>{c.domain}</span>
-              <button onClick={() => runAction(() => apiFetch(`/api/competitors/${c.id}/approve`, { method: 'POST' }), competitors.refetch)}>
-                Approve
-              </button>
-              <button onClick={() => runAction(() => apiFetch(`/api/competitors/${c.id}/reject`, { method: 'POST' }), competitors.refetch)}>
-                Reject
-              </button>
-            </li>
-          ))}
-        </ul>
-      </section>
+      <TypeTabBar
+        ariaLabel="Approval types"
+        tabs={TYPE_ORDER.map((t) => ({ id: t, label: TYPE_LABELS[t], count: counts[t] }))}
+        active={activeType}
+        onChange={setChosenType}
+      />
+      <section role="tabpanel">{pane}</section>
     </div>
   );
 }

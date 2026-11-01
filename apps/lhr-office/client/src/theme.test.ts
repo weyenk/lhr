@@ -26,3 +26,13 @@ describe('theme.css', () => {
     expect(css).toContain(`${token}:`);
   });
 });
+
+describe('approvals workshop styles', () => {
+  it.each(['.approvals-workshop', '.decision-row', '.queue-empty', '.tab-count'])('styles %s', (selector) => {
+    expect(css).toContain(selector);
+  });
+
+  it('reuses the research workshop tab styling instead of a second palette', () => {
+    expect(css).toMatch(/\.approvals-workshop \.workshop-tabs/);
+  });
+});
