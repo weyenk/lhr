@@ -84,7 +84,8 @@ body {
 }
 
 /* Research Workshop */
-.research-workshop .workshop-tabs {
+.research-workshop .workshop-tabs,
+.approvals-workshop .workshop-tabs {
   display: flex;
   gap: 4px;
   margin-bottom: var(--space-3);
@@ -95,7 +96,8 @@ body {
   border: 1px solid var(--border);
 }
 
-.research-workshop .workshop-tabs button {
+.research-workshop .workshop-tabs button,
+.approvals-workshop .workshop-tabs button {
   border: none;
   background: transparent;
   color: #8B95A5;
@@ -106,9 +108,79 @@ body {
   font-size: 13px;
 }
 
-.research-workshop .workshop-tabs button.on {
+.research-workshop .workshop-tabs button.on,
+.approvals-workshop .workshop-tabs button.on {
   background: var(--border);
   color: var(--accent);
+}
+
+/* Approvals Workshop — reuses the workshop tab chrome above; only adds counts + decision rows */
+.approvals-workshop .workshop-tabs.nested {
+  margin-bottom: var(--space-2);
+}
+
+.approvals-workshop .tab-count {
+  display: inline-block;
+  min-width: 18px;
+  margin-left: 6px;
+  padding: 0 6px;
+  border-radius: 9px;
+  background: var(--border);
+  color: #8B95A5;
+  font-size: 11px;
+  line-height: 18px;
+  text-align: center;
+}
+
+.approvals-workshop .tab-count.has-work {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+.approvals-workshop .decision-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.approvals-workshop .decision-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-1) 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.approvals-workshop .decision-row:last-child {
+  border-bottom: none;
+}
+
+.approvals-workshop .decision-row-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.approvals-workshop .decision-row-meta {
+  color: #8B95A5;
+  font-size: 13px;
+}
+
+.approvals-workshop .decision-row-meta a {
+  color: var(--accent);
+}
+
+.approvals-workshop .decision-row-actions {
+  display: flex;
+  gap: var(--space-1);
+  flex-shrink: 0;
+}
+
+.approvals-workshop .queue-empty {
+  margin: 0;
+  color: #8B95A5;
 }
 
 .board-intro {
