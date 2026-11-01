@@ -997,3 +997,558 @@ body {
     height: auto;
   }
 }
+
+/* Agents & Jobs — Chains | Jobs workshop */
+.agents-jobs-workshop .workshop-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: var(--space-3);
+  background: var(--surface);
+  padding: 4px;
+  border-radius: 8px;
+  width: fit-content;
+  border: 1px solid var(--border);
+}
+
+.agents-jobs-workshop .workshop-tabs.job-subtabs {
+  margin-bottom: var(--space-2);
+}
+
+.agents-jobs-workshop .workshop-tabs button {
+  appearance: none;
+  background: transparent;
+  border: none;
+  color: #8B95A5;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+}
+
+.agents-jobs-workshop .workshop-tabs button.on {
+  background: rgba(63, 199, 224, 0.15);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.agents-jobs-workshop .chain-legend {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-2);
+  font-size: 12px;
+  color: #8B95A5;
+}
+
+.agents-jobs-workshop .chain-legend span::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+
+.agents-jobs-workshop .chain-legend .l-done::before {
+  background: var(--success);
+}
+
+.agents-jobs-workshop .chain-legend .l-current::before {
+  background: var(--accent);
+}
+
+.agents-jobs-workshop .chain-legend .l-wait::before {
+  background: var(--warning);
+}
+
+.agents-jobs-workshop .chain-legend .l-blocked::before {
+  background: #4a5568;
+}
+
+.agents-jobs-workshop .chains-list {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.agents-jobs-workshop .chain-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: var(--space-3);
+}
+
+.agents-jobs-workshop .chain-card.active-cycle {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+
+.agents-jobs-workshop .chain-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.agents-jobs-workshop .chain-top h3 {
+  margin: 0;
+}
+
+.agents-jobs-workshop .chain-meta {
+  font-size: 12px;
+  color: #8B95A5;
+}
+
+.agents-jobs-workshop .chain-blurb {
+  color: #8B95A5;
+  font-size: 13px;
+  margin: 6px 0 var(--space-2);
+}
+
+.agents-jobs-workshop .chain-flow {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  flex-wrap: wrap;
+  margin-bottom: var(--space-2);
+}
+
+.agents-jobs-workshop .chain-node {
+  appearance: none;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  min-width: 150px;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.agents-jobs-workshop .chain-node:hover {
+  border-color: var(--accent);
+}
+
+.agents-jobs-workshop .chain-node-step {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #8B95A5;
+}
+
+.agents-jobs-workshop .chain-node-job {
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+}
+
+.agents-jobs-workshop .chain-node-state {
+  font-size: 12px;
+  color: #8B95A5;
+}
+
+.agents-jobs-workshop .chain-node.done {
+  border-color: color-mix(in srgb, var(--success) 50%, var(--border));
+}
+
+.agents-jobs-workshop .chain-node.done .chain-node-state {
+  color: var(--success);
+}
+
+.agents-jobs-workshop .chain-node.current {
+  border-color: var(--accent);
+  background: rgba(63, 199, 224, 0.08);
+}
+
+.agents-jobs-workshop .chain-node.current .chain-node-state {
+  color: var(--accent);
+}
+
+.agents-jobs-workshop .chain-node.blocked {
+  opacity: 0.55;
+}
+
+.agents-jobs-workshop .chain-gate {
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+}
+
+.agents-jobs-workshop .chain-gate-link {
+  display: flex;
+  align-items: center;
+  color: inherit;
+  text-decoration: none;
+}
+
+.agents-jobs-workshop .chain-gate-arrow {
+  width: 18px;
+  height: 2px;
+  background: var(--border);
+  display: block;
+}
+
+.agents-jobs-workshop .chain-gate-chip {
+  font-size: 11px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px 10px;
+  margin-left: -1px;
+  white-space: nowrap;
+  color: #8B95A5;
+}
+
+.agents-jobs-workshop .chain-gate.passed .chain-gate-chip {
+  border-color: color-mix(in srgb, var(--success) 55%, var(--border));
+  color: var(--success);
+}
+
+.agents-jobs-workshop .chain-gate.waiting .chain-gate-chip {
+  border-color: var(--warning);
+  color: var(--warning);
+}
+
+.agents-jobs-workshop .chain-gate-link:hover .chain-gate-chip {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.agents-jobs-workshop .chain-footer {
+  font-size: 12px;
+  color: #8B95A5;
+  border-top: 1px solid var(--border);
+  padding-top: var(--space-1);
+}
+
+.agents-jobs-workshop .jobs-view {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: var(--space-3);
+  align-items: start;
+}
+
+.agents-jobs-workshop .job-rail {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.agents-jobs-workshop .job-rail-group-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #8B95A5;
+  margin-bottom: 6px;
+}
+
+.agents-jobs-workshop .job-rail button {
+  appearance: none;
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.agents-jobs-workshop .job-rail button.on {
+  border-color: var(--accent);
+  background: rgba(63, 199, 224, 0.08);
+}
+
+.agents-jobs-workshop .job-rail-name {
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.agents-jobs-workshop .job-rail-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.agents-jobs-workshop .job-rail-cadence {
+  font-size: 11px;
+  color: #8B95A5;
+}
+
+.agents-jobs-workshop .status-pill {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+}
+
+.agents-jobs-workshop .status-pill.ok {
+  color: var(--success);
+  border-color: color-mix(in srgb, var(--success) 55%, var(--border));
+}
+
+.agents-jobs-workshop .status-pill.run {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.agents-jobs-workshop .status-pill.partial {
+  color: var(--warning);
+  border-color: var(--warning);
+}
+
+.agents-jobs-workshop .status-pill.fail {
+  color: var(--error);
+  border-color: var(--error);
+}
+
+.agents-jobs-workshop .status-pill.idle {
+  color: #8B95A5;
+}
+
+.agents-jobs-workshop .job-pane {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: var(--space-3);
+}
+
+.agents-jobs-workshop .job-pane-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.agents-jobs-workshop .job-pane-header h2 {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 16px;
+}
+
+.agents-jobs-workshop .job-pane-actions {
+  margin-left: auto;
+}
+
+.agents-jobs-workshop .run-log {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.agents-jobs-workshop .run-log-row {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-1) 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  align-items: baseline;
+}
+
+.agents-jobs-workshop .run-log-row:last-child {
+  border-bottom: none;
+}
+
+.agents-jobs-workshop .run-log-status {
+  text-transform: uppercase;
+  font-size: 11px;
+  flex-shrink: 0;
+  width: 60px;
+  color: #8B95A5;
+}
+
+.agents-jobs-workshop .run-log-row.success .run-log-status {
+  color: var(--success);
+}
+
+.agents-jobs-workshop .run-log-row.partial .run-log-status {
+  color: var(--warning);
+}
+
+.agents-jobs-workshop .run-log-row.failure .run-log-status {
+  color: var(--error);
+}
+
+.agents-jobs-workshop .run-log-row.running .run-log-status {
+  color: var(--accent);
+}
+
+.agents-jobs-workshop .run-log-summary {
+  flex: 1;
+  min-width: 0;
+}
+
+.agents-jobs-workshop .run-log-at {
+  color: #8B95A5;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.agents-jobs-workshop .tune-grid {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.agents-jobs-workshop .tune-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: var(--space-2);
+}
+
+.agents-jobs-workshop .tune-card h3 {
+  margin: 0 0 4px;
+  font-size: 13px;
+}
+
+.agents-jobs-workshop .tune-blurb {
+  color: #8B95A5;
+  font-size: 12px;
+  margin: 0 0 var(--space-1);
+}
+
+.agents-jobs-workshop .tune-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  color: #8B95A5;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  max-width: 160px;
+}
+
+.agents-jobs-workshop .tune-field input {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: #E6E9EF;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 13px;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.agents-jobs-workshop .prose-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.agents-jobs-workshop .prose-item {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: var(--surface);
+}
+
+.agents-jobs-workshop .prose-item summary {
+  cursor: pointer;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.agents-jobs-workshop .src-badge {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  color: #8B95A5;
+}
+
+.agents-jobs-workshop .src-badge.repo {
+  color: var(--warning);
+  border-color: var(--warning);
+}
+
+.agents-jobs-workshop .prose-body {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.agents-jobs-workshop .prose-body label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  color: #8B95A5;
+}
+
+.agents-jobs-workshop .prose-body textarea {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: #E6E9EF;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 13px;
+  min-height: 90px;
+  resize: vertical;
+}
+
+.agents-jobs-workshop .prose-body textarea:read-only {
+  color: #8B95A5;
+  background: var(--surface);
+}
+
+.agents-jobs-workshop .related-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.agents-jobs-workshop .chip {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12px;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.agents-jobs-workshop .chip:hover {
+  border-color: var(--accent);
+  background: rgba(63, 199, 224, 0.1);
+}
+
+.agents-jobs-workshop .save-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.agents-jobs-workshop .dirty-flag {
+  font-size: 12px;
+  color: var(--warning);
+}
+
+@media (max-width: 900px) {
+  .agents-jobs-workshop .jobs-view {
+    grid-template-columns: 1fr;
+  }
+}

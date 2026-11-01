@@ -12,6 +12,9 @@ import { createGitHubClient, getFile, listFiles, type GitHubClient } from 'lhr-a
 import { gateAutoClears, readGatingProfile } from './gating.js';
 import { loadAgentPersona } from './loadPersona.js';
 import { callLlmJson } from './parseLlmJson.js';
+import { resolveProse } from '../resolveJobTuning.js';
+
+export const PRODUCT_SOURCING_CRITERIA_JOB_NAME = 'product-sourcing-criteria';
 
 export type SearchCriteria = {
   keywords: string[];
@@ -86,15 +89,18 @@ function blockedResult(cycle: SourcedProductCycle): JobResult | null {
   }
 }
 
-function buildPrompt(brand: string, productNames: string[]): string {
+export const CRITERIA_TASK_PROMPT =
+  `Draft a search brief for sourcing new kitchenware products for this site from wholesale marketplaces. ` +
+  `Base it on the brand doc and on gaps in the current product catalog.\n\n` +
+  `Reply with JSON only, exactly this shape:\n` +
+  `{"keywords": string[] (1-${MAX_KEYWORDS} short search phrases), ` +
+  `"platforms": string[] (hostnames without scheme, e.g. "alibaba.com"), ` +
+  `"aestheticNotes": string (free text for the product scout), ` +
+  `"categoryHints": string[] (e.g. "serveware", "knives")}`;
+
+function buildPrompt(instructions: string, brand: string, productNames: string[]): string {
   return (
-    `Draft a search brief for sourcing new kitchenware products for this site from wholesale marketplaces. ` +
-    `Base it on the brand doc and on gaps in the current product catalog.\n\n` +
-    `Reply with JSON only, exactly this shape:\n` +
-    `{"keywords": string[] (1-${MAX_KEYWORDS} short search phrases), ` +
-    `"platforms": string[] (hostnames without scheme, e.g. "alibaba.com"), ` +
-    `"aestheticNotes": string (free text for the product scout), ` +
-    `"categoryHints": string[] (e.g. "serveware", "knives")}\n\n` +
+    `${instructions}\n\n` +
     `Brand doc:\n${brand || '(missing)'}\n\n` +
     `Existing products:\n${productNames.map((n) => `- ${n}`).join('\n') || '(none yet)'}`
   );
@@ -111,13 +117,14 @@ export async function runProductSourcingCriteria(): Promise<JobResult> {
 
   const client = createGitHubClient(requireEnv('GITHUB_TOKEN'));
   const persona = await loadAgentPersona(client, PERSONA_PATH);
+  const instructions = await resolveProse(pool, PRODUCT_SOURCING_CRITERIA_JOB_NAME, 'criteria', CRITERIA_TASK_PROMPT);
   const brand = (await getFile(client, 'docs/BRAND.md', 'main'))?.content ?? '';
   const productNames = await readProductNames(client);
 
   const cycle = open ?? (await createSourcedProductCycle(pool, { gatingProfile: readGatingProfile() }));
 
   const criteria = await callLlmJson(
-    [{ role: 'user', content: buildPrompt(brand, productNames) }],
+    [{ role: 'user', content: buildPrompt(instructions, brand, productNames) }],
     { persona },
     parseSearchCriteria,
   );

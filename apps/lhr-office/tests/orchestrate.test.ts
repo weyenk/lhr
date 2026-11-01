@@ -23,6 +23,11 @@ vi.mock('@lhr/db', () => ({
   reapOrphanedRunningRuns: (...args: unknown[]) => db.reapOrphanedRunningRuns(...args),
 }));
 
+const effectiveCadenceMock = vi.fn();
+vi.mock('../src/resolveJobTuning.js', () => ({
+  effectiveCadence: (...args: unknown[]) => effectiveCadenceMock(...args),
+}));
+
 const { runDueJob, runJobNow } = await import('../src/orchestrate');
 
 const fakeDb = {} as Queryable;
@@ -37,6 +42,10 @@ beforeEach(() => {
   db.getRecentRunning.mockResolvedValue(null);
   db.insertRunningRow.mockResolvedValue(1);
   db.reapOrphanedRunningRuns.mockResolvedValue(0);
+  // Default: no DB cadence overrides, so effective cadence is just each job's own registry default.
+  effectiveCadenceMock.mockImplementation(async (_db: unknown, registry: JobRegistration[]) =>
+    new Map(registry.map((j) => [j.name, j.cadenceDays])),
+  );
 });
 
 describe('runDueJob', () => {
@@ -90,6 +99,32 @@ describe('runDueJob', () => {
     const outcome = await runDueJob(fakeDb, [job('a', run)]);
     expect(db.finishRun).toHaveBeenCalledWith(fakeDb, 1, 'partial', 'skipped 2 diets');
     expect(outcome).toEqual({ outcome: 'ran', job: 'a', status: 'partial', summary: 'skipped 2 diets' });
+  });
+
+  it('uses the DB cadence override instead of the registry default when deciding due-ness', async () => {
+    // Registry cadence is 7 days, but the job last succeeded only 2 days ago — not due by the
+    // registry default. A saved cadence override of 1 day should make it due anyway.
+    db.getLatestSuccess.mockResolvedValue({ finishedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) });
+    effectiveCadenceMock.mockResolvedValue(new Map([['a', 1]]));
+    const run = vi.fn().mockResolvedValue({ status: 'success', summary: 'ran under override cadence' });
+
+    const outcome = await runDueJob(fakeDb, [job('a', run, 7)]);
+
+    expect(run).toHaveBeenCalledOnce();
+    expect(outcome).toEqual({ outcome: 'ran', job: 'a', status: 'success', summary: 'ran under override cadence' });
+  });
+
+  it('is not due under the registry default when the DB cadence override is longer', async () => {
+    // Registry cadence is 1 day and the job last succeeded a few hours ago — due by the registry
+    // default. A saved cadence override of 30 days should keep it from running.
+    db.getLatestSuccess.mockResolvedValue({ finishedAt: new Date(Date.now() - 2 * 60 * 60 * 1000) });
+    effectiveCadenceMock.mockResolvedValue(new Map([['a', 30]]));
+    const run = vi.fn();
+
+    const outcome = await runDueJob(fakeDb, [job('a', run, 1)]);
+
+    expect(run).not.toHaveBeenCalled();
+    expect(outcome).toEqual({ outcome: 'nothing-due' });
   });
 });
 

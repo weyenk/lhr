@@ -8,10 +8,29 @@ export interface OrchestratorRun {
   finishedAt: string | null;
 }
 
+export interface JobProseEntry {
+  id: string;
+  title: string;
+  source: 'inline' | 'repo';
+  editable: boolean;
+  text: string;
+  note?: string;
+}
+
 export interface JobStatusRow {
   name: string;
+  /** The registry's hardcoded cadence (src/registry.ts) — always shown for reference. */
+  defaultCadenceDays: number;
+  /** The cadence actually in effect: a saved `job_tuning` override, else `defaultCadenceDays`. */
   cadenceDays: number;
+  prose: JobProseEntry[];
   history: OrchestratorRun[];
+}
+
+export interface JobTuningSaveResponse {
+  jobName: string;
+  cadenceDays: number | null;
+  proseOverrides: Record<string, string>;
 }
 
 export interface RecipeCandidateSummary {

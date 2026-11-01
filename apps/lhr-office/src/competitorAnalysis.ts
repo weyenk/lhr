@@ -17,6 +17,9 @@ import {
 import { fetchSearchResults } from './serpapiSearch.js';
 import { fetchCompetitorPosts, diffNewPosts, type CompetitorPost } from './competitorContent.js';
 import { callLLM } from '@lhr/llm';
+import { resolveProse } from './resolveJobTuning.js';
+
+export const COMPETITOR_ANALYSIS_JOB_NAME = 'competitor-analysis';
 
 function requireEnv(name: string): string {
   const value = process.env[name];
@@ -113,19 +116,19 @@ async function fetchHomepageText(domain: string): Promise<string> {
   return htmlToText(await response.text());
 }
 
-const MONETIZATION_PERSONA =
+export const MONETIZATION_PERSONA =
   "You analyze a competitor recipe/kitchenware site's homepage text and produce a short, factual snapshot of its monetization and product strategy: what it sells or promotes, any visible price ranges, and any visible affiliate/ad programs or sponsorship disclosures. 2-4 sentences, no speculation beyond what the text shows.";
 
-const DESIGN_PERSONA =
+export const DESIGN_PERSONA =
   "You analyze a competitor site's homepage text (tags stripped, so infer structure from headings, nav labels, and link text) and produce a short, factual description of its apparent layout, prominent calls-to-action, and visual/content style. 2-4 sentences, no speculation beyond what the text shows.";
 
 const DIFF_PERSONA =
   'Given a previous snapshot and a current snapshot of the same thing, describe what substantively changed in 1-2 sentences. If the current snapshot is just a prose rephrasing of the same facts with no substantive change, respond exactly with "No substantive change."';
 
-const WEEKLY_SUMMARY_PERSONA =
+export const WEEKLY_SUMMARY_PERSONA =
   'Synthesize this week\'s changes for a tracked competitor into a short "what changed this week" summary (2-4 sentences), covering new content, SEO positions, monetization, and design where notable. Skip dimensions with no notable change.';
 
-const DECISION_PACKAGING_PERSONA =
+export const DECISION_PACKAGING_PERSONA =
   'Produce overlap scores and a decision brief for Love Heat Relationship (LHR) — a personal gluten-free / relationship-food recipe blog with kitchenware affiliate sets on ~26-post / 6-month cadence — vs one competitor. Reply with ONLY a JSON object (no markdown fences) of shape: {"market":0-100,"content":0-100,"product":0-100,"threat":0-100,"decisionBrief":"2-4 sentences for the author","suggestedActions":["1-5 concrete LHR-side actions"]}. market=shared audience/niche, content=editorial similarity, product=commerce/affiliate posture vs LHR kitchenware affiliates, threat=urgency to respond this cycle (blend of the three plus SEO presence and change intensity). Never invent traffic, revenue, or MAU. If a dimension is unreachable this cycle, lean on any prior snapshots provided and note thin evidence in decisionBrief.';
 
 /** Per-call budget so a wedged Airlie worker cannot leave competitor-analysis polling forever. */
@@ -175,16 +178,16 @@ function llmDeadline(): number {
   return Date.now() + LLM_CALL_BUDGET_MS;
 }
 
-async function summarizeMonetization(domain: string, pageText: string): Promise<string> {
+async function summarizeMonetization(domain: string, pageText: string, persona: string): Promise<string> {
   return callLLM([{ role: 'user', content: `Homepage text for ${domain}:\n\n${pageText}` }], {
-    persona: MONETIZATION_PERSONA,
+    persona,
     deadline: llmDeadline(),
   });
 }
 
-async function summarizeDesign(domain: string, pageText: string): Promise<string> {
+async function summarizeDesign(domain: string, pageText: string, persona: string): Promise<string> {
   return callLLM([{ role: 'user', content: `Homepage text for ${domain}:\n\n${pageText}` }], {
-    persona: DESIGN_PERSONA,
+    persona,
     deadline: llmDeadline(),
   });
 }
@@ -197,11 +200,19 @@ async function diffSnapshot(previous: string | null, current: string): Promise<s
   );
 }
 
+export interface CompetitorAnalysisPersonas {
+  monetization: string;
+  design: string;
+  weekly: string;
+  decision: string;
+}
+
 async function buildCompetitorReport(
   db: Queryable,
   competitor: Pick<Competitor, 'id' | 'domain'>,
   cycleId: string,
   seoPositions: SeoPositionEntry[],
+  personas: CompetitorAnalysisPersonas,
 ): Promise<{ report: NewCompetitorReport; hadIssue: boolean }> {
   const recentReports = await listRecentCompetitorReports(db, competitor.id, CONTENT_BASELINE_CYCLES);
 
@@ -244,8 +255,8 @@ async function buildCompetitorReport(
   try {
     const pageText = await fetchHomepageText(competitor.domain);
     const [monetization, design] = await Promise.all([
-      summarizeMonetization(competitor.domain, pageText),
-      summarizeDesign(competitor.domain, pageText),
+      summarizeMonetization(competitor.domain, pageText, personas.monetization),
+      summarizeDesign(competitor.domain, pageText, personas.design),
     ]);
     monetizationSnapshot = monetization;
     designSnapshot = design;
@@ -277,7 +288,7 @@ async function buildCompetitorReport(
           ].join('\n'),
         },
       ],
-      { persona: WEEKLY_SUMMARY_PERSONA, deadline: llmDeadline() },
+      { persona: personas.weekly, deadline: llmDeadline() },
     );
   } catch (err) {
     console.warn(`[competitors] synthesis LLM call failed for ${competitor.domain}.`, err);
@@ -305,7 +316,7 @@ async function buildCompetitorReport(
           ].join('\n'),
         },
       ],
-      { persona: DECISION_PACKAGING_PERSONA, deadline: llmDeadline() },
+      { persona: personas.decision, deadline: llmDeadline() },
     );
     const packaging = parseDecisionPackaging(packagingRaw);
     overlapScores = packaging.overlapScores;
@@ -344,6 +355,13 @@ export async function analyzeCompetitors(): Promise<JobResult> {
 
   const cycleId = new Date().toISOString().slice(0, 10);
 
+  const personas: CompetitorAnalysisPersonas = {
+    monetization: await resolveProse(db, COMPETITOR_ANALYSIS_JOB_NAME, 'monetization', MONETIZATION_PERSONA),
+    design: await resolveProse(db, COMPETITOR_ANALYSIS_JOB_NAME, 'design', DESIGN_PERSONA),
+    weekly: await resolveProse(db, COMPETITOR_ANALYSIS_JOB_NAME, 'weekly', WEEKLY_SUMMARY_PERSONA),
+    decision: await resolveProse(db, COMPETITOR_ANALYSIS_JOB_NAME, 'decision', DECISION_PACKAGING_PERSONA),
+  };
+
   const { discovered, failedQueries } = await discoverCandidates(db);
   const tracked = await listCompetitorsByStatus(db, 'tracked');
   const { positionsByCompetitorId, failedKeywords } = await trackSeoPositions(db, tracked);
@@ -352,7 +370,7 @@ export async function analyzeCompetitors(): Promise<JobResult> {
   let competitorsWithIssues = 0;
   for (const competitor of tracked) {
     const seoPositions = positionsByCompetitorId.get(competitor.id) ?? [];
-    const { report, hadIssue } = await buildCompetitorReport(db, competitor, cycleId, seoPositions);
+    const { report, hadIssue } = await buildCompetitorReport(db, competitor, cycleId, seoPositions, personas);
     await insertCompetitorReport(db, report);
     reportsWritten += 1;
     if (hadIssue) competitorsWithIssues += 1;

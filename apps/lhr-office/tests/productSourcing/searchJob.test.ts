@@ -20,6 +20,12 @@ vi.mock('lhr-authoring-mcp-server/dist-lib/github.js', () => githubMock);
 const serpMock = { fetchSearchResults: vi.fn() };
 vi.mock('../../src/serpapiSearch.js', () => serpMock);
 
+// resolveProse hits the DB (getJobTuning) to look up a prose override; this test suite is not
+// exercising that lookup, so stub it to always fall through to the hardcoded default it's given.
+vi.mock('../../src/resolveJobTuning.js', () => ({
+  resolveProse: vi.fn(async (_db: unknown, _jobName: string, _key: string, fallback: string) => fallback),
+}));
+
 const { runProductSourcingSearch } = await import('../../src/productSourcing/searchJob');
 
 const CRITERIA = {

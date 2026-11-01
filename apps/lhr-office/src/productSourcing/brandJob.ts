@@ -12,6 +12,9 @@ import { createGitHubClient, getFile } from 'lhr-authoring-mcp-server/dist-lib/g
 import { loadAgentPersona } from './loadPersona.js';
 import { callLlmJson } from './parseLlmJson.js';
 import { describeCandidate, isWaitingForGate, requireEnv, verdictParser, type Verdict } from './monetizeJob.js';
+import { resolveProse } from '../resolveJobTuning.js';
+
+export const PRODUCT_SOURCING_BRAND_JOB_NAME = 'product-sourcing-brand';
 
 const PERSONA_PATH = '.claude/agents/designer-experience.md';
 
@@ -19,13 +22,16 @@ const BLOCKED_NO_OPEN_CYCLE: JobResult = { status: 'success', summary: 'blocked:
 const BLOCKED_WAITING_FOR_GATE: JobResult = { status: 'success', summary: 'blocked: waiting for gate' };
 const BLOCKED_CYCLE_NOT_BRANDING: JobResult = { status: 'success', summary: 'blocked: cycle not branding' };
 
-function buildPrompt(brand: string, candidates: SourcedProductCandidate[]): string {
+export const BRAND_TASK_PROMPT =
+  `Judge whether each shortlisted product fits this site's brand and design language (palette, materials, ` +
+  `shape, overall aesthetic) as described in the brand doc. You only have a title, source URL, and notes — ` +
+  `do not invent visual details you cannot infer from them.\n\n` +
+  `Reply with JSON only, exactly this shape, with one entry for every candidate id:\n` +
+  `{"results": [{"id": number, "pass": boolean, "rationale": string (one or two sentences)}]}`;
+
+function buildPrompt(instructions: string, brand: string, candidates: SourcedProductCandidate[]): string {
   return (
-    `Judge whether each shortlisted product fits this site's brand and design language (palette, materials, ` +
-    `shape, overall aesthetic) as described in the brand doc. You only have a title, source URL, and notes — ` +
-    `do not invent visual details you cannot infer from them.\n\n` +
-    `Reply with JSON only, exactly this shape, with one entry for every candidate id:\n` +
-    `{"results": [{"id": number, "pass": boolean, "rationale": string (one or two sentences)}]}\n\n` +
+    `${instructions}\n\n` +
     `Brand doc:\n${brand || '(missing)'}\n\n` +
     `Candidates:\n${candidates.map(describeCandidate).join('\n')}`
   );
@@ -45,14 +51,17 @@ export async function runProductSourcingBrand(): Promise<JobResult> {
   const brand = (await getFile(client, 'docs/BRAND.md', 'main'))?.content ?? '';
 
   const candidates = await listSourcedProductCandidates(pool, cycle.id, 'monetize_confirmed');
-  const verdicts =
-    candidates.length === 0
-      ? new Map<number, Verdict>()
-      : await callLlmJson(
-          [{ role: 'user', content: buildPrompt(brand, candidates) }],
-          { persona },
-          verdictParser(candidates.map((c) => c.id)),
-        );
+  let verdicts: Map<number, Verdict>;
+  if (candidates.length === 0) {
+    verdicts = new Map<number, Verdict>();
+  } else {
+    const instructions = await resolveProse(pool, PRODUCT_SOURCING_BRAND_JOB_NAME, 'brand', BRAND_TASK_PROMPT);
+    verdicts = await callLlmJson(
+      [{ role: 'user', content: buildPrompt(instructions, brand, candidates) }],
+      { persona },
+      verdictParser(candidates.map((c) => c.id)),
+    );
+  }
 
   let passed = 0;
   for (const candidate of candidates) {

@@ -23,8 +23,14 @@ const listRecentCompetitorReportsMock = vi.fn();
 const listKeywordsMock = vi.fn();
 const addKeywordMock = vi.fn();
 const removeKeywordMock = vi.fn();
+const getJobTuningMock = vi.fn();
+const listJobTuningMock = vi.fn();
+const upsertJobTuningMock = vi.fn();
 vi.mock('@lhr/db', () => ({
   getRunHistory: (...args: unknown[]) => getRunHistoryMock(...args),
+  getJobTuning: (...args: unknown[]) => getJobTuningMock(...args),
+  listJobTuning: (...args: unknown[]) => listJobTuningMock(...args),
+  upsertJobTuning: (...args: unknown[]) => upsertJobTuningMock(...args),
   getLatestPendingCycleId: (...args: unknown[]) => getLatestPendingCycleIdMock(...args),
   getPendingCandidates: (...args: unknown[]) => getPendingCandidatesMock(...args),
   setTopicStatus: (...args: unknown[]) => setTopicStatusMock(...args),
@@ -88,6 +94,8 @@ beforeEach(() => {
   listCompetitorsByStatusMock.mockResolvedValue([]);
   listRecentCompetitorReportsMock.mockResolvedValue([]);
   listKeywordsMock.mockResolvedValue([]);
+  getJobTuningMock.mockResolvedValue(null);
+  listJobTuningMock.mockResolvedValue([]);
 });
 
 afterEach(() => {

@@ -13,6 +13,9 @@ import { fetchInterestAndRelatedQueries, fetchTrendingNow, type InterestAndRelat
 import { callLLM } from '@lhr/llm';
 import { createGitHubClient, getFile, listFiles, type GitHubClient } from 'lhr-authoring-mcp-server/dist-lib/github.js';
 import { parsePostFrontmatter } from 'lhr-authoring-mcp-server/dist-lib/backfillIngredientLinks.js';
+import { resolveProse } from './resolveJobTuning.js';
+
+export const TRENDS_WATCHER_JOB_NAME = 'trends-watcher';
 
 const SUGGESTIONS_PER_CATEGORY = 2;
 const RECENT_POST_LIMIT = 15;
@@ -60,16 +63,16 @@ async function readRecentPostTitles(client: GitHubClient, limit: number): Promis
   return titles;
 }
 
-const SUGGEST_TOPICS_PERSONA =
+export const SUGGEST_TOPICS_PERSONA =
   'You suggest search topics for a Google Trends watch list. Reply with a JSON array of ' +
   `up to ${SUGGESTIONS_PER_CATEGORY} short topic strings, nothing else.`;
 
-async function suggestAdjacentTopics(category: TrendCategory, curated: string[]): Promise<string[]> {
+async function suggestAdjacentTopics(category: TrendCategory, curated: string[], persona: string): Promise<string[]> {
   const prompt =
     `Category: ${category}\nCurrent curated topics: ${curated.length ? curated.join(', ') : '(none yet)'}\n` +
     `Suggest up to ${SUGGESTIONS_PER_CATEGORY} adjacent topics worth trying this cycle.`;
   const reply = await callLLM([{ role: 'user', content: prompt }], {
-    persona: SUGGEST_TOPICS_PERSONA,
+    persona,
   });
   try {
     const parsed = JSON.parse(reply) as unknown;
@@ -122,6 +125,7 @@ export async function sourceWeeklyTrends(): Promise<JobResult> {
   const constitution = await readConstitution(client);
   const summaryPersona = await readContentStrategistPersona(client);
   const recentPostTitles = await readRecentPostTitles(client, RECENT_POST_LIMIT);
+  const suggestPersona = await resolveProse(pool, TRENDS_WATCHER_JOB_NAME, 'suggest', SUGGEST_TOPICS_PERSONA);
 
   const partialCategories: string[] = [];
 
@@ -132,7 +136,7 @@ export async function sourceWeeklyTrends(): Promise<JobResult> {
     const curatedTopics = curated.map((t) => t.topic);
     const curatedNormalized = new Set(curatedTopics.map((t) => t.toLowerCase().trim()));
 
-    const suggestedRaw = await suggestAdjacentTopics(category, curatedTopics);
+    const suggestedRaw = await suggestAdjacentTopics(category, curatedTopics, suggestPersona);
     const seenNormalized = new Set<string>();
     const suggested: string[] = [];
     for (const topic of suggestedRaw) {
