@@ -15,10 +15,8 @@ describe('jobs registry', () => {
     expect(job?.run).toBeTypeOf('function');
   });
 
-  it('registers the affiliate-sourcing job on a 7-day cadence', () => {
-    const job = jobs.find((j) => j.name === 'affiliate-sourcing');
-    expect(job).toMatchObject({ cadenceDays: 7 });
-    expect(job?.run).toBeTypeOf('function');
+  it('does not register affiliate-sourcing (global constraint)', () => {
+    expect(jobs.find((j) => j.name === 'affiliate-sourcing')).toBeUndefined();
   });
 
   it('registers the trends-watcher job on a 7-day cadence', () => {
