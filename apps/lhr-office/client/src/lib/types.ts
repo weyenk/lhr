@@ -152,3 +152,70 @@ export type BridgeJob = {
   finished_at: string | null;
   worker_id: string | null;
 };
+
+export type SourcedProductCycleStatus =
+  | 'drafting_criteria'
+  | 'awaiting_criteria_approval'
+  | 'searching'
+  | 'awaiting_product_picks'
+  | 'monetizing'
+  | 'awaiting_monetize_approval'
+  | 'branding'
+  | 'awaiting_final'
+  | 'closed';
+
+export type SourcedProductCandidateStatus =
+  | 'sourced'
+  | 'picked'
+  | 'skipped'
+  | 'monetize_pass'
+  | 'monetize_fail'
+  | 'monetize_confirmed'
+  | 'dropped'
+  | 'brand_pass'
+  | 'brand_fail'
+  | 'pending_final'
+  | 'approved'
+  | 'denied';
+
+export interface SourcedProductCriteria {
+  keywords: string[];
+  platforms: string[];
+  aestheticNotes: string;
+  categoryHints: string[];
+}
+
+export interface SourcedProductCycle {
+  id: number;
+  startedAt: string;
+  status: SourcedProductCycleStatus;
+  criteriaJson: Partial<SourcedProductCriteria> | null;
+  criteriaApprovedAt: string | null;
+  gatingProfile: 'strict' | 'trust';
+  closedAt: string | null;
+}
+
+export interface SourcedProductCandidate {
+  id: number;
+  cycleId: number;
+  title: string;
+  imageUrl: string | null;
+  sourceUrl: string;
+  platform: string;
+  moq: string | null;
+  unitCostCents: number | null;
+  notes: string | null;
+  status: SourcedProductCandidateStatus;
+  monetizePass: boolean | null;
+  monetizeRationale: string | null;
+  brandPass: boolean | null;
+  brandRationale: string | null;
+  decidedAt: string | null;
+  createdAt: string;
+}
+
+/** GET /api/sourced-products/cycle — `cycle` is null when nothing is open. */
+export interface SourcedProductCycleResponse {
+  cycle: SourcedProductCycle | null;
+  candidates: SourcedProductCandidate[];
+}
