@@ -14,6 +14,9 @@ import { gateAutoClears } from './gating.js';
 import { loadAgentPersona } from './loadPersona.js';
 import { callLlmJson } from './parseLlmJson.js';
 import { resolveProse } from '../resolveJobTuning.js';
+import { MONETIZE_TASK_PROMPT } from '../jobProseDefaults.js';
+
+export { MONETIZE_TASK_PROMPT };
 
 export const PRODUCT_SOURCING_MONETIZE_JOB_NAME = 'product-sourcing-monetize';
 
@@ -69,14 +72,6 @@ export function describeCandidate(c: SourcedProductCandidate): string {
   // The id is emitted first and unquoted-spaced so the LLM echoes it back verbatim as a number.
   return `{"id": ${c.id}, ${JSON.stringify({ title, platform, sourceUrl, moq, unitCostCents, notes }).slice(1)}`;
 }
-
-export const MONETIZE_TASK_PROMPT =
-  `Judge each shortlisted wholesale product on wholesale sellability only: is there a realistic path to buying it ` +
-  `at wholesale and reselling it profitably (unit cost vs. a plausible retail price, MOQ vs. a small shop's budget, ` +
-  `supplier reliability signals, shipping and fragility)? Do not consider affiliate programs or commissions.\n` +
-  `Use only the facts given; where MOQ or cost is null, say it is unknown rather than guessing.\n\n` +
-  `Reply with JSON only, exactly this shape, with one entry for every candidate id:\n` +
-  `{"results": [{"id": number, "pass": boolean, "rationale": string (one or two sentences)}]}`;
 
 function buildPrompt(instructions: string, candidates: SourcedProductCandidate[]): string {
   return `${instructions}\n\nCandidates:\n${candidates.map(describeCandidate).join('\n')}`;

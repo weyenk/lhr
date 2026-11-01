@@ -14,7 +14,9 @@ import { callLLM } from '@lhr/llm';
 import { createGitHubClient, getFile, listFiles, type GitHubClient } from 'lhr-authoring-mcp-server/dist-lib/github.js';
 import { parsePostFrontmatter } from 'lhr-authoring-mcp-server/dist-lib/backfillIngredientLinks.js';
 import { resolveProse } from './resolveJobTuning.js';
+import { SUGGEST_TOPICS_PERSONA } from './jobProseDefaults.js';
 
+export { SUGGEST_TOPICS_PERSONA };
 export const TRENDS_WATCHER_JOB_NAME = 'trends-watcher';
 
 const SUGGESTIONS_PER_CATEGORY = 2;
@@ -62,10 +64,6 @@ async function readRecentPostTitles(client: GitHubClient, limit: number): Promis
   }
   return titles;
 }
-
-export const SUGGEST_TOPICS_PERSONA =
-  'You suggest search topics for a Google Trends watch list. Reply with a JSON array of ' +
-  `up to ${SUGGESTIONS_PER_CATEGORY} short topic strings, nothing else.`;
 
 async function suggestAdjacentTopics(category: TrendCategory, curated: string[], persona: string): Promise<string[]> {
   const prompt =

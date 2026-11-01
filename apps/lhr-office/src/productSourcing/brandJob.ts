@@ -13,6 +13,9 @@ import { loadAgentPersona } from './loadPersona.js';
 import { callLlmJson } from './parseLlmJson.js';
 import { describeCandidate, isWaitingForGate, requireEnv, verdictParser, type Verdict } from './monetizeJob.js';
 import { resolveProse } from '../resolveJobTuning.js';
+import { BRAND_TASK_PROMPT } from '../jobProseDefaults.js';
+
+export { BRAND_TASK_PROMPT };
 
 export const PRODUCT_SOURCING_BRAND_JOB_NAME = 'product-sourcing-brand';
 
@@ -21,13 +24,6 @@ const PERSONA_PATH = '.claude/agents/designer-experience.md';
 const BLOCKED_NO_OPEN_CYCLE: JobResult = { status: 'success', summary: 'blocked: no open cycle' };
 const BLOCKED_WAITING_FOR_GATE: JobResult = { status: 'success', summary: 'blocked: waiting for gate' };
 const BLOCKED_CYCLE_NOT_BRANDING: JobResult = { status: 'success', summary: 'blocked: cycle not branding' };
-
-export const BRAND_TASK_PROMPT =
-  `Judge whether each shortlisted product fits this site's brand and design language (palette, materials, ` +
-  `shape, overall aesthetic) as described in the brand doc. You only have a title, source URL, and notes — ` +
-  `do not invent visual details you cannot infer from them.\n\n` +
-  `Reply with JSON only, exactly this shape, with one entry for every candidate id:\n` +
-  `{"results": [{"id": number, "pass": boolean, "rationale": string (one or two sentences)}]}`;
 
 function buildPrompt(instructions: string, brand: string, candidates: SourcedProductCandidate[]): string {
   return (
